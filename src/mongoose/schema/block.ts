@@ -1,0 +1,12 @@
+import * as mongoose from 'mongoose'
+const schema = mongoose.Schema({
+    hash: String,
+    timestamp: Number,
+    transactions: Array,
+    previousHash: String,
+    nonce: Number
+},
+{
+    collection: "blocks"
+})
+export default mongoose.model("Block", schema)

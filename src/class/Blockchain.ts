@@ -1,0 +1,105 @@
+import Transaction from './Transaction'
+import Block from './Block'
+import * as config from '../../config.json'
+import load_blocks from '../load_blocks'
+interface Blockchain {
+    chain: Array<Block>,
+    difficulty: number,
+    pendingTransactions: Array<Transaction>,
+    miningReward: number
+}
+class Blockchain {
+    constructor() {
+        this.difficulty = config.difficulty
+        this.pendingTransactions = []
+        this.miningReward = config.miningreward
+    }
+    createGenesisBlock() {
+        return new Block({
+            timestamp: Date.now(),
+            transactions: [],
+            previousHash: '',
+            nonce: null,
+            hash: null
+        })
+    }
+    getLatestBlock() {
+        const block = this.chain[this.chain.length - 1]
+        if (block) return block
+        else return this.createGenesisBlock()
+    }
+    async minePendingTransactions(miningRewardAddress) {
+        this.pendingTransactions = [
+            ...this.pendingTransactions,
+            new Transaction({
+                fromAddress: 'mining reward',
+                toAddress: miningRewardAddress,
+                amount: this.miningReward,
+                signature: null
+            })
+        ]
+        let block = new Block({
+            timestamp: Date.now(),
+            transactions: this.pendingTransactions,
+            previousHash: this.getLatestBlock().hash,
+            nonce: null,
+            hash: null
+        })
+        await block.mineBlock(this.difficulty)
+        this.chain.push(block)
+        this.pendingTransactions = []
+    }
+    addTransaction(transaction) {
+        if (!transaction.fromAddress || !transaction.toAddress) {
+            throw new Error('Transaction must include from and to address!')
+        }
+        if (!transaction.isValid()) {
+            throw new Error('Cannot add invalid transaction to the chain!')
+        }
+        if (transaction.amount <= 0) {
+            throw new Error('Transaction amount must be higher than 0!')
+        }
+        if (this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) {
+            throw new Error('Not enough balance!')
+        }
+        this.pendingTransactions.push(transaction)
+    }
+    getBalanceOfAddress(address) {
+        let balance = 0
+        for (const block of this.chain) {
+            for (const transaction of block.transactions) {
+                if (transaction.fromAddress === address) {
+                    balance -= transaction.amount
+                }
+                if (transaction.toAddress === address) {
+                    balance += transaction.amount
+                }
+            }
+        }
+        return balance
+    }
+    isChainValid() {
+        for (let i = 1; i < this.chain.length; i++) {
+            const currentBlock = this.chain[i]
+            const previousBlock = this.chain[i - 1]
+            if (!currentBlock.hasValidTransactions()) {
+                console.log('!currentBlock.hasValidTransactions()')
+                return false
+            }
+            if (currentBlock.hash !== currentBlock.calculateHash()) {
+                console.log('currentBlock.hash !== currentBlock.calculateHash()')
+                return false
+            }
+            if (currentBlock.previousHash !== previousBlock.hash) {
+                console.log('currentBlock.previousHash !== previousBlock.hash')
+                console.log(currentBlock.previousHash, previousBlock.hash)
+                return false
+            }
+        }
+        return true
+    }
+    async load_blocks(limit: number, skip: number) {
+        this.chain = await load_blocks(limit, skip)
+    }
+}
+export default Blockchain
