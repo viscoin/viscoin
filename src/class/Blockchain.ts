@@ -61,6 +61,9 @@ class Blockchain {
         if (this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) {
             throw new Error('Not enough balance!')
         }
+        if (this.pendingTransactions.find(e => e.fromAddress === transaction.fromAddress)) {
+            throw new Error('Already have a pending transaction!')
+        }
         this.pendingTransactions.push(transaction)
     }
     getBalanceOfAddress(address) {
