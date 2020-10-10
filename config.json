@@ -1,4 +1,5 @@
 {
     "miningreward": 100,
-    "difficulty": 4
+    "difficulty": 4,
+    "mining_reward_address": "mining reward"
 }

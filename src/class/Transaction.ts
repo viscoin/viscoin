@@ -1,4 +1,5 @@
 import * as crypto from 'crypto'
+import * as config from '../../config.json'
 interface Transaction {
     fromAddress: string,
     toAddress: string,
@@ -6,7 +7,7 @@ interface Transaction {
     signature: string
 }
 class Transaction {
-    constructor({ fromAddress, toAddress, amount, signature }) {
+    constructor({ fromAddress, toAddress, amount, signature = undefined }) {
         this.fromAddress = fromAddress
         this.toAddress = toAddress
         this.amount = amount
@@ -31,7 +32,7 @@ class Transaction {
         this.signature = sign.sign(privateKey, 'base64')
     }
     isValid() {
-        if (this.fromAddress === 'mining reward') return true
+        if (this.fromAddress === config.mining_reward_address) return true
         if (!this.signature || this.signature.length === 0) {
             throw new Error('No signature in this transaction!')
         }

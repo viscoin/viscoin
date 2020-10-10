@@ -32,10 +32,9 @@ class Blockchain {
         this.pendingTransactions = [
             ...this.pendingTransactions,
             new Transaction({
-                fromAddress: 'mining reward',
+                fromAddress: config.mining_reward_address,
                 toAddress: miningRewardAddress,
-                amount: this.miningReward,
-                signature: null
+                amount: this.miningReward
             })
         ]
         let block = new Block({
