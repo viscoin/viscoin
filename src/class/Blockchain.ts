@@ -86,7 +86,7 @@ class Blockchain {
                             ]
                         }
                     }
-                }, 'transactions', { limit: config.blockSearchLimit, skip: i * config.blockSearchLimit })
+                }, 'transactions', { limit: config.blocksPerQueryLimit, skip: i * config.blocksPerQueryLimit })
                 .exec()
             if (!blocks || !blocks.length) break
             for (const block of blocks) {

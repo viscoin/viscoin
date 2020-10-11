@@ -3,5 +3,5 @@
     "difficulty": 3,
     "mining_reward_address": "mining reward",
     "blockSize": 1000000,
-    "blockSearchLimit": 4
+    "blocksPerQueryLimit": 40
 }
