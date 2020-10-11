@@ -131,6 +131,7 @@ class Blockchain {
     }
     async load_blocks(limit: number, skip: number) {
         if (limit > config.maxInMemoryChainLength) throw new Error('Cannot load more blocks than maxInMemoryChainLength!')
+        if (skip < 0) skip = 0
         this.chain = await load_blocks(limit, skip)
         // this.chain.push(...await load_blocks(limit, skip))
         // this.chain = [
@@ -138,6 +139,14 @@ class Blockchain {
         //     ...this.chain
         // ]
         // this.shiftChain()
+    }
+    async loadLatestBlocks(limit: number) {
+        const chainLength = await schema_block
+            .countDocuments()
+            // .estimatedDocumentCount()
+            .exec()
+        // console.log('chainLength', chainLength)
+        await this.load_blocks(limit, chainLength - limit)
     }
 }
 export default Blockchain

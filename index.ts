@@ -10,7 +10,7 @@ import * as keys from './keys.json'
 (async () => {
     const blockchain = new Blockchain()
 
-    await blockchain.load_blocks(100, 0)
+    await blockchain.loadLatestBlocks(100)
 
     for (let i = 0; i < 1; i++) {
         for (const key of keys) {
