@@ -1,8 +1,9 @@
 {
     "miningReward": 100,
-    "difficulty": 1,
+    "difficulty": 3,
     "mining_reward_address": "mining reward",
     "blockSize": 1000000,
     "blocksPerQueryLimit": 100,
-    "maxInMemoryChainLength": 100
+    "maxInMemoryChainLength": 100,
+    "NodeCacheLimit": 1000000
 }
