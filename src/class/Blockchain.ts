@@ -135,7 +135,6 @@ class Blockchain {
         let i = 0
         while (true) {
             let blocks = await load_blocks(config.blocksPerQueryLimit, i * (config.blocksPerQueryLimit - 1))
-            console.log(blocks.length)
             if (!blocks.length) break
             if (!Blockchain.isPartOfChainValid(blocks)) return false
             i++

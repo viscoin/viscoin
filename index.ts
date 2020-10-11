@@ -2,7 +2,6 @@ import * as dotenv from 'dotenv'
 dotenv.config()
 import * as mongoose from './src/mongoose/mongoose'
 mongoose.init()
-import * as crypto from 'crypto'
 import Blockchain from './src/class/Blockchain'
 import Transaction from './src/class/Transaction'
 import * as keys from './keys.json'

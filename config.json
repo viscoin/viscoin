@@ -1,6 +1,6 @@
 {
     "miningReward": 100,
-    "difficulty": 3,
+    "difficulty": 1,
     "mining_reward_address": "mining reward",
     "blockSize": 1000000,
     "blocksPerQueryLimit": 100,
