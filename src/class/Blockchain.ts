@@ -37,7 +37,7 @@ class Blockchain {
             transactions.pop()
         }
         transactions.map(e => transactions[0].amount += e.minerFee)
-        console.log(transactions)
+        // console.log(transactions)
         let block = new Block({
             timestamp: Date.now(),
             transactions,
