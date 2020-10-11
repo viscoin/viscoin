@@ -12,7 +12,7 @@ import * as keys from './keys.json'
 
     await blockchain.load_blocks(10, 0)
 
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 20; i++) {
         for (const key of keys) {
             // console.log(key)
 

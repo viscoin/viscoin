@@ -46,8 +46,9 @@ class Blockchain {
             previousHash: this.getLatestBlock().hash
         })
         await block.mineBlock(this.difficulty)
-        this.chain.push(block)
         this.pendingTransactions = []
+        this.chain.push(block)
+        if (this.chain.length > config.maxInMemoryChainLength) this.chain.pop()
     }
     addTransaction(transaction) {
         if (!transaction.fromAddress || !transaction.toAddress) {
