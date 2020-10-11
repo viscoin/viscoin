@@ -18,6 +18,7 @@ class ClientNode extends Node {
             _socket.on('data', data => this.onData(socket, data))
         }
         this.sockets.push(socket)
+        return socket
     }
 }
 export default ClientNode

@@ -17,12 +17,8 @@ setTimeout(() => {
     serverNode.stop()
 }, 10000)
 const clientNode = new ClientNode()
+clientNode.createClient('localhost', 80).write('0')
 clientNode.createClient('localhost', 80)
-clientNode.createClient('localhost', 80)
-clientNode.sockets[0].write('0')
-setTimeout(() => {
-    clientNode.sockets[0].write('0')
-}, 100)
 clientNode.sockets[1].write('1')
 
 
