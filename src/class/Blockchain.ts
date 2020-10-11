@@ -48,7 +48,10 @@ class Blockchain {
         await block.mineBlock(this.difficulty)
         this.pendingTransactions = []
         this.chain.push(block)
-        if (this.chain.length > config.maxInMemoryChainLength) this.chain.pop()
+        this.shiftChain()
+    }
+    shiftChain() {
+        while (this.chain.length > config.maxInMemoryChainLength) this.chain.shift()
     }
     addTransaction(transaction) {
         if (!transaction.fromAddress || !transaction.toAddress) {
@@ -125,7 +128,14 @@ class Blockchain {
         return true
     }
     async load_blocks(limit: number, skip: number) {
-        this.chain.push(...await load_blocks(limit, skip))
+        if (limit > config.maxInMemoryChainLength) throw new Error('Cannot load more blocks than maxInMemoryChainLength!')
+        this.chain = await load_blocks(limit, skip)
+        // this.chain.push(...await load_blocks(limit, skip))
+        // this.chain = [
+        //     ...await load_blocks(limit, skip),
+        //     ...this.chain
+        // ]
+        // this.shiftChain()
     }
 }
 export default Blockchain
