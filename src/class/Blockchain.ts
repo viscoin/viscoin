@@ -74,28 +74,32 @@ class Blockchain {
         this.pendingTransactions.push(transaction)
     }
     async getBalanceOfAddress(address) {
-        const blocks = await schema_block
-            .find({
-                transactions: {
-                    $elemMatch: {
-                        $or: [
-                            { fromAddress: address },
-                            { toAddress: address }
-                        ]
+        let i = 0, balance = 0
+        while (true) {
+            const blocks = await schema_block
+                .find({
+                    transactions: {
+                        $elemMatch: {
+                            $or: [
+                                { fromAddress: address },
+                                { toAddress: address }
+                            ]
+                        }
+                    }
+                }, 'transactions', { limit: config.blockSearchLimit, skip: i * config.blockSearchLimit })
+                .exec()
+            if (!blocks || !blocks.length) break
+            for (const block of blocks) {
+                for (const transaction of block.transactions) {
+                    if (transaction.fromAddress === address) {
+                        balance -= transaction.amount
+                    }
+                    if (transaction.toAddress === address) {
+                        balance += transaction.amount
                     }
                 }
-            }, 'transactions')
-            .exec()
-        let balance = 0
-        for (const block of blocks) {
-            for (const transaction of block.transactions) {
-                if (transaction.fromAddress === address) {
-                    balance -= transaction.amount
-                }
-                if (transaction.toAddress === address) {
-                    balance += transaction.amount
-                }
             }
+            i++
         }
         return balance
     }
