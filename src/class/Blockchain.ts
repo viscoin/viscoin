@@ -124,7 +124,7 @@ class Blockchain {
         return true
     }
     async load_blocks(limit: number, skip: number) {
-        this.chain = await load_blocks(limit, skip)
+        this.chain.push(...await load_blocks(limit, skip))
     }
 }
 export default Blockchain
