@@ -17,10 +17,7 @@ import * as keys from './keys.json'
             // console.log(key)
 
             await blockchain.minePendingTransactions(key.publicKey)
-
-
-            console.log(blockchain.chain.map(e => e.timestamp))
-            // console.log(await blockchain.getBalanceOfAddress(key.publicKey))
+            console.log(await blockchain.getBalanceOfAddress(key.publicKey))
 
             // const tx1 = new Transaction({
             //     fromAddress: key.publicKey,

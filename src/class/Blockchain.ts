@@ -40,10 +40,12 @@ class Blockchain {
         }
         transactions.map(e => transactions[0].amount += e.minerFee)
         // console.log(transactions)
-        let block = new Block({
+        const previousBlock = this.getLatestBlock()
+        if (previousBlock.previousHash === '') await previousBlock.mineBlock(this.difficulty)
+        const block = new Block({
             timestamp: Date.now(),
             transactions,
-            previousHash: this.getLatestBlock().hash
+            previousHash: previousBlock.hash
         })
         await block.mineBlock(this.difficulty)
         this.pendingTransactions = []
