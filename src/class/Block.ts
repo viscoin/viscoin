@@ -9,7 +9,7 @@ interface Block {
     nonce: number
 }
 class Block {
-    constructor({ timestamp, transactions, previousHash, nonce, hash }) {
+    constructor({ timestamp, transactions, previousHash, nonce = 0, hash = null }) {
         this.timestamp = timestamp
         this.previousHash = previousHash
         const _transactions = []
@@ -18,8 +18,7 @@ class Block {
             else _transactions.push(new Transaction(transaction))
         }
         this.transactions = _transactions
-        if (nonce !== null) this.nonce = nonce
-        else this.nonce = 0
+        this.nonce = nonce
         if (hash !== null) this.hash = hash
         else this.hash = this.calculateHash()
     }

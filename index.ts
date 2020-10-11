@@ -23,11 +23,12 @@ import Transaction from './src/class/Transaction'
         console.log(`Balance: ${blockchain.getBalanceOfAddress(publicKey)}`)
         // console.log(`Balance: ${blockchain.getBalanceOfAddress('uwu')}`)
 
-        for (let j = 0; j < 10; j++) {
+        for (let j = 0; j < 1; j++) {
             const tx1 = new Transaction({
                 fromAddress: publicKey,
                 toAddress: "uwu",
-                amount: 90
+                amount: 90,
+                minerFee: 10
             })
             tx1.signTransaction({ publicKey, privateKey })
             blockchain.addTransaction(tx1)

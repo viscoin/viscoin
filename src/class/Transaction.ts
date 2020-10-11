@@ -4,13 +4,15 @@ interface Transaction {
     fromAddress: string,
     toAddress: string,
     amount: number,
+    minerFee: number,
     signature: string
 }
 class Transaction {
-    constructor({ fromAddress, toAddress, amount, signature = undefined }) {
+    constructor({ fromAddress, toAddress, amount, minerFee = 0, signature = undefined }) {
         this.fromAddress = fromAddress
         this.toAddress = toAddress
         this.amount = amount
+        this.minerFee = minerFee
         if (signature) this.signature = signature
     }
     calculateHash() {
