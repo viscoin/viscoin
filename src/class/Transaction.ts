@@ -1,10 +1,10 @@
 import * as crypto from 'crypto'
 import * as config from '../../config.json'
 interface Transaction {
-    fromAddress: string,
-    toAddress: string,
-    amount: number,
-    minerFee: number,
+    fromAddress: string
+    toAddress: string
+    amount: number
+    minerFee: number
     signature: string
 }
 class Transaction {

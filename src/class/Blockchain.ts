@@ -3,16 +3,14 @@ import Block from './Block'
 import * as config from '../../config.json'
 import load_blocks from '../load_blocks'
 interface Blockchain {
-    chain: Array<Block>,
-    difficulty: number,
-    pendingTransactions: Array<Transaction>,
-    miningReward: number
+    chain: Array<Block>
+    difficulty: number
+    pendingTransactions: Array<Transaction>
 }
 class Blockchain {
     constructor() {
         this.difficulty = config.difficulty
         this.pendingTransactions = []
-        this.miningReward = config.miningreward
     }
     createGenesisBlock() {
         return new Block({
@@ -27,17 +25,22 @@ class Blockchain {
         else return this.createGenesisBlock()
     }
     async minePendingTransactions(miningRewardAddress) {
-        this.pendingTransactions = [
-            ...this.pendingTransactions,
+        const transactions = [
             new Transaction({
                 fromAddress: config.mining_reward_address,
                 toAddress: miningRewardAddress,
-                amount: this.miningReward
-            })
+                amount: config.miningReward
+            }),
+            ...this.pendingTransactions.sort((a, b) => (b.minerFee / JSON.stringify(b).length) - (a.minerFee / JSON.stringify(a).length))
         ]
+        while (JSON.stringify(transactions).length > config.blockSize) {
+            transactions.pop()
+        }
+        transactions.map(e => transactions[0].amount += e.minerFee)
+        console.log(transactions)
         let block = new Block({
             timestamp: Date.now(),
-            transactions: this.pendingTransactions,
+            transactions,
             previousHash: this.getLatestBlock().hash
         })
         await block.mineBlock(this.difficulty)
@@ -59,6 +62,12 @@ class Blockchain {
         }
         if (this.pendingTransactions.find(e => e.fromAddress === transaction.fromAddress)) {
             throw new Error('Already have a pending transaction!')
+        }
+        if (transaction.minerFee > transaction.amount) {
+            throw new Error('Fee is larger than transaction amount!')
+        }
+        if (transaction.minerFee < 0) {
+            throw new Error('Fee must not be a negative number!')
         }
         this.pendingTransactions.push(transaction)
     }

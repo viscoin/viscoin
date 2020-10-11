@@ -1,11 +1,12 @@
 import * as crypto from 'crypto'
 import Transaction from './Transaction'
 import schema_block from '../mongoose/schema/block'
+import * as config from '../../config.json'
 interface Block {
-    timestamp: number,
-    transactions: Array<Transaction>,
-    previousHash: string,
-    hash: string,
+    timestamp: number
+    transactions: Array<Transaction>
+    previousHash: string
+    hash: string
     nonce: number
 }
 class Block {
@@ -43,6 +44,9 @@ class Block {
         for (const transaction of this.transactions) {
             if (!transaction.isValid()) return false
         }
+        let miningReward = config.miningReward
+        this.transactions.map(e => miningReward += e.minerFee)
+        if (this.transactions[0].amount !== miningReward) return false
         return true
     }
     async save() {

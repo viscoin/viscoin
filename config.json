@@ -1,5 +1,6 @@
 {
-    "miningreward": 100,
+    "miningReward": 100,
     "difficulty": 4,
-    "mining_reward_address": "mining reward"
+    "mining_reward_address": "mining reward",
+    "blockSize": 1024
 }
