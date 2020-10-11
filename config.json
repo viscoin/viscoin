@@ -3,6 +3,6 @@
     "difficulty": 3,
     "mining_reward_address": "mining reward",
     "blockSize": 1000000,
-    "blocksPerQueryLimit": 40,
+    "blocksPerQueryLimit": 100,
     "maxInMemoryChainLength": 100
 }

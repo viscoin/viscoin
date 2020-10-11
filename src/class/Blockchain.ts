@@ -111,10 +111,10 @@ class Blockchain {
         }
         return balance
     }
-    isChainValid() {
-        for (let i = 1; i < this.chain.length; i++) {
-            const currentBlock = this.chain[i]
-            const previousBlock = this.chain[i - 1]
+    static isPartOfChainValid(chain: Array<Block>) {
+        for (let i = 1; i < chain.length; i++) {
+            const currentBlock = chain[i]
+            const previousBlock = chain[i - 1]
             if (!currentBlock.hasValidTransactions()) {
                 console.log('!currentBlock.hasValidTransactions()')
                 return false
@@ -128,6 +128,17 @@ class Blockchain {
                 console.log(currentBlock.previousHash, previousBlock.hash)
                 return false
             }
+        }
+        return true
+    }
+    async isChainValid() {
+        let i = 0
+        while (true) {
+            let blocks = await load_blocks(config.blocksPerQueryLimit, i * (config.blocksPerQueryLimit - 1))
+            console.log(blocks.length)
+            if (!blocks.length) break
+            if (!Blockchain.isPartOfChainValid(blocks)) return false
+            i++
         }
         return true
     }
