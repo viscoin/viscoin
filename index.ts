@@ -10,29 +10,30 @@ import * as keys from './keys.json'
 (async () => {
     const blockchain = new Blockchain()
 
-    await blockchain.load_blocks(10, 0)
+    // await blockchain.load_blocks(10, 0)
 
     for (let i = 0; i < 1; i++) {
         for (const key of keys) {
             // console.log(key)
 
             await blockchain.minePendingTransactions(key.publicKey)
-            console.log(blockchain.getBalanceOfAddress(key.publicKey))
+            console.log(await blockchain.getBalanceOfAddress(key.publicKey))
 
-            const tx1 = new Transaction({
-                fromAddress: key.publicKey,
-                toAddress: "uwu",
-                amount: 1,
-                minerFee: 1
-            })
-            tx1.signTransaction({ publicKey: key.publicKey, privateKey: key.privateKey })
-            blockchain.addTransaction(tx1)
+            // const tx1 = new Transaction({
+            //     fromAddress: key.publicKey,
+            //     toAddress: "uwu",
+            //     amount: 1,
+            //     minerFee: 1
+            // })
+            // tx1.signTransaction({ publicKey: key.publicKey, privateKey: key.privateKey })
+            // blockchain.addTransaction(tx1)
             // console.log(tx1)
         }
         
-        await blockchain.minePendingTransactions(keys[0].publicKey)
-        console.log(blockchain.getBalanceOfAddress(keys[0].publicKey))
+        // await blockchain.minePendingTransactions(keys[0].publicKey)
+        // console.log(await blockchain.getBalanceOfAddress(keys[0].publicKey))
     }
 
+    // console.log(blockchain)
     console.log(blockchain.isChainValid())
 })()

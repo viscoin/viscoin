@@ -2,6 +2,7 @@ import Transaction from './Transaction'
 import Block from './Block'
 import * as config from '../../config.json'
 import load_blocks from '../load_blocks'
+import schema_block from '../mongoose/schema/block'
 interface Blockchain {
     chain: Array<Block>
     difficulty: number
@@ -11,6 +12,7 @@ class Blockchain {
     constructor() {
         this.difficulty = config.difficulty
         this.pendingTransactions = []
+        this.chain = []
     }
     createGenesisBlock() {
         return new Block({
@@ -71,9 +73,21 @@ class Blockchain {
         }
         this.pendingTransactions.push(transaction)
     }
-    getBalanceOfAddress(address) {
+    async getBalanceOfAddress(address) {
+        const blocks = await schema_block
+            .find({
+                transactions: {
+                    $elemMatch: {
+                        $or: [
+                            { fromAddress: address },
+                            { toAddress: address }
+                        ]
+                    }
+                }
+            }, 'transactions')
+            .exec()
         let balance = 0
-        for (const block of this.chain) {
+        for (const block of blocks) {
             for (const transaction of block.transactions) {
                 if (transaction.fromAddress === address) {
                     balance -= transaction.amount

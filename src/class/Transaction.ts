@@ -21,6 +21,7 @@ class Transaction {
             this.fromAddress
             + this.toAddress
             + this.amount
+            + this.minerFee
         )
         .digest('hex')
     }
