@@ -10,14 +10,15 @@ import * as keys from './keys.json'
 (async () => {
     const blockchain = new Blockchain()
 
-    await blockchain.loadLatestBlocks(100)
+    await blockchain.loadLatestBlocks(10)
 
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 100; i++) {
         for (const key of keys) {
             // console.log(key)
 
             await blockchain.minePendingTransactions(key.publicKey)
-            console.log(await blockchain.getBalanceOfAddress(key.publicKey))
+            console.log(blockchain.getLatestBlock().height, blockchain.getLatestBlock().hash)
+            // console.log(await blockchain.getBalanceOfAddress(key.publicKey))
 
             // const tx1 = new Transaction({
             //     fromAddress: key.publicKey,

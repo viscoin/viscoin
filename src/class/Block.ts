@@ -8,11 +8,13 @@ interface Block {
     previousHash: string
     hash: string
     nonce: number
+    height: number
 }
 class Block {
-    constructor({ timestamp, transactions, previousHash, nonce = 0, hash = null }) {
+    constructor({ timestamp, transactions, previousHash, height, nonce = 0, hash = null }) {
         this.timestamp = timestamp
         this.previousHash = previousHash
+        this.height = height
         const _transactions = []
         for (const transaction of transactions) {
             if (transaction instanceof Transaction) _transactions.push(transaction)
@@ -30,6 +32,7 @@ class Block {
             + this.timestamp
             + JSON.stringify(this.transactions)
             + this.nonce
+            + this.height
         )
         .digest('hex')
     }
@@ -55,7 +58,8 @@ class Block {
             timestamp: this.timestamp,
             transactions: this.transactions,
             previousHash: this.previousHash,
-            nonce: this.nonce
+            nonce: this.nonce,
+            height: this.height
         }).save()
     }
 }

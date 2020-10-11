@@ -18,7 +18,8 @@ class Blockchain {
         return new Block({
             timestamp: Date.now(),
             transactions: [],
-            previousHash: ''
+            previousHash: '',
+            height: 0
         })
     }
     getLatestBlock() {
@@ -45,7 +46,8 @@ class Blockchain {
         const block = new Block({
             timestamp: Date.now(),
             transactions,
-            previousHash: previousBlock.hash
+            previousHash: previousBlock.hash,
+            height: previousBlock.height + 1
         })
         await block.mineBlock(this.difficulty)
         this.pendingTransactions = []
