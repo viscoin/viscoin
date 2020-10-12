@@ -8,6 +8,6 @@
     "dataHashesLength": 100,
     "maxServerNodeConnections": 100,
     "verifyData": {
-        "maxSize": 1
+        "maxByteLength": 1000000
     }
 }
