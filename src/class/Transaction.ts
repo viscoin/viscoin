@@ -35,7 +35,7 @@ class Transaction {
         this.signature = sign.sign(privateKey, 'base64')
     }
     isValid() {
-        if (this.fromAddress === config.mining_reward_address) return true
+        if (this.fromAddress === config.mining.reward.fromAddress) return true
         if (!this.signature || this.signature.length === 0) {
             throw new Error('No signature in this transaction!')
         }

@@ -15,7 +15,7 @@ class Miner {
     }
     async start() {
         this.mining = true
-        await this.blockchain.loadLatestBlocks(config.maxInMemoryChainLength)
+        await this.blockchain.loadLatestBlocks(config.length.inMemoryChain)
         while (this.mining) {
             await this.blockchain.minePendingTransactions(this.wallet)
             if (this.log) console.log(this.blockchain.getLatestBlock().height, this.blockchain.getLatestBlock().hash)

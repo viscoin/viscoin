@@ -10,7 +10,7 @@ interface Blockchain {
 }
 class Blockchain {
     constructor() {
-        this.difficulty = config.difficulty
+        this.difficulty = config.mining.difficulty
         this.pendingTransactions = []
         this.chain = []
     }
@@ -30,13 +30,13 @@ class Blockchain {
     async minePendingTransactions(miningRewardAddress) {
         const transactions = [
             new Transaction({
-                fromAddress: config.mining_reward_address,
+                fromAddress: config.mining.reward.fromAddress,
                 toAddress: miningRewardAddress,
-                amount: config.miningReward
+                amount: config.mining.reward.amount
             }),
-            ...this.pendingTransactions.sort((a, b) => (b.minerFee / JSON.stringify(b).length) - (a.minerFee / JSON.stringify(a).length))
+            ...this.pendingTransactions.sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
         ]
-        while (JSON.stringify(transactions).length > config.blockSize) {
+        while (Buffer.byteLength(JSON.stringify(transactions)) > config.byteLength.transactions) {
             transactions.pop()
         }
         transactions.map(e => transactions[0].amount += e.minerFee)
@@ -55,7 +55,7 @@ class Blockchain {
         this.shiftChain()
     }
     shiftChain() {
-        while (this.chain.length > config.maxInMemoryChainLength) this.chain.shift()
+        while (this.chain.length > config.length.inMemoryChain) this.chain.shift()
     }
     addTransaction(transaction) {
         if (!transaction.fromAddress || !transaction.toAddress) {
@@ -94,7 +94,7 @@ class Blockchain {
                             ]
                         }
                     }
-                }, 'transactions', { limit: config.blocksPerQueryLimit, skip: i * config.blocksPerQueryLimit })
+                }, 'transactions', { limit: config.limit.blocksPerQuery, skip: i * config.limit.blocksPerQuery })
                 .exec()
             if (!blocks || !blocks.length) break
             for (const block of blocks) {
@@ -134,7 +134,7 @@ class Blockchain {
     async isChainValid() {
         let i = 0
         while (true) {
-            let blocks = await load_blocks(config.blocksPerQueryLimit, i * (config.blocksPerQueryLimit - 1))
+            let blocks = await load_blocks(config.limit.blocksPerQuery, i * (config.limit.blocksPerQuery - 1))
             if (!blocks.length) break
             if (!Blockchain.isPartOfChainValid(blocks)) return false
             i++
@@ -142,7 +142,7 @@ class Blockchain {
         return true
     }
     async load_blocks(limit: number, skip: number) {
-        if (limit > config.maxInMemoryChainLength) throw new Error('Cannot load more blocks than maxInMemoryChainLength!')
+        if (limit > config.length.inMemoryChain) throw new Error('Cannot load more blocks than maxInMemoryChainLength!')
         if (skip < 0) skip = 0
         this.chain = await load_blocks(limit, skip)
         // this.chain.push(...await load_blocks(limit, skip))

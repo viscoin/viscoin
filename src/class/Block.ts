@@ -44,12 +44,12 @@ class Block {
         await this.save()
     }
     hasValidTransactions() {
-        let miningReward = config.miningReward
+        let amount = config.mining.reward.amount
         for (const transaction of this.transactions) {
-            miningReward += transaction.minerFee
+            amount += transaction.minerFee
             if (!transaction.isValid()) return false
         }
-        if (this.transactions[0].amount !== miningReward) return false
+        if (this.transactions[0].amount !== amount) return false
         return true
     }
     async save() {

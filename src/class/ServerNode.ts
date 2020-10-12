@@ -7,7 +7,7 @@ interface ServerNode extends Node {
     maxConnections: number
 }
 class ServerNode extends Node {
-    constructor(maxConnections = config.maxServerNodeConnections) {
+    constructor(maxConnections = config.limit.serverNodeConnections) {
         super()
         this.server = new net.Server()
         this.server.maxConnections = maxConnections

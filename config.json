@@ -1,13 +1,21 @@
 {
-    "miningReward": 100,
-    "difficulty": 3,
-    "mining_reward_address": "mining reward",
-    "blockSize": 1000000,
-    "blocksPerQueryLimit": 100,
-    "maxInMemoryChainLength": 100,
-    "dataHashesLength": 100,
-    "maxServerNodeConnections": 100,
-    "verifyData": {
-        "maxByteLength": 1000000
+    "mining": {
+        "difficulty": 3,
+        "reward": {
+            "amount": 100,
+            "fromAddress": "mining reward"
+        }
+    },
+    "byteLength": {
+        "transactions": 1000000,
+        "verifyData": 1000000
+    },
+    "length": {
+        "dataHashes": 100,
+        "inMemoryChain": 100
+    },
+    "limit": {
+        "blocksPerQuery": 100,
+        "serverNodeConnections": 100
     }
 }
