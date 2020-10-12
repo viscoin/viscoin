@@ -5,5 +5,9 @@
     "blockSize": 1000000,
     "blocksPerQueryLimit": 100,
     "maxInMemoryChainLength": 100,
-    "dataHashesLength": 100
+    "dataHashesLength": 100,
+    "maxServerNodeConnections": 100,
+    "verifyData": {
+        "maxSize": 1
+    }
 }
