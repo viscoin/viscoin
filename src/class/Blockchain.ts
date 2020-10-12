@@ -36,11 +36,6 @@ class Blockchain {
             }),
             ...this.pendingTransactions.sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
         ]
-        while (Buffer.byteLength(JSON.stringify(transactions)) > config.byteLength.transactions) {
-            transactions.pop()
-        }
-        transactions.map(e => transactions[0].amount += e.minerFee)
-        // console.log(transactions)
         const previousBlock = this.getLatestBlock()
         if (previousBlock.previousHash === '') await previousBlock.mineBlock(this.difficulty)
         const block = new Block({
@@ -49,6 +44,11 @@ class Blockchain {
             previousHash: previousBlock.hash,
             height: previousBlock.height + 1
         })
+        block.transactions.map(e => block.transactions[0].amount += e.minerFee)
+        while (Buffer.byteLength(JSON.stringify(block)) > config.byteLength.block) {
+            const transaction = block.transactions.pop()
+            block.transactions[0].amount -= transaction.minerFee
+        }
         await block.mineBlock(this.difficulty)
         this.pendingTransactions = []
         this.chain.push(block)

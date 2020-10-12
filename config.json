@@ -7,7 +7,7 @@
         }
     },
     "byteLength": {
-        "transactions": 1000000,
+        "block": 1000000,
         "verifyData": 1000000
     },
     "length": {
