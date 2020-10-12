@@ -1,17 +1,18 @@
 import * as net from 'net'
+import * as crypto from 'crypto'
 import * as config from '../../config.json'
 interface Node {
-    cache: Array<String>
+    dataHashes: Array<String>
 }
 class Node {
     constructor() {
-        this.cache = []
+        this.dataHashes = []
     }
     onData(socket: net.Socket, data: Buffer) {
-        const str = data.toString()
-        if (this.cache.find(e => e === str)) return
-        this.cache.push(str)
-        if (JSON.stringify(this.cache).length > config.NodeCacheLimit) this.cache.shift()
+        const hash = crypto.createHash('sha256').update(data).digest('base64')
+        if (this.dataHashes.find(e => e === hash)) return
+        this.dataHashes.push(hash)
+        if (this.dataHashes.length > config.dataHashesLength) this.dataHashes.shift()
         socket.write(data)
         console.log(data)
     }
