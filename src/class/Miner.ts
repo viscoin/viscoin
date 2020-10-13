@@ -20,8 +20,9 @@ class Miner {
         this.mining = true
         await this.blockchain.loadLatestBlocks(config.length.inMemoryChain)
         while (this.mining) {
-            await this.blockchain.minePendingTransactions(this.wallet)
-            if (this.log) console.log(this.blockchain.getLatestBlock().height, this.blockchain.getLatestBlock().hash)
+            const block = await this.blockchain.minePendingTransactions(this.wallet)
+            this.clientNode.broadcast(Buffer.from(JSON.stringify(block)))
+            if (this.log) console.log(block.height, block.hash)
         }
     }
     stop() {

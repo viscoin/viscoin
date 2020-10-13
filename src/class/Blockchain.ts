@@ -55,6 +55,7 @@ class Blockchain {
         this.pendingTransactions = []
         this.chain.push(block)
         this.shiftChain()
+        return block
     }
     shiftChain() {
         while (this.chain.length > config.length.inMemoryChain) this.chain.shift()

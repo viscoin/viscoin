@@ -20,7 +20,7 @@ class Node extends events.EventEmitter {
         if (this.dataHashes.length > config.length.dataHashes) this.dataHashes.shift()
         return true
     }
-    broadcast(data) {
+    broadcast(data: Buffer) {
         for (const socket of this.sockets) {
             socket.write(data)
         }
