@@ -6,14 +6,18 @@ interface Transaction {
     amount: number
     minerFee: number
     signature: string
+    // timestamp: number
+    blockHeight: number
 }
 class Transaction {
-    constructor({ fromAddress, toAddress, amount, minerFee = 0, signature = undefined }) {
+    constructor({ fromAddress, toAddress, amount, blockHeight, minerFee = 0, signature = undefined }) {
         this.fromAddress = fromAddress
         this.toAddress = toAddress
         this.amount = amount
         this.minerFee = minerFee
         if (signature) this.signature = signature
+        // this.timestamp = Date.now()
+        this.blockHeight = blockHeight
     }
     calculateHash() {
         return crypto.createHash('sha256')
@@ -22,6 +26,8 @@ class Transaction {
             + this.toAddress
             + this.amount
             + this.minerFee
+            // + this.timestamp
+            + this.blockHeight
         )
         .digest('hex')
     }
@@ -34,11 +40,12 @@ class Transaction {
         sign.end()
         this.signature = sign.sign(privateKey, 'base64')
     }
-    isValid() {
+    isValid(blockHeight) {
         if (this.fromAddress === config.mining.reward.fromAddress) return true
         if (!this.signature || this.signature.length === 0) {
             throw new Error('No signature in this transaction!')
         }
+        if (this.blockHeight !== blockHeight) throw new Error('Transaction not signed for this blockHeight!')
         const verify = crypto.createVerify('sha256')
         verify.update(this.calculateHash())
         verify.end()

@@ -1,17 +1,20 @@
 import Blockchain from './Blockchain'
+import ClientNode from './ClientNode'
 import * as config from '../../config.json'
 interface Miner {
     blockchain: Blockchain
     wallet: string
     log: boolean
     mining: boolean
+    clientNode: ClientNode
 }
 class Miner {
     constructor(wallet: string, log: boolean) {
         this.blockchain = new Blockchain()
         this.wallet = wallet
         this.log = log
-        this.mining = false
+        this.mining = false,
+        this.clientNode = new ClientNode()
     }
     async start() {
         this.mining = true

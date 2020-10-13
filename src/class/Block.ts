@@ -47,7 +47,7 @@ class Block {
         let amount = config.mining.reward.amount
         for (const transaction of this.transactions) {
             amount += transaction.minerFee
-            if (!transaction.isValid()) return false
+            if (!transaction.isValid(this.height)) return false
         }
         if (this.transactions[0].amount !== amount) return false
         return true

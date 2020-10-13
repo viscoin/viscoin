@@ -11,34 +11,51 @@ import * as keys from './keys.json'
 
 
 
-const serverNode = new ServerNode()
-serverNode.start('localhost', 80)
-setTimeout(() => {
-    serverNode.stop()
-}, 10000)
-const clientNode = new ClientNode()
-clientNode.createClient('localhost', 80)
-clientNode.createClient('localhost', 80)
-clientNode.sockets[0].write('01')
-clientNode.sockets[1].write('11')
-setTimeout(() => {
-    serverNode.server.getConnections((err, count) => {
-        console.log(count)
-    })
-}, 50)
-setTimeout(() => {
-    clientNode.sockets[0].destroy()
-    clientNode.sockets[1].destroy()
-}, 100)
-setTimeout(() => {
-    console.log(clientNode.sockets)
-}, 200)
+// const serverNode = new ServerNode()
+// serverNode.start('localhost', 80)
+// setTimeout(() => {
+//     serverNode.stop()
+// }, 10000)
+// const clientNode = new ClientNode()
+// clientNode.createClient('localhost', 80)
+// clientNode.createClient('localhost', 80)
+// clientNode.sockets[0].write('01')
+// clientNode.sockets[1].write('11')
+// setTimeout(() => {
+//     serverNode.server.getConnections((err, count) => {
+//         console.log(count)
+//     })
+// }, 50)
+// setTimeout(() => {
+//     clientNode.sockets[0].destroy()
+//     clientNode.sockets[1].destroy()
+// }, 100)
+// setTimeout(() => {
+//     console.log(clientNode.sockets)
+// }, 200)
+
+
+
+
+
+
+
+
+
+
 
 // const miner = new Miner(keys[0].publicKey, true)
 // miner.start()
-// setTimeout(() => {
+// setTimeout(async () => {
 //     miner.stop()
+//     // console.log(await miner.blockchain.isChainValid())
 // }, 1000)
+
+
+
+
+
+
 
 
 
