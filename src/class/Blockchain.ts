@@ -38,9 +38,7 @@ class Blockchain {
                 amount: config.mining.reward.amount,
                 blockHeight: newBlockHeight
             }),
-            ...this.pendingTransactions
-                .filter(e => e.blockHeight !== newBlockHeight)
-                .sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
+            ...this.pendingTransactions.sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
         ]
         const block = new Block({
             timestamp: Date.now(),
@@ -61,18 +59,18 @@ class Blockchain {
     shiftChain() {
         while (this.chain.length > config.length.inMemoryChain) this.chain.shift()
     }
-    addTransaction(transaction) {
+    async addTransaction(transaction: Transaction) {
         if (!transaction.fromAddress || !transaction.toAddress) {
             throw new Error('Transaction must include from and to address!')
         }
         if (!transaction.isValid()) {
             throw new Error('Cannot add invalid transaction to the chain!')
         }
+        if (transaction.blockHeight !== this.getLatestBlock().height + 1) {
+            throw new Error('Transaction not signed for next blockHeight!')
+        }
         if (transaction.amount <= 0) {
             throw new Error('Transaction amount must be higher than 0!')
-        }
-        if (this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) {
-            throw new Error('Not enough balance!')
         }
         if (this.pendingTransactions.find(e => e.fromAddress === transaction.fromAddress)) {
             throw new Error('Already have a pending transaction!')
@@ -83,9 +81,12 @@ class Blockchain {
         if (transaction.minerFee < 0) {
             throw new Error('Fee must not be a negative number!')
         }
+        if (await this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) {
+            throw new Error('Not enough balance!')
+        }
         this.pendingTransactions.push(transaction)
     }
-    async getBalanceOfAddress(address) {
+    async getBalanceOfAddress(address: string) {
         let i = 0, balance = 0
         while (true) {
             const blocks = await schema_block

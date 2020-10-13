@@ -67,34 +67,32 @@ import * as keys from './keys.json'
 
 
 
-// (async () => {
-//     const blockchain = new Blockchain()
+(async () => {
+    const blockchain = new Blockchain()
 
-//     await blockchain.loadLatestBlocks(10)
+    await blockchain.loadLatestBlocks(10)
 
-//     for (let i = 0; i < 1; i++) {
-//         for (const key of keys) {
-//             // console.log(key)
+    for (let i = 0; i < 10; i++) {
+        for (const key of keys) {            
+            const tx1 = new Transaction({
+                fromAddress: key.publicKey,
+                toAddress: "uwu",
+                amount: 1,
+                minerFee: 1,
+                blockHeight: blockchain.getLatestBlock().height + 1
+            })
+            tx1.signTransaction({ publicKey: key.publicKey, privateKey: key.privateKey })
+            blockchain.addTransaction(tx1)
+            console.log(tx1)
 
-//             await blockchain.minePendingTransactions(key.publicKey)
-//             console.log(blockchain.getLatestBlock().height, blockchain.getLatestBlock().hash)
-//             // console.log(await blockchain.getBalanceOfAddress(key.publicKey))
-
-//             // const tx1 = new Transaction({
-//             //     fromAddress: key.publicKey,
-//             //     toAddress: "uwu",
-//             //     amount: 1,
-//             //     minerFee: 1
-//             // })
-//             // tx1.signTransaction({ publicKey: key.publicKey, privateKey: key.privateKey })
-//             // blockchain.addTransaction(tx1)
-//             // console.log(tx1)
-//         }
+            await blockchain.minePendingTransactions(key.publicKey)
+            console.log(blockchain.getLatestBlock().height, blockchain.getLatestBlock().hash)
+        }
         
-//         // await blockchain.minePendingTransactions(keys[0].publicKey)
-//         // console.log(await blockchain.getBalanceOfAddress(keys[0].publicKey))
-//     }
+        // await blockchain.minePendingTransactions(keys[0].publicKey)
+        // console.log(await blockchain.getBalanceOfAddress(keys[0].publicKey))
+    }
 
-//     // console.log(blockchain)
-//     console.log(await blockchain.isChainValid())
-// })()
+    // console.log(blockchain)
+    console.log(await blockchain.isChainValid())
+})()
