@@ -21,7 +21,7 @@ class Node extends events.EventEmitter {
         return true
     }
     broadcast(data: Buffer) {
-        if (!this.verifyData(data)) return
+        // if (!this.verifyData(data)) return
         for (const socket of this.sockets) {
             socket.write(data)
         }
