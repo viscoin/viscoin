@@ -27,36 +27,6 @@ class Blockchain {
         if (block) return block
         else return this.createGenesisBlock()
     }
-    async minePendingTransactions(miningRewardAddress) {
-        const previousBlock = this.getLatestBlock()
-        if (previousBlock.previousHash === '') await previousBlock.mineBlock(this.difficulty)
-        const newBlockHeight = previousBlock.height + 1
-        const transactions = [
-            new Transaction({
-                fromAddress: config.mining.reward.fromAddress,
-                toAddress: miningRewardAddress,
-                amount: config.mining.reward.amount,
-                blockHeight: newBlockHeight
-            }),
-            ...this.pendingTransactions.sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
-        ]
-        const block = new Block({
-            timestamp: Date.now(),
-            transactions,
-            previousHash: previousBlock.hash,
-            height: newBlockHeight
-        })
-        block.transactions.map(e => block.transactions[0].amount += e.minerFee)
-        while (Buffer.byteLength(JSON.stringify(block)) > config.byteLength.block) {
-            const transaction = block.transactions.pop()
-            block.transactions[0].amount -= transaction.minerFee
-        }
-        await block.mineBlock(this.difficulty)
-        this.pendingTransactions = []
-        this.chain.push(block)
-        this.shiftChain()
-        return block
-    }
     shiftChain() {
         while (this.chain.length > config.length.inMemoryChain) this.chain.shift()
     }

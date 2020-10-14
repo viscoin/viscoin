@@ -19,6 +19,11 @@ class Node extends events.EventEmitter {
         this.dataHashes.push(hash)
         if (this.dataHashes.length > config.length.dataHashes) this.dataHashes.shift()
         return true
+        // try {
+        //     return JSON.stringify(data)
+        // } catch (err) {
+        //     return false
+        // }
     }
     broadcast(data: Buffer) {
         // if (!this.verifyData(data)) return
