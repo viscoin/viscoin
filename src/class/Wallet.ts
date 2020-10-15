@@ -32,7 +32,7 @@ class Wallet {
             privateKey: this.privateKey
         })
         this.blockchain.addTransaction(transaction)
-        this.clientNode.broadcast(Buffer.from(JSON.stringify(transaction)))
+        this.clientNode.broadcast(Buffer.from(Buffer.alloc(1, 1) + JSON.stringify(transaction)))
         console.log(transaction)
     }
     address() {

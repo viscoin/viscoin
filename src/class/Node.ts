@@ -31,5 +31,27 @@ class Node extends events.EventEmitter {
             socket.write(data)
         }
     }
+    static types = [
+        'block',
+        'transaction'
+    ]
+    static getType(type: string | number) {
+        if (typeof type === 'string') {
+            return Node.types.indexOf(type)
+        }
+        else {
+            return Node.types[type]
+        }
+    }
+    processData(data: Buffer) {
+        try {
+            return {
+                type: data[0],
+                data: JSON.parse(String(data.slice(1)))
+            }
+        } catch (err) {
+            return false
+        }
+    }
 }
 export default Node
