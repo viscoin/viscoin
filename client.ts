@@ -8,6 +8,7 @@ socket.on('connect', () => {
 })
 clientNode.on('data', data => {
     if (!clientNode.verifyData(data)) return
-    console.log(data)
-    clientNode.broadcast(data)
+    const processed = clientNode.processData(data)
+    if (!processed) return
+    console.log(processed)
 })

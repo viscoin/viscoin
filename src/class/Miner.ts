@@ -37,7 +37,7 @@ class Miner extends events.EventEmitter {
         await this.blockchain.loadLatestBlocks(config.length.inMemoryChain)
         while (this.mining) {
             const block = await this.minePendingTransactions()
-            this.clientNode.broadcast(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
+            this.clientNode.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
             if (this.log) console.log(block.height, block.hash)
         }
     }

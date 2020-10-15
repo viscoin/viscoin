@@ -21,10 +21,13 @@ class Node extends events.EventEmitter {
         return true
     }
     broadcast(data: Buffer) {
-        if (!this.verifyData(data)) return
         for (const socket of this.sockets) {
             socket.write(data)
         }
+    }
+    broadcastAndStoreDataHash(data: Buffer) {
+        if (!this.verifyData(data)) return
+        this.broadcast(data)
     }
     static types = [
         'null',
