@@ -19,11 +19,6 @@ class Node extends events.EventEmitter {
         this.dataHashes.push(hash)
         if (this.dataHashes.length > config.length.dataHashes) this.dataHashes.shift()
         return true
-        // try {
-        //     return JSON.stringify(data)
-        // } catch (err) {
-        //     return false
-        // }
     }
     broadcast(data: Buffer) {
         // if (!this.verifyData(data)) return
@@ -32,6 +27,7 @@ class Node extends events.EventEmitter {
         }
     }
     static types = [
+        'null',
         'block',
         'transaction'
     ]
@@ -46,11 +42,11 @@ class Node extends events.EventEmitter {
     processData(data: Buffer) {
         try {
             return {
-                type: data[0],
+                type: Node.getType(data[0]),
                 data: JSON.parse(String(data.slice(1)))
             }
         } catch (err) {
-            return false
+            return null
         }
     }
 }
