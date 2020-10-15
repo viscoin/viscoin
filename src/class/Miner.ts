@@ -1,3 +1,4 @@
+import * as events from 'events'
 import Blockchain from './Blockchain'
 import Block from './Block'
 import Transaction from './Transaction'
@@ -10,16 +11,29 @@ interface Miner {
     mining: boolean
     clientNode: ClientNode
 }
-class Miner {
+class Miner extends events.EventEmitter {
     constructor(wallet: string, log: boolean) {
+        super()
         this.blockchain = new Blockchain()
         this.walletAddress = wallet
         this.log = log
         this.mining = false,
         this.clientNode = new ClientNode()
+        this.clientNode.on('data', data => {
+            if (!this.clientNode.verifyData(data)) return
+            const processed = this.clientNode.processData(data)
+            if (!processed) return
+            if (processed.type === 'block') {
+                this.blockchain.addBlock(new Block(processed.data))
+            }
+            if (processed.type === 'transaction') {
+                this.blockchain.addTransaction(new Transaction(processed.data))
+            }
+        })
     }
     async start() {
         this.mining = true
+        this.emit('mining', this.mining)
         await this.blockchain.loadLatestBlocks(config.length.inMemoryChain)
         while (this.mining) {
             const block = await this.minePendingTransactions()
@@ -29,10 +43,11 @@ class Miner {
     }
     stop() {
         this.mining = false
+        this.emit('mining', this.mining)
     }
     async minePendingTransactions() {
         const previousBlock = this.blockchain.getLatestBlock()
-        if (previousBlock.previousHash === '') await previousBlock.mineBlock(this.blockchain.difficulty)
+        if (previousBlock.previousHash === '') await this.mineBlock(previousBlock)
         const newBlockHeight = previousBlock.height + 1
         const transactions = [
             new Transaction({
@@ -54,11 +69,18 @@ class Miner {
             const transaction = block.transactions.pop()
             block.transactions[0].amount -= transaction.minerFee
         }
-        await block.mineBlock(this.blockchain.difficulty)
+        await this.mineBlock(block)
         this.blockchain.pendingTransactions = []
         this.blockchain.chain.push(block)
         this.blockchain.shiftChain()
         return block
+    }
+    async mineBlock(block: Block) {
+        while (this.mining, block.hash.substring(0, this.blockchain.difficulty) !== Array(this.blockchain.difficulty + 1).join('0')) {
+            block.nonce++
+            block.hash = block.calculateHash()
+        }
+        await block.save()
     }
 }
 export default Miner

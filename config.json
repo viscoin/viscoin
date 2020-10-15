@@ -1,6 +1,6 @@
 {
     "mining": {
-        "difficulty": 3,
+        "difficulty": 4,
         "reward": {
             "amount": 100,
             "fromAddress": "mining reward"

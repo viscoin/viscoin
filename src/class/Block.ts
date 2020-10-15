@@ -36,13 +36,6 @@ class Block {
         )
         .digest('hex')
     }
-    async mineBlock(difficulty) {
-        while (this.hash.substring(0, difficulty) !== Array(difficulty + 1).join('0')) {
-            this.nonce++
-            this.hash = this.calculateHash()
-        }
-        await this.save()
-    }
     hasValidTransactions() {
         let amount = config.mining.reward.amount
         for (const transaction of this.transactions) {

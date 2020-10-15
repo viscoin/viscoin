@@ -7,5 +7,5 @@ serverNode.on('data', (data) => {
     const processed = serverNode.processData(data)
     if (!processed) return
     serverNode.broadcast(data)
-    console.log(processed)
+    console.log(processed.type)
 })

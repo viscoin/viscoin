@@ -57,6 +57,14 @@ class Blockchain {
         }
         this.pendingTransactions.push(transaction)
     }
+    async addBlock(block) {
+        if (!Blockchain.isPartOfChainValid([this.getLatestBlock(), block])) {
+            throw new Error('New block is not valid with chain')
+        }
+        this.chain.push(block)
+        this.shiftChain()
+        console.log(this.chain.length)
+    }
     async getBalanceOfAddress(address: string) {
         let i = 0, balance = 0
         while (true) {
