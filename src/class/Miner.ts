@@ -23,11 +23,16 @@ class Miner extends events.EventEmitter {
             if (!this.clientNode.verifyData(data)) return
             const processed = this.clientNode.processData(data)
             if (!processed) return
-            if (processed.type === 'block') {
-                this.blockchain.addBlock(new Block(processed.data))
-            }
-            if (processed.type === 'transaction') {
-                this.blockchain.addTransaction(new Transaction(processed.data))
+            console.log(processed.type)
+            switch (processed.type) {
+                case 'null':
+                    break
+                case 'block':
+                    this.blockchain.addBlock(new Block(processed.data))
+                    break
+                case 'transaction':
+                    this.blockchain.addTransaction(new Transaction(processed.data))
+                    break
             }
         })
     }
