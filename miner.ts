@@ -10,7 +10,7 @@ const miner = new Miner(keys[0].publicKey, true)
 const socket = miner.clientNode.createSocket('localhost', 8333)
 socket.on('connect', () => {
     miner.start()
-    // setTimeout(() => {
-    //     miner.stop()
-    // }, 10000)
+    setTimeout(() => {
+        miner.stop()
+    }, 10000)
 })

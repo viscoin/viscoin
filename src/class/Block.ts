@@ -55,5 +55,11 @@ class Block {
             height: this.height
         }).save()
     }
+    recalculateHash(difficulty) {
+        this.nonce++
+        this.hash = this.calculateHash()
+        if (this.hash.substring(0, difficulty) !== Array(difficulty + 1).join('0')) return false
+        else return true
+    }
 }
 export default Block
