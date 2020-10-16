@@ -21,6 +21,7 @@
     "use": {
         "process": {
             "nextTick": true
-        }
+        },
+        "cluster": true
     }
 }
