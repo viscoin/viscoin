@@ -60,7 +60,7 @@ class Miner extends events.EventEmitter {
             this.blockchain.chain.push(block)
             this.blockchain.shiftChain()
             this.clientNode.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
-            block.save()
+            this.blockchain.saveTrustedBlock()
             if (config.use.process.nextTick) {
                 process.nextTick(() => {
                     this.intermediate = setImmediate(() => {

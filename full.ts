@@ -6,8 +6,10 @@ serverNode.on('data', (data) => {
     if (!serverNode.verifyData(data)) return
     const processed = serverNode.processData(data)
     if (!processed) return
-    setTimeout(() => {
-        serverNode.broadcast(data)
-        console.log(processed.type)
-    }, 5000)
+    serverNode.broadcast(data)
+    console.log(processed.type)
+    // setTimeout(() => {
+    //     serverNode.broadcast(data)
+    //     console.log(processed.type)
+    // }, 5000)
 })

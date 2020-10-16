@@ -4,7 +4,8 @@
         "reward": {
             "amount": 100,
             "fromAddress": "mining reward"
-        }
+        },
+        "trustedLength": 20
     },
     "byteLength": {
         "block": 1000000,

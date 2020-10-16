@@ -7,6 +7,7 @@ import * as keys from './keys.json'
 import * as config from './config.json'
 import * as cluster from 'cluster'
 import * as os from 'os'
+import Transaction from './src/class/Transaction'
 
 const init = () => {
     const miner = new Miner(keys[0].publicKey, true)
@@ -18,12 +19,14 @@ const init = () => {
         // miner.on('stop', () => console.log('stopped mining'))
         // miner.on('null', data => console.log('received null', data))
         // miner.on('block', data => console.log('received new block', data))
-        // miner.on('transaction', data => console.log('received new transaction', data))
+        miner.on('transaction', data => console.log(new Transaction(data)))
         miner.on('hash', (found, block) => {
             if (found) console.log(block.height, block.hash)
         })
-        miner.on('fork', () => {
+        miner.on('fork', async () => {
             console.log(miner.blockchain.getLatestBlock().height, 'new fork')
+            const valid = await miner.blockchain.isChainValid()
+            console.log(valid, 'chain valid')
         })
     })
 }

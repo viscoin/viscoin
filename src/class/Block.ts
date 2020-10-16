@@ -42,7 +42,8 @@ class Block {
             amount += transaction.minerFee
             if (!transaction.isValid()) return false
         }
-        if (this.transactions[0].amount !== amount) return false
+        if (this.transactions[0] && this.transactions[0].amount !== amount) return false
+        // if (this.transactions[0].amount !== amount) return false
         return true
     }
     async save() {

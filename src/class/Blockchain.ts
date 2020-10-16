@@ -216,5 +216,14 @@ class Blockchain {
     popForks() {
         while (this.forks.length > config.length.forks) this.forks.pop()
     }
+    async saveTrustedBlock() {
+        if (this.chain.length < config.mining.trustedLength) return
+        const blockToSave = this.chain[this.chain.length - config.mining.trustedLength]
+        const exists = await schema_block
+            .exists({ height: blockToSave.height })
+        if (exists) return false // console.log('did not save already saved block', blockToSave.height)
+        blockToSave.save()
+        return true // console.log('saved block', blockToSave.height)
+    }
 }
 export default Blockchain
