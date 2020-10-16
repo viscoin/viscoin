@@ -17,5 +17,10 @@
     "limit": {
         "blocksPerQuery": 100,
         "serverNodeConnections": 100
+    },
+    "use": {
+        "process": {
+            "nextTick": true
+        }
     }
 }

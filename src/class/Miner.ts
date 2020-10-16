@@ -54,27 +54,32 @@ class Miner {
             this.clientNode.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
             if (this.log) console.log(block.height, block.hash)
             block.save()
-            process.nextTick(() => {
+            if (config.use.process.nextTick) {
+                process.nextTick(() => {
+                    this.intermediate = setImmediate(() => {
+                        this.mine(this.getNewBlock())
+                    })
+                })
+            }
+            else {
                 this.intermediate = setImmediate(() => {
                     this.mine(this.getNewBlock())
                 })
-            })
+            }
         }
         else {
-            process.nextTick(() => {
-                // if (block.nonce % 100 === 0) {
-                //     setTimeout(() => {
-                //         this.mine(block)
-                //     }, 0)
-                // }
-                // else this.mine(block)
-                // setTimeout(() => {
-                //     this.mine(block)
-                // }, 0)
+            if (config.use.process.nextTick) {
+                process.nextTick(() => {
+                    this.intermediate = setImmediate(() => {
+                        this.mine(block)
+                    })
+                })
+            }
+            else {
                 this.intermediate = setImmediate(() => {
                     this.mine(block)
                 })
-            })
+            }
         }
     }
     getNewBlock() {
