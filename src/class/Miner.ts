@@ -7,17 +7,16 @@ interface Miner {
     blockchain: Blockchain
     walletAddress: string
     log: boolean
-    mining: boolean
     clientNode: ClientNode
+    intermediate: NodeJS.Immediate
 }
 class Miner {
     constructor(wallet: string, log: boolean) {
         this.blockchain = new Blockchain()
         this.walletAddress = wallet
         this.log = log
-        this.mining = false,
         this.clientNode = new ClientNode()
-        this.clientNode.on('data', data => {
+        this.clientNode.on('data', async data => {
             if (!this.clientNode.verifyData(data)) return
             const processed = this.clientNode.processData(data)
             if (!processed) return
@@ -29,35 +28,53 @@ class Miner {
                     this.blockchain.addBlock(new Block(processed.data))
                     break
                 case 'transaction':
-                    this.blockchain.addTransaction(new Transaction(processed.data))
+                    const code = await this.blockchain.addTransaction(new Transaction(processed.data))
+                    if (code) return console.log(`code: ${code}`)
+                    this.stop()
+                    this.start()
                     break
             }
         })
     }
-    async start() {
-        this.mining = true
+    async load() {
         await this.blockchain.loadLatestBlocks(config.length.inMemoryChain)
-        const block = this.getNewBlock()
-        this.mine(block)
+    }
+    start() {
+        this.mine(this.getNewBlock())
     }
     stop() {
-        this.mining = false
+        clearImmediate(this.intermediate)
     }
     mine(block) {
-        if (!this.mining) return
-        // const block = this.getNewBlock()
-        const mined = block.recalculateHash(this.blockchain.difficulty)
-        if (mined) {
+        const found = block.recalculateHash(this.blockchain.difficulty)
+        if (found) {
             this.blockchain.pendingTransactions = []
             this.blockchain.chain.push(block)
             this.blockchain.shiftChain()
             this.clientNode.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
             if (this.log) console.log(block.height, block.hash)
             block.save()
-            process.nextTick(() => this.mine(this.getNewBlock()))
+            process.nextTick(() => {
+                this.intermediate = setImmediate(() => {
+                    this.mine(this.getNewBlock())
+                })
+            })
         }
         else {
-            process.nextTick(() => this.mine(block))
+            process.nextTick(() => {
+                // if (block.nonce % 100 === 0) {
+                //     setTimeout(() => {
+                //         this.mine(block)
+                //     }, 0)
+                // }
+                // else this.mine(block)
+                // setTimeout(() => {
+                //     this.mine(block)
+                // }, 0)
+                this.intermediate = setImmediate(() => {
+                    this.mine(block)
+                })
+            })
         }
     }
     getNewBlock() {

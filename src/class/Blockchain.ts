@@ -31,31 +31,16 @@ class Blockchain {
         while (this.chain.length > config.length.inMemoryChain) this.chain.shift()
     }
     async addTransaction(transaction: Transaction) {
-        if (!transaction.fromAddress || !transaction.toAddress) {
-            throw new Error('Transaction must include from and to address!')
-        }
-        if (!transaction.isValid()) {
-            throw new Error('Cannot add invalid transaction to the chain!')
-        }
-        if (transaction.blockHeight !== this.getLatestBlock().height + 1) {
-            throw new Error('Transaction not signed for next blockHeight!')
-        }
-        if (transaction.amount <= 0) {
-            throw new Error('Transaction amount must be higher than 0!')
-        }
-        if (this.pendingTransactions.find(e => e.fromAddress === transaction.fromAddress)) {
-            throw new Error('Already have a pending transaction!')
-        }
-        if (transaction.minerFee > transaction.amount) {
-            throw new Error('Fee is larger than transaction amount!')
-        }
-        if (transaction.minerFee < 0) {
-            throw new Error('Fee must not be a negative number!')
-        }
-        if (await this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) {
-            throw new Error('Not enough balance!')
-        }
+        if (!transaction.fromAddress || !transaction.toAddress) return 1
+        if (!transaction.isValid()) return 2
+        if (transaction.blockHeight !== this.getLatestBlock().height + 1) return 3
+        if (transaction.amount <= 0) return 4
+        if (this.pendingTransactions.find(e => e.fromAddress === transaction.fromAddress)) return 5
+        if (transaction.minerFee > transaction.amount) return 6
+        if (transaction.minerFee < 0) return 7
+        if (await this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) return 8
         this.pendingTransactions.push(transaction)
+        return 0
     }
     async addBlock(block) {
         if (!Blockchain.isPartOfChainValid([this.getLatestBlock(), block])) {

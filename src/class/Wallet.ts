@@ -1,6 +1,7 @@
 import Blockchain from './Blockchain'
 import Transaction from './Transaction'
 import ClientNode from './ClientNode'
+import * as config from '../../config.json'
 interface Wallet {
     blockchain: Blockchain,
     publicKey: string,
@@ -10,6 +11,7 @@ interface Wallet {
 class Wallet {
     constructor({ publicKey, privateKey }: { publicKey: string, privateKey: string }) {
         this.blockchain = new Blockchain()
+        this.blockchain.loadLatestBlocks(config.length.inMemoryChain)
         this.publicKey = publicKey
         this.privateKey = privateKey
         this.clientNode = new ClientNode()

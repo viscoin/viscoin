@@ -8,9 +8,10 @@ import Transaction from './src/class/Transaction'
 
 const miner = new Miner(keys[0].publicKey, true)
 const socket = miner.clientNode.createSocket('localhost', 8333)
-socket.on('connect', () => {
+socket.on('connect', async () => {
+    await miner.load()
     miner.start()
-    setTimeout(() => {
-        miner.stop()
-    }, 10000)
+    // setTimeout(() => {
+    //     miner.stop()
+    // }, 10000)
 })
