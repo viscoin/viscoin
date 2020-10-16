@@ -99,7 +99,7 @@ class Blockchain {
                 ])
             }
         }
-        this.updateMainChain()
+        return this.updateMainChain()
     }
     async getBalanceOfAddress(address: string) {
         let i = 0, balance = 0
@@ -206,7 +206,9 @@ class Blockchain {
             this.sortForksByHeight()
             this.popForks()
             this.chain = chain
+            return true
         }
+        return false
     }
     sortForksByHeight() {
         this.forks.sort((a, b) => b[b.length - 1].height - a[a.length - 1].height)

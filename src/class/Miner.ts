@@ -27,7 +27,8 @@ class Miner extends events.EventEmitter {
                 case 'null':
                     break
                 case 'block':
-                    this.blockchain.addBlock(new Block(processed.data))
+                    const forked = this.blockchain.addBlock(new Block(processed.data))
+                    if (forked) this.emit('fork')
                     this.stop()
                     this.start()
                     break

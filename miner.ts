@@ -22,6 +22,9 @@ const init = () => {
         miner.on('hash', (found, block) => {
             if (found) console.log(block.height, block.hash)
         })
+        miner.on('fork', () => {
+            console.log('new fork')
+        })
     })
 }
 const memory = () => {
