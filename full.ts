@@ -9,5 +9,5 @@ serverNode.on('data', (data) => {
     setTimeout(() => {
         serverNode.broadcast(data)
         console.log(processed.type)
-    }, 1000)
+    }, 5000)
 })

@@ -23,7 +23,7 @@ const init = () => {
             if (found) console.log(block.height, block.hash)
         })
         miner.on('fork', () => {
-            console.log('new fork')
+            console.log(miner.blockchain.getLatestBlock().height, 'new fork')
         })
     })
 }
