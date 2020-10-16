@@ -43,12 +43,11 @@ class Blockchain {
         return 0
     }
     async addBlock(block) {
-        if (!Blockchain.isPartOfChainValid([this.getLatestBlock(), block])) {
-            throw new Error('New block is not valid with chain')
-        }
+        if (!Blockchain.isPartOfChainValid([this.getLatestBlock(), block])) return 1
         this.chain.push(block)
         this.shiftChain()
-        console.log(this.chain.length)
+        // console.log(this.chain.length)
+        return 0
     }
     async getBalanceOfAddress(address: string) {
         let i = 0, balance = 0

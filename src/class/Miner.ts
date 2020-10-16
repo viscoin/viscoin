@@ -27,11 +27,12 @@ class Miner extends events.EventEmitter {
                 case 'null':
                     break
                 case 'block':
-                    this.blockchain.addBlock(new Block(processed.data))
+                    const blockCode = await this.blockchain.addBlock(new Block(processed.data))
+                    if (blockCode) return console.log(`blockCode: ${blockCode}`)
                     break
                 case 'transaction':
-                    const code = await this.blockchain.addTransaction(new Transaction(processed.data))
-                    if (code) return console.log(`code: ${code}`)
+                    const transactionCode = await this.blockchain.addTransaction(new Transaction(processed.data))
+                    if (transactionCode) return console.log(`transactionCode: ${transactionCode}`)
                     this.stop()
                     this.start()
                     break
