@@ -27,8 +27,7 @@ class Miner extends events.EventEmitter {
                 case 'null':
                     break
                 case 'block':
-                    const blockCode = await this.blockchain.addBlock(new Block(processed.data))
-                    if (blockCode) return console.log(`blockCode: ${blockCode}`)
+                    this.blockchain.addBlock(new Block(processed.data))
                     this.stop()
                     this.start()
                     break

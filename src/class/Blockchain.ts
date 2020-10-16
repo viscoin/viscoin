@@ -7,12 +7,14 @@ interface Blockchain {
     chain: Array<Block>
     difficulty: number
     pendingTransactions: Array<Transaction>
+    forks: Array<Array<Block>>
 }
 class Blockchain {
     constructor() {
         this.difficulty = config.mining.difficulty
         this.pendingTransactions = []
         this.chain = []
+        this.forks = []
     }
     createGenesisBlock() {
         return new Block({
@@ -22,10 +24,14 @@ class Blockchain {
             height: 0
         })
     }
-    getLatestBlock() {
-        const block = this.chain[this.chain.length - 1]
+    getBlock(index) {
+        const block = this.chain[index]
         if (block) return block
-        else return this.createGenesisBlock()
+        else if (this.chain.length === 0) return this.createGenesisBlock()
+        else return null
+    }
+    getLatestBlock() {
+        return this.getBlock(this.chain.length - 1)
     }
     shiftChain() {
         while (this.chain.length > config.length.inMemoryChain) this.chain.shift()
@@ -42,12 +48,58 @@ class Blockchain {
         this.pendingTransactions.push(transaction)
         return 0
     }
-    async addBlock(block) {
-        if (!Blockchain.isPartOfChainValid([this.getLatestBlock(), block])) return 1
-        this.chain.push(block)
-        this.shiftChain()
-        // console.log(this.chain.length)
-        return 0
+    addBlock(block) {
+        // find index of previous block in main chain
+        const previousBlockIndex = this.chain.findIndex(e => e.height === block.height - 1)
+        // if previous block in main chain does not exist
+        if (previousBlockIndex !== -1) {
+            const previousBlock = this.chain[previousBlockIndex]
+            if (Blockchain.isPartOfChainValid([previousBlock, block])) {
+                // if previousBlock is the last block in the fork
+                if (previousBlockIndex === this.chain.length - 1) {
+                    this.chain.push(block)
+                }
+                // block is in other index (create new fork)
+                else {
+                    this.forks.push([
+                        previousBlock,
+                        block
+                    ])
+                }
+            }
+        }
+        else {
+            let found = false
+            for (const fork of this.forks) {
+                // find index of previousBlock in fork
+                const previousBlockIndex = fork.findIndex(e => e.height === block.height - 1)
+                // if index of previous block
+                if (previousBlockIndex === -1) continue
+                // if block is valid in current fork
+                const previousBlock = fork[previousBlockIndex]
+                if (Blockchain.isPartOfChainValid([previousBlock, block])) {
+                    // if previousBlock is the last block in the fork
+                    if (previousBlockIndex === fork.length - 1) {
+                        found = true
+                        fork.push(block)
+                    }
+                    // block is in other index (create new fork)
+                    else {
+                        this.forks.push([
+                            previousBlock,
+                            block
+                        ])
+                    }
+                }
+            }
+            // create new fork
+            if (!found) {
+                this.forks.push([
+                    block
+                ])
+            }
+        }
+        this.updateMainChain()
     }
     async getBalanceOfAddress(address: string) {
         let i = 0, balance = 0
@@ -84,16 +136,15 @@ class Blockchain {
             const currentBlock = chain[i]
             const previousBlock = chain[i - 1]
             if (!currentBlock.hasValidTransactions()) {
-                console.log('!currentBlock.hasValidTransactions()')
+                // console.log('!currentBlock.hasValidTransactions()')
                 return false
             }
             if (currentBlock.hash !== currentBlock.calculateHash()) {
-                console.log('currentBlock.hash !== currentBlock.calculateHash()')
+                // console.log('currentBlock.hash !== currentBlock.calculateHash()')
                 return false
             }
             if (currentBlock.previousHash !== previousBlock.hash) {
-                console.log('currentBlock.previousHash !== previousBlock.hash')
-                console.log(currentBlock.previousHash, previousBlock.hash)
+                // console.log('currentBlock.previousHash !== previousBlock.hash')
                 return false
             }
         }
@@ -127,6 +178,41 @@ class Blockchain {
             .exec()
         // console.log('chainLength', chainLength)
         await this.load_blocks(limit, chainLength - limit)
+    }
+    getChainWithMostWork() {
+        // const chains = [
+        //     this.chain,
+        //     ...this.forks
+        // ].sort((a, b) => b[b.length - 1].height - a[a.length - 1].height)
+        // console.log(chains[0][chains[0].length - 1].height)
+        const chains = [
+            this.chain,
+            ...this.forks
+        ]
+        chains.sort((a, b) => b[b.length - 1].height - a[a.length - 1].height)[0]
+        const chain = chains[0]
+        // console.log(`height of chain with most work: ${chain[chain.length -1].height}`)
+        return chain
+        // return [
+        //     this.chain,
+        //     ...this.forks
+        // ].sort((a, b) => b[b.length - 1].height - a[a.length - 1].height)[0]
+    }
+    updateMainChain() {
+        // console.log('forks', this.forks.length)
+        const chain = this.getChainWithMostWork()
+        if (chain[chain.length - 1].height > this.chain[this.chain.length - 1].height) {
+            this.forks.push(this.chain)
+            this.sortForksByHeight()
+            this.popForks()
+            this.chain = chain
+        }
+    }
+    sortForksByHeight() {
+        this.forks.sort((a, b) => b[b.length - 1].height - a[a.length - 1].height)
+    }
+    popForks() {
+        while (this.forks.length > config.length.forks) this.forks.pop()
     }
 }
 export default Blockchain

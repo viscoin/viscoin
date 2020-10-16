@@ -1,6 +1,6 @@
 {
     "mining": {
-        "difficulty": 5,
+        "difficulty": 4,
         "reward": {
             "amount": 100,
             "fromAddress": "mining reward"
@@ -12,7 +12,8 @@
     },
     "length": {
         "dataHashes": 100,
-        "inMemoryChain": 100
+        "inMemoryChain": 100,
+        "forks": 10
     },
     "limit": {
         "blocksPerQuery": 100,
@@ -25,6 +26,6 @@
         "cluster": false
     },
     "log": {
-        "memory": true
+        "memory": false
     }
 }
