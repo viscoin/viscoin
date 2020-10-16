@@ -24,19 +24,28 @@ const init = () => {
         })
     })
 }
-if (config.use.cluster) {
-    if (cluster.isMaster) {
-        for (let i = 0; i < os.cpus().length; i++) {
-            cluster.fork()
-                .on('exit', () => {
-                    cluster.fork()
-                })
-        }
+const memory = () => {
+    if (config.log.memory) {
+        setInterval(() => {
+            const mem = process.memoryUsage()
+            let str = ''
+            for (const key in mem) {
+                str += ` ${key} ${Math.round(mem[key] / 1024 / 1024 * 100) / 100} MB `
+            }
+            console.log(str)
+        }, 1000)
     }
-    else {
-        init()
+}
+if (config.use.cluster && cluster.isMaster) {
+    memory()
+    for (let i = 0; i < os.cpus().length; i++) {
+        cluster.fork()
+            .on('exit', () => {
+                cluster.fork()
+            })
     }
 }
 else {
     init()
+    memory()
 }

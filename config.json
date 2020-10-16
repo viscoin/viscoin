@@ -1,6 +1,6 @@
 {
     "mining": {
-        "difficulty": 4,
+        "difficulty": 5,
         "reward": {
             "amount": 100,
             "fromAddress": "mining reward"
@@ -22,6 +22,9 @@
         "process": {
             "nextTick": true
         },
-        "cluster": true
+        "cluster": false
+    },
+    "log": {
+        "memory": true
     }
 }
