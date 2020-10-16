@@ -34,7 +34,7 @@ class Node extends events.EventEmitter {
         'block',
         'transaction'
     ]
-    static getType(type: string | number) {
+    static getType(type: string | number): string | number {
         if (typeof type === 'string') {
             return Node.types.indexOf(type)
         }
@@ -45,7 +45,7 @@ class Node extends events.EventEmitter {
     processData(data: Buffer) {
         try {
             return {
-                type: Node.getType(data[0]),
+                type: <string> Node.getType(data[0]),
                 data: JSON.parse(String(data.slice(1)))
             }
         } catch (err) {

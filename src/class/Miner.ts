@@ -1,3 +1,4 @@
+import * as events from 'events'
 import Blockchain from './Blockchain'
 import Block from './Block'
 import Transaction from './Transaction'
@@ -10,8 +11,9 @@ interface Miner {
     clientNode: ClientNode
     intermediate: NodeJS.Immediate
 }
-class Miner {
+class Miner extends events.EventEmitter {
     constructor(wallet: string, log: boolean) {
+        super()
         this.blockchain = new Blockchain()
         this.walletAddress = wallet
         this.log = log
@@ -20,7 +22,7 @@ class Miner {
             if (!this.clientNode.verifyData(data)) return
             const processed = this.clientNode.processData(data)
             if (!processed) return
-            console.log(processed.type)
+            this.emit(processed.type, processed.data)
             switch (processed.type) {
                 case 'null':
                     break
@@ -41,18 +43,20 @@ class Miner {
     }
     start() {
         this.mine(this.getNewBlock())
+        this.emit('start')
     }
     stop() {
         clearImmediate(this.intermediate)
+        this.emit('stop')
     }
     mine(block) {
         const found = block.recalculateHash(this.blockchain.difficulty)
         if (found) {
+            this.emit('hash', found, block)
             this.blockchain.pendingTransactions = []
             this.blockchain.chain.push(block)
             this.blockchain.shiftChain()
             this.clientNode.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
-            if (this.log) console.log(block.height, block.hash)
             block.save()
             if (config.use.process.nextTick) {
                 process.nextTick(() => {
@@ -68,6 +72,7 @@ class Miner {
             }
         }
         else {
+            this.emit('hash', found)
             if (config.use.process.nextTick) {
                 process.nextTick(() => {
                     this.intermediate = setImmediate(() => {

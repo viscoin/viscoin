@@ -11,7 +11,12 @@ const socket = miner.clientNode.createSocket('localhost', 8333)
 socket.on('connect', async () => {
     await miner.load()
     miner.start()
-    // setTimeout(() => {
-    //     miner.stop()
-    // }, 10000)
+    miner.on('start', () => console.log('started mining'))
+    miner.on('stop', () => console.log('stopped mining'))
+    miner.on('null', data => console.log('received null', data))
+    miner.on('block', data => console.log('received new block', data))
+    miner.on('transaction', data => console.log('received new transaction', data))
+    miner.on('hash', (found, block) => {
+        if (found) console.log(block.height, block.hash)
+    })
 })
