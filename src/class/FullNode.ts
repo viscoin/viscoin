@@ -7,7 +7,6 @@ interface FullNode {
     storageNode: StorageNode
     serverNode: ServerNode
     clientNode: ClientNode
-    running: boolean
     intermediate: NodeJS.Immediate
 }
 class FullNode extends events.EventEmitter {
@@ -34,38 +33,16 @@ class FullNode extends events.EventEmitter {
         this.storageNode.loadBlocksFromStorage()
         this.storageNode.clientNode.createSocket(config.port, 'localhost')
 
-        this.running = false
-
         this.on('data', data => {
             this.serverNode.broadcastAndStoreDataHash(data)
             this.clientNode.broadcastAndStoreDataHash(data)
         })
     }
-    start(port: number, address: string) {
-        this.running = true
-        this.serverNode.start(port, address)
-        this.loop()
+    start() {
         this.emit('start')
     }
     stop() {
-        this.running = false
-        clearImmediate(this.intermediate)
         this.emit('stop')
-    }
-    loop() {
-        process.nextTick(() => {
-            const block = this.storageNode.blockchain.getLatestBlock()
-            const buffer = Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block))
-            this.serverNode.broadcastAndStoreDataHash(buffer)
-            this.clientNode.broadcastAndStoreDataHash(buffer)
-            // loop
-            // this.intermediate = setImmediate(() => {
-            //     if (this.running) this.loop()
-            // }, config.delay.loop)
-            setTimeout(() => {
-                if (this.running) this.loop()
-            }, config.delay.loop)
-        })
     }
 }
 export default FullNode

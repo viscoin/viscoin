@@ -6,11 +6,11 @@ import * as os from 'os'
 import Transaction from './src/class/Transaction'
 
 const init = () => {
-    const miner = new Miner(keys[0].publicKey, true)
+    const miner = new Miner(keys[0].publicKey)
     const socket = miner.clientNode.createSocket(config.port, 'localhost')
     socket.on('connect', async () => {
         // await miner.load()
-        await miner.sync()
+        // await miner.sync()
         miner.start()
         // miner.on('start', () => console.log('started mining'))
         // miner.on('stop', () => console.log('stopped mining'))
@@ -21,8 +21,8 @@ const init = () => {
             if (found) console.log(block.height, block.hash)
         })
         miner.on('fork', async () => {
-            console.log(miner.blockchain.getLatestBlock().height, 'new fork')
-            const valid = await miner.blockchain.isChainValid()
+            console.log(miner.storageNode.blockchain.getLatestBlock().height, 'new fork')
+            const valid = await miner.storageNode.blockchain.isChainValid()
             console.log(valid, 'chain valid')
         })
     })
