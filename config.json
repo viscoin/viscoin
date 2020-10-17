@@ -28,5 +28,9 @@
     },
     "log": {
         "memory": false
-    }
+    },
+    "delay": {
+        "loop": 1000
+    },
+    "port": 8333
 }

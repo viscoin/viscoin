@@ -1,15 +1,15 @@
-import ServerNode from './src/class/ServerNode'
+import * as mongoose from './src/mongoose/mongoose'
+mongoose.init()
+import FullNode from './src/class/FullNode'
+import * as config from './config.json'
 
-const serverNode = new ServerNode()
-serverNode.start('localhost', 8333)
-serverNode.on('data', (data) => {
-    if (!serverNode.verifyData(data)) return
-    const processed = serverNode.processData(data)
-    if (!processed) return
-    serverNode.broadcast(data)
-    console.log(processed.type)
-    // setTimeout(() => {
-    //     serverNode.broadcast(data)
-    //     console.log(processed.type)
-    // }, 5000)
+const fullNode = new FullNode()
+fullNode.on('start', () => console.log('started'))
+fullNode.on('stop', () => console.log('stopped'))
+fullNode.on('block', (block, forked) => console.log(block, forked))
+fullNode.on('transaction', (transaction, code) => console.log(transaction, code))
+// fullNode.on('data', data => console.log(data))
+fullNode.on('loaded', () => {
+    console.log('loaded')
+    fullNode.start(config.port, 'localhost')
 })

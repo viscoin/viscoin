@@ -11,7 +11,7 @@ class ServerNode extends Node {
         this.server = new net.Server()
         this.server.maxConnections = maxConnections
     }
-    start(ip: string, port: number) {
+    start(port: number, address: string) {
         this.server
             .on('connection', socket => {
                 socket
@@ -20,7 +20,7 @@ class ServerNode extends Node {
                     .on('close', () => this.sockets.splice(this.sockets.indexOf(socket), 1))
                 this.sockets.push(socket)
             })
-            .listen(port, ip)
+            .listen(port, address)
     }
     stop() {
         this.server.close()

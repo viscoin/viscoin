@@ -1,7 +1,3 @@
-import * as dotenv from 'dotenv'
-dotenv.config()
-import * as mongoose from './src/mongoose/mongoose'
-mongoose.init()
 import Miner from './src/class/Miner'
 import * as keys from './keys.json'
 import * as config from './config.json'
@@ -11,9 +7,10 @@ import Transaction from './src/class/Transaction'
 
 const init = () => {
     const miner = new Miner(keys[0].publicKey, true)
-    const socket = miner.clientNode.createSocket('localhost', 8333)
+    const socket = miner.clientNode.createSocket(config.port, 'localhost')
     socket.on('connect', async () => {
-        await miner.load()
+        // await miner.load()
+        await miner.sync()
         miner.start()
         // miner.on('start', () => console.log('started mining'))
         // miner.on('stop', () => console.log('stopped mining'))

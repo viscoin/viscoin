@@ -6,8 +6,8 @@ class ClientNode extends Node {
     constructor() {
         super()
     }
-    createSocket(ip: string, port: number) {
-        const socket = net.connect(port, ip)
+    createSocket(port: number, address: string) {
+        const socket = net.connect(port, address)
             .on('data', data => this.emit('data', data))
             .on('error', () => {})
             .on('close', () => this.sockets.splice(this.sockets.indexOf(socket), 1))

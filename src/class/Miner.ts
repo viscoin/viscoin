@@ -44,6 +44,20 @@ class Miner extends events.EventEmitter {
     async load() {
         await this.blockchain.loadLatestBlocks(config.length.inMemoryChain)
     }
+    async sync() {
+        return <any> new Promise(resolve => {
+            const callback = (data) => {
+                const block = new Block(data)
+                this.blockchain.chain = [
+                    block
+                ]
+                console.log(block)
+                resolve()
+            }
+            this.on('block', callback)
+            this.removeListener('block', callback)
+        })
+    }
     start() {
         this.mine(this.getNewBlock())
         this.emit('start')

@@ -225,5 +225,8 @@ class Blockchain {
         blockToSave.save()
         return true // console.log('saved block', blockToSave.height)
     }
+    async loadBlocksFromStorage() {
+        return await this.loadLatestBlocks(config.length.inMemoryChain)
+    }
 }
 export default Blockchain
