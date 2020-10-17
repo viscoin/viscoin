@@ -11,20 +11,13 @@ class Miner extends FullNode {
     constructor(wallet: string) {
         super()
         this.walletAddress = wallet
-        this.clientNode.on('data', data => {
-            if (!this.clientNode.verifyData(data)) return
-            const processed = this.clientNode.processData(data)
-            if (!processed) return
-            switch (processed.type) {
-                case 'block':
-                    this.stop()
-                    this.start()
-                    break
-                case 'transaction':
-                    this.stop()
-                    this.start()
-                    break
-            }
+        this.on('block', (block, forked) => {
+            this.stop()
+            this.start()
+        })
+        this.on('transaction', (transaction, code) => {
+            this.stop()
+            this.start()
         })
         this.on('start', () => {
             this.mine(this.getNewBlock())
