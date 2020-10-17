@@ -4,11 +4,15 @@ import * as config from './config.json'
 import * as cluster from 'cluster'
 import * as os from 'os'
 import Transaction from './src/class/Transaction'
+import * as addresses from './addresses.json'
 
 const init = () => {
     const miner = new Miner(keys[0].publicKey)
-    const socket = miner.clientNode.createSocket(config.port, 'localhost')
-    socket.on('connect', async () => {
+    miner.serverNode.start(config.port, 'localhost')
+    for (const address in addresses) {
+        miner.clientNode.createSocket(config.port, address)
+    }
+    setTimeout(() => {
         // await miner.load()
         // await miner.sync()
         miner.start()
@@ -25,7 +29,7 @@ const init = () => {
             const valid = await miner.storageNode.blockchain.isChainValid()
             console.log(valid, 'chain valid')
         })
-    })
+    }, 1000)
 }
 const memory = () => {
     if (config.log.memory) {
