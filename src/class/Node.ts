@@ -11,12 +11,8 @@ class Node extends events.EventEmitter {
         super()
         this.dataHashes = []
         this.sockets = []
-        this.on('socket', socket => {
+        this.on('socket', (socket, connected) => {
             socket
-                .on('connect', () => {
-                    if (this.hasSocket(socket)) socket.destroy()
-                    else this.sockets.push(socket)
-                })
                 .on('data', data => this.emit('data', data))
                 .on('error', () => {
                     socket.destroy()
@@ -26,6 +22,13 @@ class Node extends events.EventEmitter {
                     socket.destroy()
                     this.sockets.splice(this.sockets.indexOf(socket), 1)
                 })
+            if (!connected) {
+                socket.on('connect', () => {
+                    if (this.hasSocket(socket)) socket.destroy()
+                    else this.sockets.push(socket)
+                })
+            }
+            else this.sockets.push(socket)
         })
     }
     verifyData(data: Buffer) {
