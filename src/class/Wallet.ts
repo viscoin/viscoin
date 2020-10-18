@@ -1,20 +1,17 @@
 import Blockchain from './Blockchain'
 import Transaction from './Transaction'
 import ClientNode from './ClientNode'
+import FullNode from './FullNode'
 import * as config from '../../config.json'
 interface Wallet {
-    blockchain: Blockchain,
     publicKey: string,
     privateKey: string,
-    clientNode: ClientNode
 }
-class Wallet {
+class Wallet extends FullNode {
     constructor({ publicKey, privateKey }: { publicKey: string, privateKey: string }) {
-        this.blockchain = new Blockchain()
-        this.blockchain.loadLatestBlocks(config.length.inMemoryChain)
+        super()
         this.publicKey = publicKey
         this.privateKey = privateKey
-        this.clientNode = new ClientNode()
     }
     async balance() {
         return await this.blockchain.getBalanceOfAddress(this.publicKey)
@@ -33,8 +30,8 @@ class Wallet {
             privateKey: this.privateKey
         })
         this.blockchain.addTransaction(transaction)
-        this.clientNode.broadcast(Buffer.from(Buffer.alloc(1, ClientNode.getType('transaction')) + JSON.stringify(transaction)))
-        console.log(transaction)
+        this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('transaction')) + JSON.stringify(transaction)))
+        return transaction
     }
     address() {
         return this.publicKey

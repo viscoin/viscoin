@@ -26,7 +26,7 @@ const init = () => {
         // miner.on('stop', () => console.log('stopped mining'))
         // miner.on('null', data => console.log('received null', data))
         // miner.on('block', data => console.log('received new block', data))
-        miner.on('transaction', data => console.log(new Transaction(data)))
+        miner.on('transaction', data => console.log(data))
         miner.on('hash', (found, block) => {
             if (found) console.log(block.height, block.hash)
         })
