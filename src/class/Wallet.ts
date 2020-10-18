@@ -21,7 +21,6 @@ class Wallet {
     }
     // send(address: string, amount: number, minerFee: number) {
     send({ address, amount, minerFee }: { address: string, amount: number, minerFee: number }) {
-        if (!this.clientNode.sockets.length) return
         const transaction = new Transaction({
             fromAddress: this.publicKey,
             toAddress: address,
