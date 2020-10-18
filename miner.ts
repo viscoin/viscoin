@@ -8,15 +8,16 @@ import * as nodes from './nodes.json'
 
 const init = () => {
     const miner = new Miner(keys[0].publicKey)
-    miner.serverNode.start(config.network.port, config.network.address)
-    setTimeout(() => {
-        for (const node of nodes) {
-            const socket = miner.clientNode.createSocket(node.port, node.address)
-            if (!socket) continue
-            socket.on('connect', () => {
-                console.log('connected to socket :)')
-            })
-        }
+    miner.on('listening', () => {
+        console.log('listening')
+        // for (const node of nodes) {
+        //     const socket = miner.clientNode.createSocket(node.port, node.address)
+        //     if (!socket) continue
+        //     socket.on('connect', () => {
+        //         console.log('connected to socket :)')
+        //         console.log(miner.clientNode.sockets.length)
+        //     })
+        // }
         // await miner.load()
         // await miner.sync()
         miner.start()
@@ -34,7 +35,7 @@ const init = () => {
             const valid = await miner.storageNode.blockchain.isChainValid()
             console.log(valid, 'chain valid')
         })
-    }, 1000)
+    })
 }
 const memory = () => {
     if (config.log.memory) {

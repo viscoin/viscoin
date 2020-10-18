@@ -17,32 +17,31 @@ class FullNode extends events.EventEmitter {
         this.serverNode = new ServerNode()
         this.serverNode
             .on('data', data => this.emit('data', data))
+            .on('listening', () => {
+                // ClientNode
+                this.clientNode = new ClientNode()
+                this.clientNode
+                    .on('data', data => this.emit('data', data))
+                this.clientNode.createSocket(config.network.port, config.network.address)
 
-        // ClientNode
-        this.clientNode = new ClientNode()
-        this.clientNode
-            .on('data', data => this.emit('data', data))
-            .createSocket(config.network.port, config.network.address)
+                // StorageNode
+                this.storageNode = new StorageNode()
+                this.storageNode
+                    .on('block', (block, forked) => this.emit('block', block, forked))
+                    .on('transaction', (transaction, code) => this.emit('transaction', transaction, code))
+                    .on('loaded', () => this.emit('loaded'))
+                this.storageNode.loadBlocksFromStorage()
+                this.storageNode.clientNode.createSocket(config.network.port, config.network.address)
 
-        // StorageNode
-        this.storageNode = new StorageNode()
-        this.storageNode
-            .on('block', (block, forked) => this.emit('block', block, forked))
-            .on('transaction', (transaction, code) => this.emit('transaction', transaction, code))
-            .on('loaded', () => this.emit('loaded'))
-        this.storageNode.loadBlocksFromStorage()
-        this.storageNode.clientNode.createSocket(config.network.port, config.network.address)
+                // emit
+                this.emit('listening')
+            })
+            .start(config.network.port, config.network.address)
 
         this.on('data', data => {
             this.serverNode.broadcastAndStoreDataHash(data)
             this.clientNode.broadcastAndStoreDataHash(data)
         })
-    }
-    start() {
-        this.emit('start')
-    }
-    stop() {
-        this.emit('stop')
     }
 }
 export default FullNode

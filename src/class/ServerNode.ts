@@ -13,19 +13,10 @@ class ServerNode extends Node {
     }
     start(port: number, address: string) {
         this.server
-            .on('connection', socket => {
-                socket
-                    .on('data', data => this.emit('data', data))
-                    .on('error', () => {
-                        socket.destroy()
-                        this.sockets.splice(this.sockets.indexOf(socket), 1)
-                    })
-                    .on('close', () => {
-                        socket.destroy()
-                        this.sockets.splice(this.sockets.indexOf(socket), 1)
-                    })
-                this.sockets.push(socket)
-            })
+            .on('connection', socket => this.emit('socket', socket))
+            .on('listening', () => this.emit('listening'))
+            .on('close', () => {})
+            .on('error', () => {})
             .listen(port, address)
     }
     stop() {

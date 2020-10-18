@@ -19,12 +19,12 @@ class Miner extends FullNode {
             this.stop()
             this.start()
         })
-        this.on('start', () => {
-            this.mine(this.getNewBlock())
-        })
-        this.on('stop', () => {
-            clearImmediate(this.intermediate)
-        })
+    }
+    start() {
+        this.mine(this.getNewBlock())
+    }
+    stop() {
+        clearImmediate(this.intermediate)
     }
     mine(block) {
         const found = block.recalculateHash(this.storageNode.blockchain.difficulty)

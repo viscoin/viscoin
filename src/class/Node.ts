@@ -11,6 +11,22 @@ class Node extends events.EventEmitter {
         super()
         this.dataHashes = []
         this.sockets = []
+        this.on('socket', socket => {
+            socket
+                .on('connect', () => {
+                    if (this.hasSocket(socket)) socket.destroy()
+                    else this.sockets.push(socket)
+                })
+                .on('data', data => this.emit('data', data))
+                .on('error', () => {
+                    socket.destroy()
+                    this.sockets.splice(this.sockets.indexOf(socket), 1)
+                })
+                .on('close', () => {
+                    socket.destroy()
+                    this.sockets.splice(this.sockets.indexOf(socket), 1)
+                })
+        })
     }
     verifyData(data: Buffer) {
         if (Buffer.byteLength(data) > config.byteLength.verifyData) return false
@@ -52,13 +68,12 @@ class Node extends events.EventEmitter {
             return null
         }
     }
-    hasSocket(port: number, address: string) {
-        for (const socket of this.sockets) {
-            const info = <net.AddressInfo> socket.address()
-            if (info.port === port && info.address === address) {
-                console.log('already has socket connection')
-                return true
-            }
+    hasSocket(socket) {
+        const info = <net.AddressInfo> socket.address()
+        for (const _socket of this.sockets) {
+            const _info = <net.AddressInfo> _socket.address()
+            if (info.port === _info.port
+                && info.address === _info.address) return true
         }
         return false
     }
