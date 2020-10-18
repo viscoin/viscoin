@@ -10,14 +10,10 @@ const init = () => {
     const miner = new Miner(keys[0].publicKey)
     miner.on('listening', () => {
         console.log('listening')
-        // for (const node of nodes) {
-        //     const socket = miner.clientNode.createSocket(node.port, node.address)
-        //     if (!socket) continue
-        //     socket.on('connect', () => {
-        //         console.log('connected to socket :)')
-        //         console.log(miner.clientNode.sockets.length)
-        //     })
-        // }
+        for (const node of nodes) {
+            const socket = miner.clientNode.createSocket(node.port, node.address)
+            socket.on('connect', () => console.log('connected to socket :)'))
+        }
         // await miner.load()
         // await miner.sync()
         miner.start()
