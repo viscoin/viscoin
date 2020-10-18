@@ -1,6 +1,7 @@
 import * as events from 'events'
 import ServerNode from './ServerNode'
 import ClientNode from './ClientNode'
+import Node from './Node'
 import * as config from '../../config.json'
 import Blockchain from './Blockchain'
 import Block from './Block'
@@ -9,34 +10,25 @@ interface FullNode {
     blockchain: Blockchain
     serverNode: ServerNode
     clientNode: ClientNode
+    node: Node
     intermediate: NodeJS.Immediate
 }
 class FullNode extends events.EventEmitter {
     constructor() {
         super()
-
-        // Blockchain
         this.blockchain = new Blockchain()
-
-        // ServerNode
+        this.loadBlocksFromStorage()
         this.serverNode = new ServerNode()
         this.serverNode
             .on('data', data => this.emit('data', data))
-            .on('listening', () => {
-                // ClientNode
-                this.clientNode = new ClientNode()
-                this.clientNode
-                    .on('data', data => this.emit('data', data))
-                    .createSocket(config.network.port, config.network.address)
-
-                // emit
-                this.emit('listening')
-            })
+            .on('listening', () => this.emit('listening'))
             .start(config.network.port, config.network.address)
-
+        this.clientNode = new ClientNode()
+        this.clientNode.on('data', data => this.emit('data', data))
+        this.node = new Node()
         this.on('data', async data => {
-            if (!this.clientNode.verifyData(data)) return
-            const processed = this.clientNode.processData(data)
+            if (!this.node.verifyData(data)) return
+            const processed = this.node.processData(data)
             if (processed === null) return
             switch (processed.type) {
                 case 'block':
@@ -50,13 +42,8 @@ class FullNode extends events.EventEmitter {
                     this.emit('transaction', transaction, code)
                     break
             }
-
-            // relay
             this.broadcastAndStoreDataHash(data)
         })
-
-        // load
-        this.loadBlocksFromStorage()
     }
     async loadBlocksFromStorage() {
         await this.blockchain.loadLatestBlocks(config.length.inMemoryChain)
