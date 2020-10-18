@@ -35,6 +35,7 @@ class Node extends events.EventEmitter {
         if (Buffer.byteLength(data) > config.byteLength.verifyData) return false
         const hash = crypto.createHash('sha256').update(data).digest()
         if (this.dataHashes.find(e => e.compare(hash) === 0)) return false
+        if (this.processData(data) === null) return false
         this.dataHashes.push(hash)
         if (this.dataHashes.length > config.length.dataHashes) this.dataHashes.shift()
         return true
