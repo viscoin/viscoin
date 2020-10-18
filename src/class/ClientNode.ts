@@ -7,7 +7,7 @@ class ClientNode extends Node {
         super()
     }
     createSocket(port: number, address: string) {
-        if (!this.hasSocket(port, address)) return false
+        if (this.hasSocket(port, address)) return false
         const socket = net.connect(port, address)
             .on('data', data => this.emit('data', data))
             .on('error', () => {
