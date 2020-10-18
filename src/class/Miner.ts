@@ -26,15 +26,15 @@ class Miner extends FullNode {
     stop() {
         clearImmediate(this.intermediate)
     }
-    mine(block) {
-        const found = block.recalculateHash(this.storageNode.blockchain.difficulty)
+    mine(block: Block) {
+        const found = block.recalculateHash(this.blockchain.difficulty)
         if (found) {
             this.emit('hash', found, block)
-            this.storageNode.blockchain.pendingTransactions = []
-            this.storageNode.blockchain.chain.push(block)
-            this.storageNode.blockchain.shiftChain()
-            this.clientNode.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
-            this.storageNode.blockchain.saveTrustedBlock()
+            this.blockchain.pendingTransactions = []
+            this.blockchain.chain.push(block)
+            this.blockchain.shiftChain()
+            this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
+            this.blockchain.saveTrustedBlock()
             if (config.use.process.nextTick) {
                 process.nextTick(() => {
                     this.intermediate = setImmediate(() => {
@@ -65,7 +65,7 @@ class Miner extends FullNode {
         }
     }
     getNewBlock() {
-        const previousBlock = this.storageNode.blockchain.getLatestBlock()
+        const previousBlock = this.blockchain.getLatestBlock()
         if (previousBlock.previousHash === '') previousBlock.save()
         const newBlockHeight = previousBlock.height + 1
         const transactions = [
@@ -75,7 +75,7 @@ class Miner extends FullNode {
                 amount: config.mining.reward.amount,
                 blockHeight: newBlockHeight
             }),
-            ...this.storageNode.blockchain.pendingTransactions.sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
+            ...this.blockchain.pendingTransactions.sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
         ]
         const block = new Block({
             timestamp: Date.now(),

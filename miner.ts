@@ -31,9 +31,9 @@ const init = () => {
             if (found) console.log(block.height, block.hash)
         })
         miner.on('fork', async () => {
-            console.log(miner.storageNode.blockchain.getLatestBlock().height, 'new fork')
-            const valid = await miner.storageNode.blockchain.isChainValid()
-            console.log(valid, 'chain valid')
+            // console.log(miner.storageNode.blockchain.getLatestBlock().height, 'new fork')
+            // const valid = await miner.storageNode.blockchain.isChainValid()
+            // console.log(valid, 'chain valid')
         })
     })
 }
