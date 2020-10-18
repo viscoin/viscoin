@@ -4,15 +4,15 @@ import * as config from './config.json'
 import * as cluster from 'cluster'
 import * as os from 'os'
 import Transaction from './src/class/Transaction'
-import * as addresses from './addresses.json'
+import * as nodes from './nodes.json'
 
 const init = () => {
     const miner = new Miner(keys[0].publicKey)
     miner.serverNode.start(config.network.port, config.network.address)
     setTimeout(() => {
-        for (const address of addresses) {
-            const socket = miner.clientNode.createSocket(config.network.port, address)
-            console.log(address)
+        for (const node of nodes) {
+            const socket = miner.clientNode.createSocket(node.port, node.address)
+            if (!socket) continue
             socket.on('connect', () => {
                 console.log('connected to socket :)')
             })
@@ -20,13 +20,14 @@ const init = () => {
         // await miner.load()
         // await miner.sync()
         miner.start()
+        miner.on('data', data => console.log('data'))
         // miner.on('start', () => console.log('started mining'))
         // miner.on('stop', () => console.log('stopped mining'))
         // miner.on('null', data => console.log('received null', data))
         // miner.on('block', data => console.log('received new block', data))
         miner.on('transaction', data => console.log(new Transaction(data)))
         miner.on('hash', (found, block) => {
-            if (found) console.log(block.height, block.hash)
+            // if (found) console.log(block.height, block.hash)
         })
         miner.on('fork', async () => {
             console.log(miner.storageNode.blockchain.getLatestBlock().height, 'new fork')

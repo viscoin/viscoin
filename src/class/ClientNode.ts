@@ -7,10 +7,17 @@ class ClientNode extends Node {
         super()
     }
     createSocket(port: number, address: string) {
+        if (!this.hasSocket(port, address)) return false
         const socket = net.connect(port, address)
             .on('data', data => this.emit('data', data))
-            .on('error', () => {})
-            .on('close', () => this.sockets.splice(this.sockets.indexOf(socket), 1))
+            .on('error', () => {
+                socket.destroy()
+                this.sockets.splice(this.sockets.indexOf(socket), 1)
+            })
+            .on('close', () => {
+                socket.destroy()
+                this.sockets.splice(this.sockets.indexOf(socket), 1)
+            })
         this.sockets.push(socket)
         return socket
     }

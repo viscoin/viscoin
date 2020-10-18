@@ -52,5 +52,15 @@ class Node extends events.EventEmitter {
             return null
         }
     }
+    hasSocket(port: number, address: string) {
+        for (const socket of this.sockets) {
+            const info = <net.AddressInfo> socket.address()
+            if (info.port === port && info.address === address) {
+                console.log('already has socket connection')
+                return true
+            }
+        }
+        return false
+    }
 }
 export default Node

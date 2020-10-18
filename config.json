@@ -33,7 +33,7 @@
         "loop": 1000
     },
     "network": {
-        "port": 8333,
-        "address": "localhost"
+        "address": "localhost",
+        "port": 8334
     }
 }
