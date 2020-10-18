@@ -1,3 +1,5 @@
+import * as mongoose from './src/mongoose/mongoose'
+mongoose.init()
 import Miner from './src/class/Miner'
 import * as keys from './keys.json'
 import * as config from './config.json'
@@ -9,15 +11,16 @@ import * as crypto from 'crypto'
 
 const init = () => {
     const miner = new Miner(keys[0].publicKey)
+    miner.on('loaded', () => {
+        console.log('loaded')
+        miner.start()
+    })
     miner.on('listening', () => {
         console.log('listening')
         for (const node of nodes) {
             const socket = miner.clientNode.createSocket(node.port, node.address)
             socket.on('connect', () => console.log('connected to socket :)'))
         }
-        // await miner.load()
-        // await miner.sync()
-        miner.start()
         miner.on('data', data => console.log(crypto.createHash('sha256').update(data).digest('base64')))
         // miner.on('start', () => console.log('started mining'))
         // miner.on('stop', () => console.log('stopped mining'))
@@ -25,7 +28,7 @@ const init = () => {
         // miner.on('block', data => console.log('received new block', data))
         miner.on('transaction', data => console.log(new Transaction(data)))
         miner.on('hash', (found, block) => {
-            // if (found) console.log(block.height, block.hash)
+            if (found) console.log(block.height, block.hash)
         })
         miner.on('fork', async () => {
             console.log(miner.storageNode.blockchain.getLatestBlock().height, 'new fork')

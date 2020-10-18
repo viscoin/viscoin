@@ -3,6 +3,7 @@ import Blockchain from './Blockchain'
 import ClientNode from './ClientNode'
 import Transaction from './Transaction'
 import Block from './Block'
+import * as config from '../../config.json'
 interface StorageNode {
     blockchain: Blockchain
     clientNode: ClientNode
@@ -32,7 +33,7 @@ class StorageNode extends events.EventEmitter {
         })
     }
     async loadBlocksFromStorage() {
-        await this.blockchain.loadBlocksFromStorage()
+        await this.blockchain.loadLatestBlocks(config.length.inMemoryChain)
         this.emit('loaded')
     }
 }

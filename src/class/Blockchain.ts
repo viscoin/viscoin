@@ -163,7 +163,7 @@ class Blockchain {
     async load_blocks(limit: number, skip: number) {
         if (limit > config.length.inMemoryChain) throw new Error('Cannot load more blocks than maxInMemoryChainLength!')
         if (skip < 0) skip = 0
-        this.chain = await load_blocks(limit, skip)
+        return await load_blocks(limit, skip)
         // this.chain.push(...await load_blocks(limit, skip))
         // this.chain = [
         //     ...await load_blocks(limit, skip),
@@ -174,10 +174,8 @@ class Blockchain {
     async loadLatestBlocks(limit: number) {
         const chainLength = await schema_block
             .countDocuments()
-            // .estimatedDocumentCount()
             .exec()
-        // console.log('chainLength', chainLength)
-        await this.load_blocks(limit, chainLength - limit)
+        this.chain = await this.load_blocks(limit, chainLength - limit)
     }
     getChainWithMostWork() {
         // const chains = [
@@ -220,13 +218,13 @@ class Blockchain {
         if (this.chain.length < config.mining.trustedLength) return
         const blockToSave = this.chain[this.chain.length - config.mining.trustedLength]
         const exists = await schema_block
-            .exists({ height: blockToSave.height })
+            .exists({ $or: [
+                { height: blockToSave.height },
+                { hash: blockToSave.hash }
+            ] })
         if (exists) return false // console.log('did not save already saved block', blockToSave.height)
         blockToSave.save()
         return true // console.log('saved block', blockToSave.height)
-    }
-    async loadBlocksFromStorage() {
-        return await this.loadLatestBlocks(config.length.inMemoryChain)
     }
 }
 export default Blockchain
