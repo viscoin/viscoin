@@ -5,6 +5,7 @@ import * as cluster from 'cluster'
 import * as os from 'os'
 import Transaction from './src/class/Transaction'
 import * as nodes from './nodes.json'
+import * as crypto from 'crypto'
 
 const init = () => {
     const miner = new Miner(keys[0].publicKey)
@@ -17,7 +18,7 @@ const init = () => {
         // await miner.load()
         // await miner.sync()
         miner.start()
-        miner.on('data', data => console.log('data'))
+        miner.on('data', data => console.log(crypto.createHash('sha256').update(data).digest('base64')))
         // miner.on('start', () => console.log('started mining'))
         // miner.on('stop', () => console.log('stopped mining'))
         // miner.on('null', data => console.log('received null', data))
