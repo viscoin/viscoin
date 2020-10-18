@@ -9,5 +9,5 @@ fullNode.on('stop', () => console.log('stopped'))
 fullNode.on('block', (block, forked) => console.log(block, forked))
 fullNode.on('transaction', (transaction, code) => console.log(transaction, code))
 fullNode.on('loaded', () => {
-    fullNode.serverNode.start(config.port, 'localhost')
+    fullNode.serverNode.start(config.network.port, config.network.address)
 })

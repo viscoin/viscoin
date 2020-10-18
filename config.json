@@ -32,5 +32,8 @@
     "delay": {
         "loop": 1000
     },
-    "port": 8333
+    "network": {
+        "port": 8333,
+        "address": "localhost"
+    }
 }

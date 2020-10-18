@@ -5,7 +5,7 @@ import * as keys from './keys.json'
 import * as config from './config.json'
 
 const wallet = new Wallet(keys[0])
-const socket = wallet.clientNode.createSocket(config.port, 'localhost')
+const socket = wallet.clientNode.createSocket(config.network.port, config.network.address)
 socket.on('connect', async () => {
     const balance = await wallet.balance()
     console.log(balance)

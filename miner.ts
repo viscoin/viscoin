@@ -8,11 +8,15 @@ import * as addresses from './addresses.json'
 
 const init = () => {
     const miner = new Miner(keys[0].publicKey)
-    miner.serverNode.start(config.port, 'localhost')
-    for (const address in addresses) {
-        miner.clientNode.createSocket(config.port, address)
-    }
+    miner.serverNode.start(config.network.port, config.network.address)
     setTimeout(() => {
+        for (const address of addresses) {
+            const socket = miner.clientNode.createSocket(config.network.port, address)
+            console.log(address)
+            socket.on('connect', () => {
+                console.log('connected to socket :)')
+            })
+        }
         // await miner.load()
         // await miner.sync()
         miner.start()

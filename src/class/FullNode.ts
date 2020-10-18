@@ -22,7 +22,7 @@ class FullNode extends events.EventEmitter {
         this.clientNode = new ClientNode()
         this.clientNode
             .on('data', data => this.emit('data', data))
-            .createSocket(config.port, 'localhost')
+            .createSocket(config.network.port, config.network.address)
 
         // StorageNode
         this.storageNode = new StorageNode()
@@ -31,7 +31,7 @@ class FullNode extends events.EventEmitter {
             .on('transaction', (transaction, code) => this.emit('transaction', transaction, code))
             .on('loaded', () => this.emit('loaded'))
         this.storageNode.loadBlocksFromStorage()
-        this.storageNode.clientNode.createSocket(config.port, 'localhost')
+        this.storageNode.clientNode.createSocket(config.network.port, config.network.address)
 
         this.on('data', data => {
             this.serverNode.broadcastAndStoreDataHash(data)
