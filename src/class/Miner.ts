@@ -81,7 +81,8 @@ class Miner extends FullNode {
             timestamp: Date.now(),
             transactions,
             previousHash: previousBlock.hash,
-            height: newBlockHeight
+            height: newBlockHeight,
+            difficulty: this.blockchain.difficulty
         })
         block.transactions.map(e => block.transactions[0].amount += e.minerFee)
         while (Buffer.byteLength(JSON.stringify(block)) > config.byteLength.block) {

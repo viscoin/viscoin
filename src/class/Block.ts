@@ -12,7 +12,7 @@ interface Block {
     difficulty: number
 }
 class Block {
-    constructor({ timestamp, transactions, previousHash, height, nonce = 0, hash = null, difficulty = config.mining.difficulty }) {
+    constructor({ timestamp, transactions, previousHash, height, nonce = 0, hash = null, difficulty }) {
         this.timestamp = timestamp
         this.previousHash = previousHash
         this.height = height

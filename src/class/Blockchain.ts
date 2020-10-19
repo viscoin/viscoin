@@ -21,7 +21,8 @@ class Blockchain {
             timestamp: Date.now(),
             transactions: [],
             previousHash: '',
-            height: 0
+            height: 0,
+            difficulty: this.difficulty
         })
     }
     getBlock(index) {
@@ -135,9 +136,8 @@ class Blockchain {
         for (let i = 1; i < chain.length; i++) {
             const currentBlock = chain[i]
             const previousBlock = chain[i - 1]
-            console.log('uwu', currentBlock.difficulty, currentBlock.meetsDifficulty(), currentBlock.height, currentBlock.hash.substring(0, currentBlock.difficulty))
             if (!currentBlock.meetsDifficulty()) {
-                console.log('!currentBlock.meetsDifficulty()')
+                // console.log('!currentBlock.meetsDifficulty()')
                 return false
             }
             if (!currentBlock.hasValidTransactions()) {
