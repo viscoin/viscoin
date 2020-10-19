@@ -9,9 +9,10 @@ interface Block {
     hash: string
     nonce: number
     height: number
+    difficulty: number
 }
 class Block {
-    constructor({ timestamp, transactions, previousHash, height, nonce = 0, hash = null }) {
+    constructor({ timestamp, transactions, previousHash, height, nonce = 0, hash = null, difficulty = config.mining.difficulty }) {
         this.timestamp = timestamp
         this.previousHash = previousHash
         this.height = height
@@ -24,6 +25,7 @@ class Block {
         this.nonce = nonce
         if (hash !== null) this.hash = hash
         else this.hash = this.calculateHash()
+        this.difficulty = difficulty
     }
     calculateHash() {
         return crypto.createHash('sha256')
@@ -33,6 +35,7 @@ class Block {
             + JSON.stringify(this.transactions)
             + this.nonce
             + this.height
+            + this.difficulty
         )
         .digest('hex')
     }
@@ -53,13 +56,17 @@ class Block {
             transactions: this.transactions,
             previousHash: this.previousHash,
             nonce: this.nonce,
-            height: this.height
+            height: this.height,
+            difficulty: this.difficulty
         }).save()
     }
-    recalculateHash(difficulty) {
+    recalculateHash() {
         this.nonce++
         this.hash = this.calculateHash()
-        if (this.hash.substring(0, difficulty) !== Array(difficulty + 1).join('0')) return false
+        return this.meetsDifficulty()
+    }
+    meetsDifficulty() {
+        if (this.hash.substring(0, this.difficulty) !== Array(this.difficulty + 1).join('0')) return false
         else return true
     }
 }

@@ -135,6 +135,11 @@ class Blockchain {
         for (let i = 1; i < chain.length; i++) {
             const currentBlock = chain[i]
             const previousBlock = chain[i - 1]
+            console.log('uwu', currentBlock.difficulty, currentBlock.meetsDifficulty(), currentBlock.height, currentBlock.hash.substring(0, currentBlock.difficulty))
+            if (!currentBlock.meetsDifficulty()) {
+                console.log('!currentBlock.meetsDifficulty()')
+                return false
+            }
             if (!currentBlock.hasValidTransactions()) {
                 // console.log('!currentBlock.hasValidTransactions()')
                 return false
@@ -225,6 +230,20 @@ class Blockchain {
         if (exists) return false // console.log('did not save already saved block', blockToSave.height)
         blockToSave.save()
         return true // console.log('saved block', blockToSave.height)
+    }
+    async getWork() {
+        let i = 0, work = 0
+        while (true) {
+            const blocks = await schema_block
+                .find({}, 'difficulty', { limit: config.limit.blocksPerQuery, skip: i * config.limit.blocksPerQuery })
+                .exec()
+            if (!blocks || !blocks.length) break
+            for (const block of blocks) {
+                work += block.difficulty
+            }
+            i++
+        }
+        return work
     }
 }
 export default Blockchain

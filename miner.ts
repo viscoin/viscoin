@@ -14,6 +14,13 @@ const init = () => {
     miner.on('loaded', () => {
         console.log('loaded')
         miner.start()
+        setTimeout(async () => {
+            miner.stop()
+            const work = await miner.blockchain.getWork()
+            console.log(work)
+            const valid = await miner.blockchain.isChainValid()
+            console.log(valid)
+        }, 1000)
     })
     miner.on('listening', () => {
         console.log('listening')

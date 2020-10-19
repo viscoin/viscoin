@@ -27,7 +27,7 @@ class Miner extends FullNode {
         clearImmediate(this.intermediate)
     }
     mine(block: Block) {
-        const found = block.recalculateHash(this.blockchain.difficulty)
+        const found = block.recalculateHash()
         if (found) {
             this.emit('hash', found, block)
             this.blockchain.pendingTransactions = []

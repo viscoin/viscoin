@@ -5,7 +5,8 @@ const schema = mongoose.Schema({
     transactions: Array,
     previousHash: String,
     nonce: Number,
-    height: Number
+    height: Number,
+    difficulty: Number
 },
 {
     collection: "blocks"
