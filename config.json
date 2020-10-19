@@ -5,7 +5,7 @@
             "fromAddress": "mining reward"
         },
         "trustedLength": 20,
-        "blockTime": 10
+        "blockTime": 100
     },
     "byteLength": {
         "block": 1000000,
@@ -17,7 +17,7 @@
         "forks": 10
     },
     "limit": {
-        "blocksPerQuery": 100,
+        "blocksPerQuery": 10,
         "serverNodeConnections": 100
     },
     "use": {

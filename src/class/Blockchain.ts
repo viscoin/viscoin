@@ -3,6 +3,7 @@ import Block from './Block'
 import * as config from '../../config.json'
 import load_blocks from '../load_blocks'
 import schema_block from '../mongoose/schema/block'
+import block from '../mongoose/schema/block'
 interface Blockchain {
     chain: Array<Block>
     difficulty: number
@@ -20,13 +21,15 @@ class Blockchain {
         this.updateDifficulty()
     }
     createGenesisBlock() {
-        return new Block({
+        const block = new Block({
             timestamp: Date.now(),
             transactions: [],
             previousHash: '',
             height: 0,
             difficulty: this.difficulty
         })
+        this.chain.push(block)
+        return block
     }
     getBlock(index) {
         const block = this.chain[index]
@@ -141,29 +144,39 @@ class Blockchain {
             const currentBlock = chain[i]
             const previousBlock = chain[i - 1]
             if (!currentBlock.meetsDifficulty()) {
-                // console.log('!currentBlock.meetsDifficulty()')
+                console.log('!currentBlock.meetsDifficulty()')
                 return false
             }
             if (!currentBlock.hasValidTransactions()) {
-                // console.log('!currentBlock.hasValidTransactions()')
+                console.log('!currentBlock.hasValidTransactions()')
                 return false
             }
             if (currentBlock.hash !== currentBlock.calculateHash()) {
-                // console.log('currentBlock.hash !== currentBlock.calculateHash()')
+                console.log('currentBlock.hash !== currentBlock.calculateHash()')
+                console.log(currentBlock.hash, currentBlock.calculateHash())
                 return false
             }
             if (currentBlock.previousHash !== previousBlock.hash) {
-                // console.log('currentBlock.previousHash !== previousBlock.hash')
+                console.log('currentBlock.previousHash !== previousBlock.hash')
+                console.log(currentBlock.previousHash, previousBlock.hash)
                 return false
             }
         }
         return true
     }
     async isChainValid() {
-        let i = 0
+        let i = 0,
+        previousBlock = null
         while (true) {
-            let blocks = await load_blocks(config.limit.blocksPerQuery, i * (config.limit.blocksPerQuery - 1))
+            let blocks = await load_blocks(config.limit.blocksPerQuery, i * config.limit.blocksPerQuery)
             if (!blocks.length) break
+            if (previousBlock) {
+                blocks = [
+                    previousBlock,
+                    ...blocks
+                ]
+            }
+            previousBlock = blocks[blocks.length - 1]
             if (!Blockchain.isPartOfChainValid(blocks)) return false
             i++
         }

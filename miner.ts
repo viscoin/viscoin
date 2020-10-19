@@ -5,13 +5,16 @@ import * as keys from './keys.json'
 import * as config from './config.json'
 import * as cluster from 'cluster'
 import * as os from 'os'
-import Transaction from './src/class/Transaction'
 import * as nodes from './nodes.json'
 import * as crypto from 'crypto'
 
 const init = () => {
     const miner = new Miner(keys[0].publicKey)
-    miner.on('loaded', () => {
+    miner.on('loaded', async () => {
+        // const work = await miner.blockchain.getWork()
+        // console.log(work)
+        // const valid = await miner.blockchain.isChainValid()
+        // console.log(valid)
         console.log('loaded')
         miner.start()
         setTimeout(async () => {
@@ -20,7 +23,7 @@ const init = () => {
             console.log(work)
             const valid = await miner.blockchain.isChainValid()
             console.log(valid)
-        }, 3000)
+        }, 30000)
     })
     miner.on('listening', () => {
         console.log('listening')

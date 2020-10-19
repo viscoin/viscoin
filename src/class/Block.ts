@@ -23,9 +23,9 @@ class Block {
         }
         this.transactions = _transactions
         this.nonce = nonce
+        this.difficulty = difficulty
         if (hash !== null) this.hash = hash
         else this.hash = this.calculateHash()
-        this.difficulty = difficulty
     }
     calculateHash() {
         return crypto.createHash('sha256')

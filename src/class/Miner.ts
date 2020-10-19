@@ -68,7 +68,6 @@ class Miner extends FullNode {
     }
     getNewBlock() {
         const previousBlock = this.blockchain.getLatestBlock()
-        if (previousBlock.previousHash === '') previousBlock.save()
         const newBlockHeight = previousBlock.height + 1
         const transactions = [
             new Transaction({
