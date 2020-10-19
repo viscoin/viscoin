@@ -9,7 +9,6 @@ interface Blockchain {
     difficulty: number
     pendingTransactions: Array<Transaction>
     forks: Array<Array<Block>>
-    blockTime: number
 }
 class Blockchain {
     constructor() {
@@ -17,7 +16,6 @@ class Blockchain {
         this.pendingTransactions = []
         this.chain = []
         this.forks = []
-        this.blockTime = config.mining.blockTime
         this.updateDifficulty()
     }
     createGenesisBlock() {
@@ -140,6 +138,7 @@ class Blockchain {
         return balance
     }
     static isPartOfChainValid(chain: Array<Block>) {
+        // i = 2
         for (let i = 1; i < chain.length; i++) {
             const currentBlock = chain[i]
             const previousBlock = chain[i - 1]
@@ -162,21 +161,40 @@ class Blockchain {
                 return false
             }
         }
+        for (let i = 2; i < chain.length; i++) {
+            const blocks = [
+                chain[i - 2],
+                chain[i - 1],
+                chain[i]
+            ]
+            let difficulty = blocks[1].difficulty
+            const blockTime = blocks[1].timestamp - blocks[0].timestamp
+            if (blockTime < config.mining.blockTime && difficulty < 64) {
+                difficulty++
+            }
+            else if (blockTime > config.mining.blockTime && difficulty > 0) {
+                difficulty--
+            }
+            if (blocks[2].difficulty !== difficulty) return false
+        }
         return true
     }
     async isChainValid() {
         let i = 0,
-        previousBlock = null
+        previousBlocks = []
         while (true) {
             let blocks = await load_blocks(config.limit.blocksPerQuery, i * config.limit.blocksPerQuery)
             if (!blocks.length) break
-            if (previousBlock) {
+            if (previousBlocks) {
                 blocks = [
-                    previousBlock,
+                    ...previousBlocks,
                     ...blocks
                 ]
             }
-            previousBlock = blocks[blocks.length - 1]
+            previousBlocks = [
+                blocks[blocks.length - 2],
+                blocks[blocks.length - 1]
+            ]
             if (!Blockchain.isPartOfChainValid(blocks)) return false
             i++
         }
@@ -271,10 +289,10 @@ class Blockchain {
         ]
         this.difficulty = blocks[1].difficulty
         const blockTime = blocks[1].timestamp - blocks[0].timestamp
-        if (blockTime < this.blockTime && this.difficulty < 64) {
+        if (blockTime < config.mining.blockTime && this.difficulty < 64) {
             this.difficulty++
         }
-        else if (blockTime > this.blockTime && this.difficulty > 0) {
+        else if (blockTime > config.mining.blockTime && this.difficulty > 0) {
             this.difficulty--
         }
         console.log('updateDifficulty', this.difficulty)
