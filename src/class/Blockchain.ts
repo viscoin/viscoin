@@ -175,7 +175,10 @@ class Blockchain {
             else if (blockTime > config.mining.blockTime && difficulty > 0) {
                 difficulty--
             }
-            if (blocks[2].difficulty !== difficulty) return false
+            if (blocks[2].difficulty !== difficulty) {
+                console.log('blocks[2].difficulty !== difficulty')
+                return false
+            }
         }
         return true
     }
