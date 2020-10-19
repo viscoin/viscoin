@@ -278,7 +278,7 @@ class Blockchain {
                 .exec()
             if (!blocks || !blocks.length) break
             for (const block of blocks) {
-                work += block.difficulty
+                work += Math.pow(16, block.difficulty)
             }
             i++
         }
