@@ -20,7 +20,7 @@ const init = () => {
             console.log(work)
             const valid = await miner.blockchain.isChainValid()
             console.log(valid)
-        }, 30000)
+        }, 3000)
     })
     miner.on('listening', () => {
         console.log('listening')
