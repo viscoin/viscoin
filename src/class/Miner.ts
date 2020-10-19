@@ -31,7 +31,7 @@ class Miner extends FullNode {
         if (found) {
             this.emit('hash', found, block)
             this.blockchain.pendingTransactions = []
-            this.blockchain.chain.push(block)
+            this.blockchain.addBlock(block)
             this.blockchain.shiftChain()
             this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
             this.blockchain.saveTrustedBlock()

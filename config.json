@@ -1,11 +1,11 @@
 {
     "mining": {
-        "difficulty": 4,
         "reward": {
             "amount": 100,
             "fromAddress": "mining reward"
         },
-        "trustedLength": 20
+        "trustedLength": 20,
+        "blockTime": 10
     },
     "byteLength": {
         "block": 1000000,

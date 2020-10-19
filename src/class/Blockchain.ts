@@ -8,13 +8,16 @@ interface Blockchain {
     difficulty: number
     pendingTransactions: Array<Transaction>
     forks: Array<Array<Block>>
+    blockTime: number
 }
 class Blockchain {
     constructor() {
-        this.difficulty = config.mining.difficulty
+        this.difficulty = 0
         this.pendingTransactions = []
         this.chain = []
         this.forks = []
+        this.blockTime = config.mining.blockTime
+        this.updateDifficulty()
     }
     createGenesisBlock() {
         return new Block({
@@ -100,6 +103,7 @@ class Blockchain {
                 ])
             }
         }
+        this.updateDifficulty()
         return this.updateMainChain()
     }
     async getBalanceOfAddress(address: string) {
@@ -181,6 +185,7 @@ class Blockchain {
             .countDocuments()
             .exec()
         this.chain = await this.load_blocks(limit, chainLength - limit)
+        this.updateDifficulty()
     }
     getChainWithMostWork() {
         // const chains = [
@@ -244,6 +249,22 @@ class Blockchain {
             i++
         }
         return work
+    }
+    updateDifficulty() {
+        if (this.chain.length < 2) return
+        const blocks = [
+            this.getBlock(this.chain.length - 2),
+            this.getBlock(this.chain.length - 1)
+        ]
+        this.difficulty = blocks[1].difficulty
+        const blockTime = blocks[1].timestamp - blocks[0].timestamp
+        if (blockTime < this.blockTime && this.difficulty < 64) {
+            this.difficulty++
+        }
+        else if (blockTime > this.blockTime && this.difficulty > 0) {
+            this.difficulty--
+        }
+        console.log('updateDifficulty', this.difficulty)
     }
 }
 export default Blockchain
