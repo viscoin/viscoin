@@ -143,21 +143,21 @@ class Blockchain {
             const currentBlock = chain[i]
             const previousBlock = chain[i - 1]
             if (!currentBlock.meetsDifficulty()) {
-                console.log('!currentBlock.meetsDifficulty()')
+                // console.log('!currentBlock.meetsDifficulty()')
                 return false
             }
             if (!currentBlock.hasValidTransactions()) {
-                console.log('!currentBlock.hasValidTransactions()')
+                // console.log('!currentBlock.hasValidTransactions()')
                 return false
             }
             if (currentBlock.hash !== currentBlock.calculateHash()) {
-                console.log('currentBlock.hash !== currentBlock.calculateHash()')
-                console.log(currentBlock.hash, currentBlock.calculateHash())
+                // console.log('currentBlock.hash !== currentBlock.calculateHash()')
+                // console.log(currentBlock.hash, currentBlock.calculateHash())
                 return false
             }
             if (currentBlock.previousHash !== previousBlock.hash) {
-                console.log('currentBlock.previousHash !== previousBlock.hash')
-                console.log(currentBlock.previousHash, previousBlock.hash)
+                // console.log('currentBlock.previousHash !== previousBlock.hash')
+                // console.log(currentBlock.previousHash, previousBlock.hash)
                 return false
             }
         }
@@ -176,7 +176,7 @@ class Blockchain {
                 difficulty--
             }
             if (blocks[2].difficulty !== difficulty) {
-                console.log('blocks[2].difficulty !== difficulty')
+                // console.log('blocks[2].difficulty !== difficulty')
                 return false
             }
         }
