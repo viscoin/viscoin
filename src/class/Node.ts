@@ -14,11 +14,12 @@ class Node extends events.EventEmitter {
         this.on('socket', (socket, connected) => {
             socket
                 .on('data', data => this.emit('data', data))
-                .on('error', () => {
+                .on('error', err => {
+                    this.emit('error', err)
                     socket.destroy()
                     this.sockets.splice(this.sockets.indexOf(socket), 1)
                 })
-                .on('close', () => {
+                .on('close', err => {
                     socket.destroy()
                     this.sockets.splice(this.sockets.indexOf(socket), 1)
                 })
