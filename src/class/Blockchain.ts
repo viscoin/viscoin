@@ -22,7 +22,7 @@ class Blockchain {
         const block = new Block({
             timestamp: Date.now(),
             transactions: [],
-            previousHash: '',
+            previousHash: Buffer.alloc(32, 0x00),
             height: 0,
             difficulty: this.difficulty
         })
