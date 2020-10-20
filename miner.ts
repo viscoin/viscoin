@@ -35,12 +35,12 @@ const init = () => {
         // miner.on('start', () => console.log('started mining'))
         // miner.on('stop', () => console.log('stopped mining'))
         // miner.on('null', data => console.log('received null', data))
-        miner.on('block', (block, forked) => console.log(forked, block.hash))
+        // miner.on('block', (block, forked) => console.log(forked, block.hash))
         miner.on('transaction', (transaction, code) => console.log(transaction))
         miner.on('hash', async (found, block) => {
             if (found) {
-                console.log(block.height, block.hash)
-                if (block.height === 40) {
+                console.log(block.height, block.hash.toString('hex'))
+                if (block.height === 400) {
                     miner.stop()
                     const work = await miner.blockchain.getWork()
                     console.log(work)

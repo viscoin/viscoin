@@ -5,11 +5,12 @@ import * as config from '../../config.json'
 interface Block {
     timestamp: number
     transactions: Array<Transaction>
-    previousHash: string
-    hash: string
+    previousHash: Buffer
+    hash: Buffer
     nonce: number
     height: number
     difficulty: number
+    preAllocatedBuffer: Buffer
 }
 class Block {
     constructor({ timestamp, transactions, previousHash, height, nonce = 0, hash = null, difficulty }) {
@@ -24,20 +25,23 @@ class Block {
         this.transactions = _transactions
         this.nonce = nonce
         this.difficulty = difficulty
-        if (hash !== null) this.hash = hash
+        if (hash !== null) this.hash = Buffer.from(hash)
         else this.hash = this.calculateHash()
+        const index = Math.floor(this.difficulty / 8),
+        remainder = this.difficulty % 8
+        this.preAllocatedBuffer = Buffer.alloc(32).fill(Math.pow(2, 7 - remainder), index, index + 1)
     }
     calculateHash() {
         return crypto.createHash('sha256')
         .update(
-            this.previousHash
+            String(this.previousHash)
             + this.timestamp
             + JSON.stringify(this.transactions)
             + this.nonce
             + this.height
             + this.difficulty
         )
-        .digest('hex')
+        .digest()
     }
     hasValidTransactions() {
         let amount = config.mining.reward.amount
@@ -66,7 +70,7 @@ class Block {
         return this.meetsDifficulty()
     }
     meetsDifficulty() {
-        if (this.hash.substring(0, this.difficulty) !== Array(this.difficulty + 1).join('0')) return false
+        if (Buffer.compare(this.hash, this.preAllocatedBuffer) !== -1) return false
         else return true
     }
 }

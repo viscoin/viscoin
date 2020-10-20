@@ -1,12 +1,12 @@
 import * as mongoose from 'mongoose'
 const schema = mongoose.Schema({
-    hash: String,
-    timestamp: Number,
-    transactions: Array,
-    previousHash: String,
+    previousHash: Buffer,
     nonce: Number,
     height: Number,
-    difficulty: Number
+    timestamp: Number,
+    difficulty: Number,
+    transactions: Array,
+    hash: Buffer
 },
 {
     collection: "blocks"
