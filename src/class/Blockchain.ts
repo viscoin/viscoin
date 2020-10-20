@@ -150,14 +150,14 @@ class Blockchain {
                 // console.log('!currentBlock.hasValidTransactions()')
                 return false
             }
-            if (currentBlock.hash !== currentBlock.calculateHash()) {
-                // console.log('currentBlock.hash !== currentBlock.calculateHash()')
-                // console.log(currentBlock.hash, currentBlock.calculateHash())
+            if (!currentBlock.hash.equals(currentBlock.calculateHash())) {
+                // console.log('!currentBlock.hash.equals(currentBlock.calculateHash())')
+                // console.log(currentBlock.hash.equals(currentBlock.calculateHash()))
                 return false
             }
-            if (currentBlock.previousHash !== previousBlock.hash) {
-                // console.log('currentBlock.previousHash !== previousBlock.hash')
-                // console.log(currentBlock.previousHash, previousBlock.hash)
+            if (!currentBlock.previousHash.equals(previousBlock.hash)) {
+                // console.log('!currentBlock.previousHash.equals(previousBlock.hash)')
+                // console.log(currentBlock.previousHash.equals(previousBlock.hash))
                 return false
             }
         }
@@ -264,7 +264,7 @@ class Blockchain {
     static getWorkSumOfBlocks(blocks) {
         let work = 0
         for (const block of blocks) {
-            work += Math.pow(16, block.difficulty)
+            work += Math.pow(2, block.difficulty)
         }
         return work
     }
@@ -276,7 +276,7 @@ class Blockchain {
                 .exec()
             if (!blocks || !blocks.length) break
             for (const block of blocks) {
-                work += Math.pow(16, block.difficulty)
+                work += Math.pow(2, block.difficulty)
             }
             i++
         }

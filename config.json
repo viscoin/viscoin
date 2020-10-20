@@ -5,7 +5,7 @@
             "fromAddress": "mining reward"
         },
         "trustedLength": 10,
-        "blockTime": 5000
+        "blockTime": 100
     },
     "byteLength": {
         "block": 1000000,
@@ -34,7 +34,7 @@
     },
     "network": {
         "address": "localhost",
-        "port": 8333
+        "port": 8335
     },
     "save": true
 }

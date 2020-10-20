@@ -14,8 +14,11 @@ interface Block {
 }
 class Block {
     constructor({ timestamp, transactions, previousHash, height, nonce = 0, hash = null, difficulty }) {
+        console.log(hash)
         this.timestamp = timestamp
-        this.previousHash = previousHash
+        if (previousHash instanceof Buffer) this.previousHash = previousHash
+        else previousHash = Buffer.from(previousHash)
+        // this.previousHash = Buffer.from(previousHash)
         this.height = height
         const _transactions = []
         for (const transaction of transactions) {
@@ -25,7 +28,11 @@ class Block {
         this.transactions = _transactions
         this.nonce = nonce
         this.difficulty = difficulty
-        if (hash !== null) this.hash = Buffer.from(hash)
+        if (hash) {
+            if (hash instanceof Buffer) this.hash = hash
+            else this.hash = Buffer.from(hash)
+        }
+        // if (hash) this.hash = Buffer.from(hash)
         else this.hash = this.calculateHash()
         const index = Math.floor(this.difficulty / 8),
         remainder = this.difficulty % 8
