@@ -14,7 +14,6 @@ interface Block {
 }
 class Block {
     constructor({ timestamp, transactions, previousHash, height, nonce = 0, hash = null, difficulty }) {
-        console.log(hash)
         this.timestamp = timestamp
         if (previousHash instanceof Buffer) this.previousHash = previousHash
         else previousHash = Buffer.from(previousHash)
