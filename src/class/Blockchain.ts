@@ -222,23 +222,17 @@ class Blockchain {
         this.updateDifficulty()
     }
     getChainWithMostWork() {
-        // const chains = [
-        //     this.chain,
-        //     ...this.forks
-        // ].sort((a, b) => b[b.length - 1].height - a[a.length - 1].height)
-        // console.log(chains[0][chains[0].length - 1].height)
         const chains = [
             this.chain,
             ...this.forks
         ]
-        chains.sort((a, b) => b[b.length - 1].height - a[a.length - 1].height)[0]
+        chains.sort((a, b) => {
+            return Blockchain.getWorkSumOfBlocks(b) - Blockchain.getWorkSumOfBlocks(a)
+        })
+        // chains.sort((a, b) => b[b.length - 1].height - a[a.length - 1].height)[0]
         const chain = chains[0]
-        // console.log(`height of chain with most work: ${chain[chain.length -1].height}`)
+        // console.log(chain[chain.length - 1].height)
         return chain
-        // return [
-        //     this.chain,
-        //     ...this.forks
-        // ].sort((a, b) => b[b.length - 1].height - a[a.length - 1].height)[0]
     }
     updateMainChain() {
         // console.log('forks', this.forks.length)
@@ -262,13 +256,17 @@ class Blockchain {
         if (this.chain.length < config.mining.trustedLength) return
         const blockToSave = this.chain[this.chain.length - config.mining.trustedLength]
         const exists = await schema_block
-            .exists({ $or: [
-                { height: blockToSave.height },
-                { hash: blockToSave.hash }
-            ] })
+            .exists({ height: blockToSave.height })
         if (exists) return false // console.log('did not save already saved block', blockToSave.height)
         blockToSave.save()
         return true // console.log('saved block', blockToSave.height)
+    }
+    static getWorkSumOfBlocks(blocks) {
+        let work = 0
+        for (const block of blocks) {
+            work += Math.pow(16, block.difficulty)
+        }
+        return work
     }
     async getWork() {
         let i = 0, work = 0
@@ -298,7 +296,7 @@ class Blockchain {
         else if (blockTime > config.mining.blockTime && this.difficulty > 0) {
             this.difficulty--
         }
-        console.log('updateDifficulty', this.difficulty)
+        // console.log('updateDifficulty', this.difficulty)
     }
 }
 export default Blockchain

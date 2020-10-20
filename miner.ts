@@ -31,12 +31,12 @@ const init = () => {
             const socket = miner.clientNode.createSocket(node.port, node.address)
             socket.on('connect', () => console.log('connected to socket :)'))
         }
-        miner.on('data', data => console.log(crypto.createHash('sha256').update(data).digest('base64')))
+        // miner.on('data', data => console.log(crypto.createHash('sha256').update(data).digest('base64')))
         // miner.on('start', () => console.log('started mining'))
         // miner.on('stop', () => console.log('stopped mining'))
         // miner.on('null', data => console.log('received null', data))
-        // miner.on('block', data => console.log('received new block', data))
-        miner.on('transaction', data => console.log(data))
+        miner.on('block', (block, forked) => console.log(block.hash, forked))
+        miner.on('transaction', (transaction, code) => console.log(transaction))
         miner.on('hash', (found, block) => {
             if (found) console.log(block.height, block.hash)
         })

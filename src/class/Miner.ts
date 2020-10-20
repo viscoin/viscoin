@@ -6,25 +6,37 @@ import * as config from '../../config.json'
 import FullNode from './FullNode'
 interface Miner {
     walletAddress: string
+    mining: boolean
 }
 class Miner extends FullNode {
     constructor(wallet: string) {
         super()
         this.walletAddress = wallet
+        this.mining = false
         this.on('block', (block, forked) => {
-            this.stop()
-            this.start()
+            this.restart()
         })
         this.on('transaction', (transaction, code) => {
-            this.stop()
-            this.start()
+            this.restart()
         })
     }
     start() {
-        this.mine(this.getNewBlock())
+        this._start(true)
     }
     stop() {
+        this._stop(true)
+    }
+    _start(force: boolean) {
+        if (force) this.mining = true
+        if (this.mining) this.mine(this.getNewBlock())
+    }
+    _stop(force: boolean) {
+        if (force) this.mining = false
         clearImmediate(this.intermediate)
+    }
+    restart() {
+        this._stop(false)
+        this._start(false)
     }
     mine(block: Block) {
         const found = block.recalculateHash()
