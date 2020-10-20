@@ -17,13 +17,13 @@ const init = () => {
         // console.log(valid)
         console.log('loaded')
         miner.start()
-        setTimeout(async () => {
-            miner.stop()
-            const work = await miner.blockchain.getWork()
-            console.log(work)
-            const valid = await miner.blockchain.isChainValid()
-            console.log(valid)
-        }, 30000)
+        // setTimeout(async () => {
+        //     miner.stop()
+        //     const work = await miner.blockchain.getWork()
+        //     console.log(work)
+        //     const valid = await miner.blockchain.isChainValid()
+        //     console.log(valid)
+        // }, 30000)
     })
     miner.on('listening', () => {
         console.log('listening')
@@ -37,8 +37,17 @@ const init = () => {
         // miner.on('null', data => console.log('received null', data))
         miner.on('block', (block, forked) => console.log(block.hash, forked))
         miner.on('transaction', (transaction, code) => console.log(transaction))
-        miner.on('hash', (found, block) => {
-            if (found) console.log(block.height, block.hash)
+        miner.on('hash', async (found, block) => {
+            if (found) {
+                console.log(block.height, block.hash)
+                if (block.height === 450) {
+                    miner.stop()
+                    const work = await miner.blockchain.getWork()
+                    console.log(work)
+                    const valid = await miner.blockchain.isChainValid()
+                    console.log(valid)
+                }
+            }
         })
         miner.on('fork', async () => {
             // console.log(miner.storageNode.blockchain.getLatestBlock().height, 'new fork')

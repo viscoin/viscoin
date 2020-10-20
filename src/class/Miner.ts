@@ -48,7 +48,7 @@ class Miner extends FullNode {
             // this.blockchain.addBlock(block)
             this.blockchain.shiftChain()
             this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
-            this.blockchain.saveTrustedBlock()
+            if (config.save) this.blockchain.saveTrustedBlock()
             if (config.use.process.nextTick) {
                 process.nextTick(() => {
                     this.intermediate = setImmediate(() => {
