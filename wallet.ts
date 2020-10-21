@@ -17,13 +17,12 @@ wallet.on('listening', () => {
     }
     // wallet.on('data', data => console.log(crypto.createHash('sha256').update(data).digest('base64')))
 })
-setTimeout(() => {
+wallet.on('block', (block, forked) => {
+    console.log(forked, block.hash)
     const transaction = wallet.send({
         address: 'uwu',
         amount: 10,
         minerFee: 1
     })
     console.log(transaction)
-    console.log(wallet.serverNode.sockets.length)
-    console.log(wallet.clientNode.sockets.length)
-}, 1000)
+})
