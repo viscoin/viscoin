@@ -80,13 +80,11 @@ class Miner extends FullNode {
     }
     getNewBlock() {
         const previousBlock = this.blockchain.getLatestBlock()
-        const newBlockHeight = previousBlock.height + 1
         const transactions = [
             new Transaction({
                 fromAddress: config.mining.reward.fromAddress,
                 toAddress: this.walletAddress,
-                amount: config.mining.reward.amount,
-                blockHeight: newBlockHeight
+                amount: config.mining.reward.amount
             }),
             ...this.blockchain.pendingTransactions.sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
         ]
@@ -94,7 +92,7 @@ class Miner extends FullNode {
             timestamp: Date.now(),
             transactions,
             previousHash: previousBlock.hash,
-            height: newBlockHeight,
+            height: previousBlock.height + 1,
             difficulty: this.blockchain.difficulty
         })
         block.transactions.map(e => block.transactions[0].amount += e.minerFee)

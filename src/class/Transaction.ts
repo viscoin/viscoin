@@ -6,18 +6,16 @@ interface Transaction {
     amount: number
     minerFee: number
     signature: string
-    // timestamp: number
-    blockHeight: number
+    timestamp: number
 }
 class Transaction {
-    constructor({ fromAddress, toAddress, amount, blockHeight, minerFee = 0, signature = undefined }) {
+    constructor({ fromAddress, toAddress, amount, timestamp = Date.now(), minerFee = 0, signature = undefined }) {
         this.fromAddress = fromAddress
         this.toAddress = toAddress
         this.amount = amount
+        this.timestamp = timestamp
         this.minerFee = minerFee
         if (signature) this.signature = signature
-        // this.timestamp = Date.now()
-        this.blockHeight = blockHeight
     }
     calculateHash() {
         return crypto.createHash('sha256')
@@ -26,8 +24,7 @@ class Transaction {
             + this.toAddress
             + this.amount
             + this.minerFee
-            // + this.timestamp
-            + this.blockHeight
+            + this.timestamp
         )
         .digest('hex')
     }

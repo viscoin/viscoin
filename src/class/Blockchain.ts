@@ -44,7 +44,7 @@ class Blockchain {
     async addTransaction(transaction: Transaction) {
         if (!transaction.fromAddress || !transaction.toAddress) return 1
         if (!transaction.isValid()) return 2
-        if (transaction.blockHeight !== this.getLatestBlock().height + 1) return 3
+        if (transaction.timestamp < this.getLatestBlock().timestamp) return 3
         if (transaction.amount <= 0) return 4
         if (this.pendingTransactions.find(e => e.fromAddress === transaction.fromAddress)) return 5
         if (transaction.minerFee > transaction.amount) return 6

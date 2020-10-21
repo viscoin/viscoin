@@ -22,8 +22,7 @@ class Wallet extends FullNode {
             fromAddress: this.publicKey,
             toAddress: address,
             amount,
-            minerFee,
-            blockHeight: this.blockchain.getLatestBlock().height + 1
+            minerFee
         })
         transaction.signTransaction({
             publicKey: this.publicKey,
