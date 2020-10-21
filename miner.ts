@@ -40,7 +40,7 @@ const init = () => {
         miner.on('hash', async (found, block) => {
             if (found) {
                 console.log(block.height, block.hash.toString('hex'))
-                if (block.height === 150) {
+                if (block.height === 85) {
                     miner.stop()
                     const work = await miner.blockchain.getWork()
                     console.log(work)
