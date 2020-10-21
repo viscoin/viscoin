@@ -20,7 +20,6 @@ class Blockchain {
     }
     createGenesisBlock() {
         const block = new Block({
-            timestamp: Date.now(),
             transactions: [],
             previousHash: Buffer.alloc(32, 0x00),
             height: 0,

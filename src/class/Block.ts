@@ -13,7 +13,7 @@ interface Block {
     preAllocatedBuffer: Buffer
 }
 class Block {
-    constructor({ timestamp, transactions, previousHash, height, nonce = 0, hash = null, difficulty }) {
+    constructor({ timestamp = Date.now(), transactions, previousHash, height, nonce = 0, hash = null, difficulty }) {
         this.timestamp = timestamp
         if (previousHash instanceof Buffer) this.previousHash = previousHash
         else previousHash = Buffer.from(previousHash)

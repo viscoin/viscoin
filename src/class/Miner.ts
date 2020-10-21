@@ -89,7 +89,6 @@ class Miner extends FullNode {
             ...this.blockchain.pendingTransactions.sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
         ]
         const block = new Block({
-            timestamp: Date.now(),
             transactions,
             previousHash: previousBlock.hash,
             height: previousBlock.height + 1,
