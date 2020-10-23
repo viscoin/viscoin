@@ -17,7 +17,7 @@ miner.on('listening', () => {
     console.log('listening')
     miner.connectToNetwork(nodes)
     miner.start()
-    miner.on('transaction', (transaction, code) => console.log(transaction))
+    miner.on('transaction', (transaction, code) => console.log(transaction.signature))
     miner.on('hash', async (found, block) => {
         if (found) console.log(block.height, block.hash.toString('hex'))
     })
@@ -28,3 +28,9 @@ miner.on('listening', () => {
     // miner.on('block', (block, forked) => console.log(forked, block.hash))
     // miner.on('fork', async () => console.log('forked'))
 })
+setInterval(async () => {
+    const work = await miner.blockchain.getWork()
+    console.log(work)
+    const valid = await miner.blockchain.isChainValid()
+    console.log(valid)
+}, 10000)

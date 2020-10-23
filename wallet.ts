@@ -6,11 +6,14 @@ import * as nodes from './nodes.json'
 const wallet = new Wallet(keys[0])
 wallet.connectToNetwork(nodes)
 wallet.on('block', (block, forked) => {
-    console.log(forked, block.hash)
+    console.log(forked, block.hash.toString('hex'))
     const transaction = wallet.send({
         address: 'uwu',
-        amount: 10,
+        amount: 2,
         minerFee: 1
     })
-    console.log(transaction)
+    console.log(transaction.signature)
 })
+setInterval(async () => {
+    console.log(await wallet.balance())
+}, 1000)

@@ -86,7 +86,9 @@ class Miner extends FullNode {
                 toAddress: this.walletAddress,
                 amount: config.mining.reward.amount
             }),
-            ...this.blockchain.pendingTransactions.sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
+            ...this.blockchain.pendingTransactions
+                .filter(e => e.timestamp >= previousBlock.timestamp)
+                .sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
         ]
         const block = new Block({
             transactions,
