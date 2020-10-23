@@ -128,7 +128,7 @@ class Blockchain {
                         balance -= transaction.amount
                     }
                     if (transaction.toAddress === address) {
-                        balance += transaction.amount
+                        balance += transaction.amount - transaction.minerFee
                     }
                 }
             }

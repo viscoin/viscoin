@@ -6,17 +6,6 @@ import * as nodes from './nodes.json'
 import * as crypto from 'crypto'
 
 const wallet = new Wallet(keys[0])
-wallet.on('loaded', () => {
-    console.log('loaded')
-})
-wallet.on('listening', () => {
-    console.log('listening')
-    for (const node of nodes) {
-        const socket = wallet.clientNode.createSocket(node.port, node.address)
-        socket.on('connect', () => console.log('connected to socket :)'))
-    }
-    // wallet.on('data', data => console.log(crypto.createHash('sha256').update(data).digest('base64')))
-})
 wallet.on('block', (block, forked) => {
     console.log(forked, block.hash)
     const transaction = wallet.send({
@@ -25,4 +14,8 @@ wallet.on('block', (block, forked) => {
         minerFee: 1
     })
     console.log(transaction)
+})
+wallet.on('loaded', async () => {
+    console.log(await wallet.balance('uwu'))
+    console.log(await wallet.balance())
 })

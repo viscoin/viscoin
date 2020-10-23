@@ -13,8 +13,9 @@ class Wallet extends FullNode {
         this.publicKey = publicKey
         this.privateKey = privateKey
     }
-    async balance() {
-        return await this.blockchain.getBalanceOfAddress(this.publicKey)
+    async balance(address = undefined) {
+        if (address) return await this.blockchain.getBalanceOfAddress(address)
+        else return await this.blockchain.getBalanceOfAddress(this.publicKey)
     }
     // send(address: string, amount: number, minerFee: number) {
     send({ address, amount, minerFee }: { address: string, amount: number, minerFee: number }) {
