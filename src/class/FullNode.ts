@@ -22,25 +22,9 @@ class FullNode extends events.EventEmitter {
         this.serverNode
             .on('data', data => this.emit('data', data))
             .on('listening', () => this.emit('listening'))
-            .on('error', err => {
-                if (err.code === 'ECONNRESET') {
-                    console.log(`Connection broke`)
-                }
-                console.log(err)
-            })
             .start(config.network.port, config.network.address)
         this.clientNode = new ClientNode()
-        this.clientNode
-            .on('data', data => this.emit('data', data))
-            .on('error', err => {
-                if (err.code === 'ECONNREFUSED') {
-                    console.log(`Failed to connect to: ${err.address}:${err.port}`)
-                    // console.log(err)
-                    setTimeout(() => {
-                        this.clientNode.createSocket(err.port, err.address)
-                    }, 1000)
-                }
-            })
+        this.clientNode.on('data', data => this.emit('data', data))
         this.node = new Node()
         this.on('data', async data => {
             if (!this.node.verifyData(data)) return

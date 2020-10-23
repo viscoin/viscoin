@@ -13,7 +13,10 @@ class ServerNode extends Node {
     }
     start(port: number, address: string) {
         this.server
-            .on('connection', socket => this.emit('socket', socket, true))
+            .on('connection', socket => {
+                this.addSocket(socket)
+                socket.on('data', data => this.emit('data', data))
+            })
             .on('listening', () => this.emit('listening'))
             .on('close', () => {})
             .on('error', () => {})

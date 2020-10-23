@@ -8,7 +8,8 @@ class ClientNode extends Node {
     }
     createSocket(port: number, address: string) {
         const socket = net.connect(port, address)
-        this.emit('socket', socket)
+        this.addSocket(socket)
+        socket.on('data', data => this.emit('data', data))
         return socket
     }
 }

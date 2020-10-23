@@ -11,26 +11,30 @@ class Node extends events.EventEmitter {
         super()
         this.dataHashes = []
         this.sockets = []
-        this.on('socket', (socket, connected) => {
-            socket
-                .on('data', data => this.emit('data', data))
-                .on('error', err => {
-                    this.emit('error', err)
-                    socket.destroy()
-                    this.sockets.splice(this.sockets.indexOf(socket), 1)
-                })
-                .on('close', err => {
-                    socket.destroy()
-                    this.sockets.splice(this.sockets.indexOf(socket), 1)
-                })
-            if (!connected) {
-                socket.on('connect', () => {
-                    if (this.hasSocket(socket)) socket.destroy()
-                    else this.sockets.push(socket)
-                })
+    }
+    addSocket(socket: net.Socket) {
+        let index = this.sockets.indexOf(undefined)
+        if (index !== -1) this.sockets[index] = socket
+        else {
+            this.sockets.push(socket)
+            index = this.sockets.length - 1
+        }
+        const destroy = (err) => {
+            socket.destroy()
+            this.sockets[index] = undefined
+            console.log(err)
+        }
+        const hasSocket = () => {
+            if (this.hasSocket(socket)) {
+                destroy('hasSocket')
             }
-            else this.sockets.push(socket)
-        })
+        }
+        if (socket.connecting) socket.on('connect', () => hasSocket())
+        else hasSocket()
+        socket
+            .on('error', err => destroy(err))
+            .on('close', err => destroy(err))
+        return index
     }
     verifyData(data: Buffer) {
         if (Buffer.byteLength(data) > config.byteLength.verifyData) return false
@@ -43,6 +47,7 @@ class Node extends events.EventEmitter {
     }
     broadcast(data: Buffer) {
         for (const socket of this.sockets) {
+            if (!socket) continue
             socket.write(data)
         }
     }
@@ -76,6 +81,7 @@ class Node extends events.EventEmitter {
     hasSocket(socket) {
         const info = <net.AddressInfo> socket.address()
         for (const _socket of this.sockets) {
+            if (!_socket) continue
             const _info = <net.AddressInfo> _socket.address()
             if (info.port === _info.port
                 && info.address === _info.address) return true
