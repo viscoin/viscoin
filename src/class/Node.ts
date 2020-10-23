@@ -13,28 +13,27 @@ class Node extends events.EventEmitter {
         this.sockets = []
     }
     addSocket(socket: net.Socket) {
-        let index = this.sockets.indexOf(undefined)
-        if (index !== -1) this.sockets[index] = socket
-        else {
-            this.sockets.push(socket)
-            index = this.sockets.length - 1
-        }
-        const destroy = (err) => {
-            socket.destroy()
-            this.sockets[index] = undefined
-            console.log(err)
-        }
-        const hasSocket = () => {
-            if (this.hasSocket(socket)) {
-                destroy('hasSocket')
+        const index = this.sockets.indexOf(undefined)
+        const addSocket = () => {
+            const _socket = this.hasSocket(socket)
+            if (_socket !== false) {
+                _socket.destroy()
+                this.sockets[this.sockets.indexOf(_socket)] = socket
             }
+            else if (index !== -1) this.sockets[index] = socket
+            else this.sockets.push(socket)
         }
-        if (socket.connecting) socket.on('connect', () => hasSocket())
-        else hasSocket()
+        if (socket.connecting) socket.on('connect', () => addSocket())
+        else addSocket()
         socket
-            .on('error', err => destroy(err))
-            .on('close', err => destroy(err))
-        return index
+            .on('error', err => {
+                socket.destroy()
+                this.sockets[index] = undefined
+            })
+            .on('close', err => {
+                socket.destroy()
+                this.sockets[index] = undefined
+            })
     }
     verifyData(data: Buffer) {
         if (Buffer.byteLength(data) > config.byteLength.verifyData) return false
@@ -84,7 +83,7 @@ class Node extends events.EventEmitter {
             if (!_socket) continue
             const _info = <net.AddressInfo> _socket.address()
             if (info.port === _info.port
-                && info.address === _info.address) return true
+                && info.address === _info.address) return _socket
         }
         return false
     }
