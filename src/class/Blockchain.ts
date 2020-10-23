@@ -249,6 +249,7 @@ class Blockchain {
         return chain
     }
     updateMainChain() {
+        if (!this.chain.length) return false
         // console.log('forks', this.forks.length)
         const chain = this.getChainWithMostWork()
         if (chain[chain.length - 1].height > this.chain[this.chain.length - 1].height) {

@@ -6,12 +6,14 @@ import * as config from '../../config.json'
 import FullNode from './FullNode'
 interface Miner {
     walletAddress: string
+    save: boolean
     mining: boolean
 }
 class Miner extends FullNode {
-    constructor(wallet: string) {
+    constructor(wallet: string, save: boolean) {
         super()
         this.walletAddress = wallet
+        this.save = save
         this.mining = false
         this.on('block', (block, forked) => {
             this.restart()
@@ -48,7 +50,7 @@ class Miner extends FullNode {
             // this.blockchain.addBlock(block)
             this.blockchain.shiftChain()
             this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
-            if (config.save) this.blockchain.saveTrustedBlock()
+            if (this.save) this.blockchain.saveTrustedBlock()
             if (config.use.process.nextTick) {
                 process.nextTick(() => {
                     this.intermediate = setImmediate(() => {

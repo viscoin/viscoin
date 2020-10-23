@@ -4,14 +4,11 @@ import Miner from './src/class/Miner'
 import * as keys from './keys.json'
 import * as nodes from './nodes.json'
 
-const miner = new Miner(keys[0].publicKey)
+const miner = new Miner(keys[0].publicKey, false)
+miner.loadBlocksFromStorage()
 miner.on('loaded', async () => {
     console.log('loaded')
     miner.hostNetworkNode()
-    // const work = await miner.blockchain.getWork()
-    // console.log(work)
-    // const valid = await miner.blockchain.isChainValid()
-    // console.log(valid)
 })
 miner.on('listening', () => {
     console.log('listening')

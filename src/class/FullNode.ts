@@ -6,8 +6,6 @@ import * as config from '../../config.json'
 import Blockchain from './Blockchain'
 import Block from './Block'
 import Transaction from './Transaction'
-import * as os from 'os'
-import * as cluster from 'cluster'
 interface FullNode {
     blockchain: Blockchain
     serverNode: ServerNode
@@ -19,7 +17,6 @@ class FullNode extends events.EventEmitter {
     constructor() {
         super()
         this.blockchain = new Blockchain()
-        this.loadBlocksFromStorage()
         this.serverNode = new ServerNode()
         this.serverNode
             .on('data', data => this.emit('data', data))
@@ -61,11 +58,6 @@ class FullNode extends events.EventEmitter {
         for (const node of nodes) {
             const socket = this.clientNode.createSocket(node.port, node.address)
             socket.on('connect', () => console.log('connected to socket :)'))
-        }
-    }
-    cluster() {
-        for (let i = 0; i < os.cpus().length; i++) {
-            cluster.fork().on('exit', () => cluster.fork())
         }
     }
 }
