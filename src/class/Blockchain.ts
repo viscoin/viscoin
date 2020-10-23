@@ -44,11 +44,12 @@ class Blockchain {
         if (!transaction.fromAddress || !transaction.toAddress) return 1
         if (!transaction.isValid()) return 2
         if (transaction.timestamp < this.getLatestBlock().timestamp) return 3
-        if (transaction.amount <= 0) return 4
-        if (this.pendingTransactions.find(e => e.fromAddress === transaction.fromAddress)) return 5
-        if (transaction.minerFee > transaction.amount) return 6
-        if (transaction.minerFee < 0) return 7
-        if (await this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) return 8
+        if (transaction.timestamp > Date.now()) return 4
+        if (transaction.amount <= 0) return 5
+        if (this.pendingTransactions.find(e => e.fromAddress === transaction.fromAddress)) return 6
+        if (transaction.minerFee > transaction.amount) return 7
+        if (transaction.minerFee < 0) return 8
+        if (await this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) return 9
         this.pendingTransactions.push(transaction)
         return 0
     }
@@ -158,6 +159,20 @@ class Blockchain {
                 // console.log('!currentBlock.previousHash.equals(previousBlock.hash)')
                 // console.log(currentBlock.previousHash.equals(previousBlock.hash))
                 return false
+            }
+            for (const transaction of currentBlock.transactions) {
+                if (transaction.timestamp < previousBlock.timestamp) {
+                    console.log('transaction.timestamp < previousBlock.timestamp')
+                    console.log(transaction.timestamp, previousBlock.timestamp)
+                    return false
+                }
+            }
+            for (const transaction of previousBlock.transactions) {
+                if (transaction.timestamp >= currentBlock.timestamp) {
+                    console.log('transaction.timestamp >= currentBlock.timestamp')
+                    console.log(transaction.timestamp, currentBlock.timestamp)
+                    return false
+                }
             }
         }
         for (let i = 2; i < chain.length; i++) {
