@@ -6,6 +6,8 @@ import * as config from '../../config.json'
 import Blockchain from './Blockchain'
 import Block from './Block'
 import Transaction from './Transaction'
+import * as os from 'os'
+import * as cluster from 'cluster'
 interface FullNode {
     blockchain: Blockchain
     serverNode: ServerNode
@@ -22,7 +24,6 @@ class FullNode extends events.EventEmitter {
         this.serverNode
             .on('data', data => this.emit('data', data))
             .on('listening', () => this.emit('listening'))
-            .start(config.network.port, config.network.address)
         this.clientNode = new ClientNode()
         this.clientNode.on('data', data => this.emit('data', data))
         this.node = new Node()
@@ -52,6 +53,20 @@ class FullNode extends events.EventEmitter {
     broadcastAndStoreDataHash(data: Buffer) {
         this.serverNode.broadcastAndStoreDataHash(data)
         this.clientNode.broadcastAndStoreDataHash(data)
+    }
+    hostNetworkNode() {
+        this.serverNode.start(config.network.port, config.network.address)
+    }
+    connectToNetwork(nodes: Array<{ port: number, address: string }>) {
+        for (const node of nodes) {
+            const socket = this.clientNode.createSocket(node.port, node.address)
+            socket.on('connect', () => console.log('connected to socket :)'))
+        }
+    }
+    cluster() {
+        for (let i = 0; i < os.cpus().length; i++) {
+            cluster.fork().on('exit', () => cluster.fork())
+        }
     }
 }
 export default FullNode

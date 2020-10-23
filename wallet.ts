@@ -3,9 +3,8 @@ mongoose.init()
 import Wallet from './src/class/Wallet'
 import * as keys from './keys.json'
 import * as nodes from './nodes.json'
-import * as crypto from 'crypto'
-
 const wallet = new Wallet(keys[0])
+wallet.connectToNetwork(nodes)
 wallet.on('block', (block, forked) => {
     console.log(forked, block.hash)
     const transaction = wallet.send({
@@ -14,8 +13,4 @@ wallet.on('block', (block, forked) => {
         minerFee: 1
     })
     console.log(transaction)
-})
-wallet.on('loaded', async () => {
-    console.log(await wallet.balance('uwu'))
-    console.log(await wallet.balance())
 })
