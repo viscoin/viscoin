@@ -13,7 +13,10 @@ fullNode.on('listening', () => {
     console.log('listening')
     fullNode.connectToNetwork(nodes)
     fullNode.on('transaction', (transaction, code) => console.log(transaction.signature))
-    fullNode.on('block', (block, forked) => console.log(block.height, block.hash.toString('hex')))
+    fullNode.on('block', (block, forked) => {
+        fullNode.blockchain.saveTrustedBlock()
+        console.log(block.height, block.hash.toString('hex'))
+    })
     // fullNode.on('data', data => console.log(crypto.createHash('sha256').update(data).digest('base64')))
     // fullNode.on('start', () => console.log('started mining'))
     // fullNode.on('stop', () => console.log('stopped mining'))
