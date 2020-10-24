@@ -19,8 +19,14 @@ class Miner extends FullNode {
         this.on('transaction', (transaction, code) => {
             this.restart()
         })
+        // this.init()
     }
-    start() {
+    // async init() {
+    //     await this.blockchain.updateDifficulty()
+    //     this.emit('ready')
+    // }
+    async start() {
+        await this.blockchain.updateDifficulty()
         this._start(true)
     }
     stop() {

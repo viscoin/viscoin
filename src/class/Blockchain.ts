@@ -10,7 +10,6 @@ class Blockchain {
     constructor() {
         this.difficulty = 0
         this.pendingTransactions = []
-        this.updateDifficulty()
     }
     createGenesisBlock() {
         const block = new Block({
