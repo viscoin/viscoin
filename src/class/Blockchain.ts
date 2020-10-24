@@ -152,7 +152,7 @@ class Blockchain {
         while (true) {
             for (let i = 0; i < 2; i++) {
                 if (!block) break
-                block = await Block.load({ hash: block.previousHash }, null, { sort: { height: -1, difficulty: -1 } })
+                block = await Block.load({ hash: block.previousHash })
                 if (!block) break
                 blocks.unshift(block)
             }
@@ -161,36 +161,23 @@ class Blockchain {
                 ...blocks,
                 ...previousBlocks
             ]
-            console.log(blocks.map(e => {
-                return { previousHash: e.previousHash.toString('base64'), hash: e.hash.toString('base64'), difficulty: e.difficulty }
-            }))
+            if (!Blockchain.isPartOfChainValid(blocks)) return false
             previousBlocks = [
                 blocks[0],
                 blocks[1]
             ]
-            if (!Blockchain.isPartOfChainValid(blocks)) return false
             blocks = []
         }
         return true
     }
-    static getWorkSumOfBlocks(blocks) {
-        let work = 0
-        for (const block of blocks) {
-            work += Math.pow(2, block.difficulty)
-        }
-        return work
-    }
     async getWork() {
-        let i = 0, work = 0
+        let block = await Block.load(null, null, { sort: { height: -1, difficulty: -1 } }),
+        work = 0
         while (true) {
-            const blocks = await schema_block
-                .find({}, 'difficulty', { limit: config.limit.blocksPerQuery, skip: i * config.limit.blocksPerQuery })
-                .exec()
-            if (!blocks || !blocks.length) break
-            for (const block of blocks) {
-                work += Math.pow(2, block.difficulty)
-            }
-            i++
+            if (!block) break
+            block = await Block.load({ hash: block.previousHash })
+            if (!block) break
+            work += Math.pow(2, block.difficulty)
         }
         return work
     }
