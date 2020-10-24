@@ -16,7 +16,7 @@ class Block {
     constructor({ timestamp = Date.now(), transactions, previousHash, height, nonce = 0, hash = null, difficulty }) {
         this.timestamp = timestamp
         if (previousHash instanceof Buffer) this.previousHash = previousHash
-        else previousHash = Buffer.from(previousHash)
+        else this.previousHash = Buffer.from(previousHash)
         // this.previousHash = Buffer.from(previousHash)
         this.height = height
         const _transactions = []
