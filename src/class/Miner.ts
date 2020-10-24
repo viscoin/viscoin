@@ -79,11 +79,7 @@ class Miner extends FullNode {
     }
     getNewBlock() {
         const previousBlock = this.blockchain.getLatestBlock()
-        if (previousBlock.height === 0) {
-            console.log('genesisBlock')
-            this.blockchain.chain.push(previousBlock)
-            this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(previousBlock)))
-        }
+        if (previousBlock.height === 0) this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(previousBlock)))
         const transactions = [
             new Transaction({
                 fromAddress: config.mining.reward.fromAddress,

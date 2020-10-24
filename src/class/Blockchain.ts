@@ -54,6 +54,7 @@ class Blockchain {
         return 0
     }
     addBlock(block) {
+        if (!this.chain.length) return this.chain.push(block)
         // find index of previous block in main chain
         const previousBlockIndex = this.chain.findIndex(e => e.height === block.height - 1)
         // if previous block in main chain does not exist
@@ -143,21 +144,21 @@ class Blockchain {
             const currentBlock = chain[i]
             const previousBlock = chain[i - 1]
             if (!currentBlock.meetsDifficulty()) {
-                // console.log('!currentBlock.meetsDifficulty()')
+                console.log('!currentBlock.meetsDifficulty()')
                 return false
             }
             if (!currentBlock.hasValidTransactions()) {
-                // console.log('!currentBlock.hasValidTransactions()')
+                console.log('!currentBlock.hasValidTransactions()')
                 return false
             }
             if (!currentBlock.hash.equals(currentBlock.calculateHash())) {
-                // console.log('!currentBlock.hash.equals(currentBlock.calculateHash())')
-                // console.log(currentBlock.hash.equals(currentBlock.calculateHash()))
+                console.log('!currentBlock.hash.equals(currentBlock.calculateHash())')
+                console.log(currentBlock.hash.equals(currentBlock.calculateHash()))
                 return false
             }
             if (!currentBlock.previousHash.equals(previousBlock.hash)) {
-                // console.log('!currentBlock.previousHash.equals(previousBlock.hash)')
-                // console.log(currentBlock.previousHash.equals(previousBlock.hash))
+                console.log('!currentBlock.previousHash.equals(previousBlock.hash)')
+                console.log(currentBlock.previousHash.equals(previousBlock.hash))
                 return false
             }
             for (const transaction of currentBlock.transactions) {

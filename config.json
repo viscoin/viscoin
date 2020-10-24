@@ -35,6 +35,5 @@
     "network": {
         "address": "localhost",
         "port": 8334
-    },
-    "save": true
+    }
 }
