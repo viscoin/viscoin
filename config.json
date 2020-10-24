@@ -4,7 +4,6 @@
             "amount": 100,
             "fromAddress": "mining reward"
         },
-        "trustedLength": 10,
         "blockTime": 1000
     },
     "byteLength": {
@@ -12,9 +11,7 @@
         "verifyData": 1000000
     },
     "length": {
-        "dataHashes": 100,
-        "inMemoryChain": 100,
-        "forks": 10
+        "dataHashes": 100
     },
     "limit": {
         "blocksPerQuery": 10,

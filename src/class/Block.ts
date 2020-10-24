@@ -16,7 +16,7 @@ class Block {
     constructor({ timestamp = Date.now(), transactions, previousHash, height, nonce = 0, hash = null, difficulty }) {
         this.timestamp = timestamp
         if (previousHash instanceof Buffer) this.previousHash = previousHash
-        else this.previousHash = Buffer.from(previousHash)
+        else if (previousHash) this.previousHash = Buffer.from(previousHash)
         // this.previousHash = Buffer.from(previousHash)
         this.height = height
         const _transactions = []
@@ -78,6 +78,13 @@ class Block {
     meetsDifficulty() {
         if (Buffer.compare(this.hash, this.preAllocatedBuffer) !== -1) return false
         else return true
+    }
+    static async load(query: object | null, projection: string | null = null, options: object | null = null) {
+        let block = await schema_block
+            .findOne(query, projection, options)
+            .exec()
+        if (!block) return null
+        return new Block(block)
     }
 }
 export default Block

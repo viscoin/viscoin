@@ -24,28 +24,7 @@ class FullNode extends events.EventEmitter {
         this.clientNode = new ClientNode()
         this.clientNode.on('data', data => this.emit('data', data))
         this.node = new Node()
-        this.on('data', async data => {
-            if (!this.node.verifyData(data)) return
-            const processed = this.node.processData(data)
-            if (processed === null) return
-            switch (processed.type) {
-                case 'block':
-                    const block = new Block(processed.data)
-                    const forked = this.blockchain.addBlock(block)
-                    this.emit('block', block, forked)
-                    break
-                case 'transaction':
-                    const transaction = new Transaction(processed.data)
-                    const code = await this.blockchain.addTransaction(transaction)
-                    this.emit('transaction', transaction, code)
-                    break
-            }
-            this.broadcastAndStoreDataHash(data)
-        })
-    }
-    async loadBlocksFromStorage() {
-        await this.blockchain.loadLatestBlocks(config.length.inMemoryChain)
-        this.emit('loaded')
+        this.on('data', this.handleData)
     }
     broadcastAndStoreDataHash(data: Buffer) {
         this.serverNode.broadcastAndStoreDataHash(data)
@@ -59,6 +38,24 @@ class FullNode extends events.EventEmitter {
             const socket = this.clientNode.createSocket(node.port, node.address)
             socket.on('connect', () => console.log('connected to socket :)'))
         }
+    }
+    async handleData(data) {
+        if (!this.node.verifyData(data)) return
+        const processed = this.node.processData(data)
+        if (processed === null) return
+        switch (processed.type) {
+            case 'block':
+                const block = new Block(processed.data)
+                const forked = this.blockchain.addBlock(block)
+                this.emit('block', block, forked)
+                break
+            case 'transaction':
+                const transaction = new Transaction(processed.data)
+                const code = await this.blockchain.addTransaction(transaction)
+                this.emit('transaction', transaction, code)
+                break
+        }
+        this.broadcastAndStoreDataHash(data)
     }
 }
 export default FullNode

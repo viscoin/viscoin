@@ -26,9 +26,9 @@ class Miner extends FullNode {
     stop() {
         this._stop(true)
     }
-    _start(force: boolean) {
+    async _start(force: boolean) {
         if (force) this.mining = true
-        if (this.mining) this.mine(this.getNewBlock())
+        if (this.mining) this.mine(await this.getNewBlock())
     }
     _stop(force: boolean) {
         if (force) this.mining = false
@@ -38,26 +38,23 @@ class Miner extends FullNode {
         this._stop(false)
         this._start(false)
     }
-    mine(block: Block) {
+    async mine(block: Block) {
         const found = block.recalculateHash()
         if (found) {
             this.emit('hash', found, block)
             this.blockchain.pendingTransactions = []
-            this.blockchain.chain.push(block)
-            this.blockchain.updateDifficulty()
-            // this.blockchain.addBlock(block)
-            this.blockchain.shiftChain()
+            await this.blockchain.addBlock(block)
             this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
             if (config.use.process.nextTick) {
                 process.nextTick(() => {
-                    this.intermediate = setImmediate(() => {
-                        this.mine(this.getNewBlock())
+                    this.intermediate = setImmediate(async () => {
+                        this.mine(await this.getNewBlock())
                     })
                 })
             }
             else {
-                this.intermediate = setImmediate(() => {
-                    this.mine(this.getNewBlock())
+                this.intermediate = setImmediate(async () => {
+                    this.mine(await this.getNewBlock())
                 })
             }
         }
@@ -77,8 +74,8 @@ class Miner extends FullNode {
             }
         }
     }
-    getNewBlock() {
-        const previousBlock = this.blockchain.getLatestBlock()
+    async getNewBlock() {
+        const previousBlock = await this.blockchain.getLatestBlock()
         if (previousBlock.height === 0) this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(previousBlock)))
         const transactions = [
             new Transaction({
