@@ -28,7 +28,7 @@ class Blockchain {
         this.chain.push(block)
         return block
     }
-    getBlock(index) {
+    getBlock(index: number) {
         const block = this.chain[index]
         if (block) return block
         else if (this.chain.length === 0) return this.createGenesisBlock()
