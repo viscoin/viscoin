@@ -40,7 +40,6 @@ class Blockchain {
         return 0
     }
     async addBlock(block) {
-        console.log('addBlock', block.hash)
         const previousBlock = await Block.load({ hash: block.previousHash })
         if (!previousBlock) return
         const valid = Blockchain.isPartOfChainValid([
@@ -48,7 +47,7 @@ class Blockchain {
             block
         ])
         if (valid) {
-            if (!(await Block.load({ hash: block.hash }))) {
+            if (!(await Block.exists({ hash: block.hash }))) {
                 await block.save()
             }
         }

@@ -86,5 +86,8 @@ class Block {
         if (!block) return null
         return new Block(block)
     }
+    static async exists(query: object) {
+        return await schema_block.exists(query)
+    }
 }
 export default Block
