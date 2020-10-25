@@ -40,7 +40,7 @@ class Blockchain {
         return 0
     }
     async addBlock(block) {
-        const previousBlock = await Block.load({ hash: block.previousHash })
+        const previousBlock = await Block.load({ hash: block.previousHash, height: block.height - 1 })
         if (!previousBlock) return
         const valid = Blockchain.isPartOfChainValid([
             previousBlock,
@@ -121,7 +121,7 @@ class Blockchain {
             if (blockTime < config.mining.blockTime && difficulty < 64) {
                 difficulty++
             }
-            else if (blockTime > config.mining.blockTime && difficulty > 0) {
+            else if (blockTime >= config.mining.blockTime && difficulty > 0) {
                 difficulty--
             }
             if (blocks[2].difficulty !== difficulty) {
@@ -178,7 +178,7 @@ class Blockchain {
         if (blockTime < config.mining.blockTime && this.difficulty < 64) {
             this.difficulty++
         }
-        else if (blockTime > config.mining.blockTime && this.difficulty > 0) {
+        else if (blockTime >= config.mining.blockTime && this.difficulty > 0) {
             this.difficulty--
         }
     }
