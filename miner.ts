@@ -10,7 +10,7 @@ miner.start()
 miner.on('transaction', (transaction, code) => console.log(transaction.signature))
 miner.on('hash', async (found, block) => {
     if (found) {
-        console.log(block.height, block.hash.toString('hex'), block.previousHash)
+        console.log(block.height, block.hash.toString('hex'))
         // miner.blockchain.saveTrustedBlock()
     }
 })
@@ -27,4 +27,6 @@ setInterval(async () => {
     console.log(work)
     const valid = await miner.blockchain.isChainValid()
     console.log(valid)
+    const balance = await miner.blockchain.getBalanceOfAddress(keys[0].publicKey)
+    console.log(balance)
 }, 10000)
