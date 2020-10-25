@@ -13,20 +13,14 @@ class Miner extends FullNode {
         super()
         this.walletAddress = wallet
         this.mining = false
-        this.on('block', (block, forked) => {
+        this.on('block', block => {
             this.restart()
         })
         this.on('transaction', (transaction, code) => {
             this.restart()
         })
-        // this.init()
     }
-    // async init() {
-    //     await this.blockchain.updateDifficulty()
-    //     this.emit('ready')
-    // }
-    async start() {
-        await this.blockchain.updateDifficulty()
+    start() {
         this._start(true)
     }
     stop() {
@@ -93,6 +87,7 @@ class Miner extends FullNode {
                 .filter(e => e.timestamp >= previousBlock.timestamp)
                 .sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
         ]
+        await this.blockchain.updateDifficulty()
         const block = new Block({
             transactions,
             previousHash: previousBlock.hash,

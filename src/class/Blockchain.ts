@@ -47,12 +47,8 @@ class Blockchain {
             block
         ])
         if (valid) {
-            if (!(await Block.exists({ hash: block.hash }))) {
-                await block.save()
-            }
+            if (!(await Block.exists({ hash: block.hash }))) await block.save()
         }
-        // else console.log('not valid')
-        await this.updateDifficulty()
     }
     async getBalanceOfAddress(address: string) {
         let block = await this.getLatestBlock(),
