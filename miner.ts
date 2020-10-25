@@ -12,17 +12,8 @@ miner.on('transaction', (transaction, code) => console.log(transaction.signature
 miner.on('hash', async (found, block) => {
     if (found) {
         console.log(block.height, block.hash.toString('hex'))
-        // miner.blockchain.saveTrustedBlock()
     }
 })
-// miner.on('data', data => console.log(crypto.createHash('sha256').update(data).digest('base64')))
-// miner.on('start', () => console.log('started mining'))
-// miner.on('stop', () => console.log('stopped mining'))
-// miner.on('null', data => console.log('received null', data))
-// miner.on('block', (block, forked) => {
-//     miner.blockchain.saveTrustedBlock()
-// })
-// miner.on('fork', async () => console.log('forked'))
 setInterval(async () => {
     console.log('socket connections (server)', miner.serverNode.sockets.length)
     console.log('socket connections (client)', miner.clientNode.sockets.length)

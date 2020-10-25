@@ -48,8 +48,8 @@ class FullNode extends events.EventEmitter {
         switch (processed.type) {
             case 'block':
                 const block = new Block(processed.data)
-                const forked = await this.blockchain.addBlock(block)
-                this.emit('block', block, forked)
+                await this.blockchain.addBlock(block)
+                this.emit('block', block)
                 break
             case 'transaction':
                 const transaction = new Transaction(processed.data)

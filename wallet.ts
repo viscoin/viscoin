@@ -5,8 +5,8 @@ import * as keys from './keys.json'
 import * as nodes from './nodes.json'
 const wallet = new Wallet(keys[0])
 wallet.connectToNetwork(nodes)
-wallet.on('block', (block, forked) => {
-    console.log(forked, block.hash.toString('hex'))
+wallet.on('block', block => {
+    console.log(block.hash.toString('hex'))
     const transaction = wallet.send({
         address: 'uwu',
         amount: 2,
