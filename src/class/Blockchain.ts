@@ -122,6 +122,7 @@ class Blockchain {
                 difficulty++
             }
             else if (blockTime >= config.mining.blockTime && difficulty > 0) {
+            // else if (blockTime > config.mining.blockTime && difficulty > 0) {
                 difficulty--
             }
             if (blocks[2].difficulty !== difficulty) {
@@ -179,6 +180,7 @@ class Blockchain {
             this.difficulty++
         }
         else if (blockTime >= config.mining.blockTime && this.difficulty > 0) {
+        // else if (blockTime > config.mining.blockTime && this.difficulty > 0) {
             this.difficulty--
         }
     }
