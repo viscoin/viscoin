@@ -35,6 +35,8 @@ class FullNode extends events.EventEmitter {
     }
     connectToNetwork(nodes: Array<{ port: number, address: string }>) {
         for (const node of nodes) {
+            if (node.port === config.network.port
+                && node.address === config.network.address) continue
             const socket = this.clientNode.createSocket(node.port, node.address)
             socket.on('connect', () => console.log('connected to socket :)'))
         }
@@ -46,7 +48,7 @@ class FullNode extends events.EventEmitter {
         switch (processed.type) {
             case 'block':
                 const block = new Block(processed.data)
-                const forked = this.blockchain.addBlock(block)
+                const forked = await this.blockchain.addBlock(block)
                 this.emit('block', block, forked)
                 break
             case 'transaction':

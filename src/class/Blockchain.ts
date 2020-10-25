@@ -126,6 +126,7 @@ class Blockchain {
             }
             if (blocks[2].difficulty !== difficulty) {
                 console.log('blocks[2].difficulty !== difficulty')
+                console.log(blocks[2].difficulty, difficulty)
                 return false
             }
         }

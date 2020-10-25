@@ -5,6 +5,7 @@ import * as keys from './keys.json'
 import * as nodes from './nodes.json'
 
 const miner = new Miner(keys[0].publicKey)
+miner.hostNetworkNode()
 miner.connectToNetwork(nodes)
 miner.start()
 miner.on('transaction', (transaction, code) => console.log(transaction.signature))
@@ -23,6 +24,8 @@ miner.on('hash', async (found, block) => {
 // })
 // miner.on('fork', async () => console.log('forked'))
 setInterval(async () => {
+    console.log('socket connections (server)', miner.serverNode.sockets.length)
+    console.log('socket connections (client)', miner.clientNode.sockets.length)
     const work = await miner.blockchain.getWork()
     console.log(work)
     const valid = await miner.blockchain.isChainValid()
