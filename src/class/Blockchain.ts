@@ -47,7 +47,10 @@ class Blockchain {
             block
         ])
         if (valid) {
-            if (!(await Block.exists({ hash: block.hash }))) await block.save()
+            if (!(await Block.exists({ hash: block.hash }))) {
+                await block.save()
+                await this.cleanLastTrustedChain()
+            }
         }
     }
     async getBalanceOfAddress(address: string) {
@@ -179,6 +182,58 @@ class Blockchain {
         // else if (blockTime > config.mining.blockTime && this.difficulty > 0) {
             this.difficulty--
         }
+    }
+    async cleanChain() {
+        if (!await this.isChainValid()) return
+        let block = await this.getLatestBlock()
+        if (!block) return
+        const height = block.height, hashes = []
+        while (true) {
+            block = await Block.load({ hash: block.previousHash })
+            if (!block) break
+            hashes.push(block.hash)
+        }
+        if (!hashes.length) return
+        const info = await schema_block
+            .deleteMany({
+                hash: {
+                    $not: {
+                        $in: hashes
+                    }
+                },
+                height: {
+                    lte: height - config.mining.trustedAfterBlocks
+                }
+            })
+            .exec()
+        console.log(info)
+    }
+    async cleanLastTrustedChain() {
+        if (!await this.isChainValid()) return
+        let block = await this.getLatestBlock()
+        if (!block) return
+        const height = block.height - config.mining.trustedAfterBlocks
+        if (height < 1) return
+        let hash = null
+        while (true) {
+            block = await Block.load({ hash: block.previousHash })
+            if (!block) break
+            if (block.height === height) {
+            // if (block.height <= height) {
+                hash = block.hash
+                break
+            }
+        }
+        if (!hash) return
+        const info = await schema_block
+            .deleteMany({
+                hash: {
+                    $ne: hash
+                },
+                height
+            })
+            .exec()
+        console.log(info)
     }
 }
 export default Blockchain

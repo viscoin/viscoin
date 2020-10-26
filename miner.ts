@@ -15,12 +15,12 @@ miner.on('hash', async (found, block) => {
     }
 })
 setInterval(async () => {
-    console.log('socket connections (server)', miner.serverNode.sockets.length)
-    console.log('socket connections (client)', miner.clientNode.sockets.length)
+    // console.log('socket connections (server)', miner.serverNode.sockets.length)
+    // console.log('socket connections (client)', miner.clientNode.sockets.length)
     const work = await miner.blockchain.getWork()
     console.log('work', work)
     const valid = await miner.blockchain.isChainValid()
     console.log('valid', valid)
-    const balance = await miner.blockchain.getBalanceOfAddress(keys[0].publicKey)
-    console.log('balance', balance)
+    // const balance = await miner.blockchain.getBalanceOfAddress(keys[0].publicKey)
+    // console.log('balance', balance)
 }, 10000)
