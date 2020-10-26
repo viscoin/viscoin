@@ -32,6 +32,6 @@
     },
     "network": {
         "address": "localhost",
-        "port": 8335
+        "port": 8333
     }
 }

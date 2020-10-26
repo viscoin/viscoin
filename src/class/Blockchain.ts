@@ -202,7 +202,7 @@ class Blockchain {
                     }
                 },
                 height: {
-                    lte: height - config.mining.trustedAfterBlocks
+                    $lte: height - config.mining.trustedAfterBlocks
                 }
             })
             .exec()
