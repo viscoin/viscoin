@@ -130,7 +130,8 @@ class Blockchain {
         }
         return true
     }
-    async isChainValid() {
+    // add limit
+    async isChainValid(limit: number = 0) {
         let block = await this.getLatestBlock()
         let previousBlocks = []
         let blocks = []
@@ -146,6 +147,7 @@ class Blockchain {
                 ...blocks,
                 ...previousBlocks
             ]
+            // return object with info about invalidity
             if (!Blockchain.isPartOfChainValid(blocks)) return false
             previousBlocks = [
                 blocks[0],
@@ -182,7 +184,7 @@ class Blockchain {
         }
     }
     async cleanChain() {
-        if (!await this.isChainValid()) return
+        if (!await this.isChainValid()) return await this.repairChain()
         let block = await this.getLatestBlock()
         if (!block) return
         const height = block.height, hashes = []
@@ -207,7 +209,7 @@ class Blockchain {
         console.log(info)
     }
     async cleanLastTrustedChain() {
-        if (!await this.isChainValid()) return
+        if (!await this.isChainValid()) return await this.repairChain()
         let block = await this.getLatestBlock()
         if (!block) return
         let i = 0
@@ -228,5 +230,77 @@ class Blockchain {
             .exec()
         console.log(info)
     }
+    async repairChain() {
+        // delete one block from invalid chain at a time
+        if (await this.isChainValid()) return
+        let block = await this.getLatestBlock()
+        const latestBlock = block
+        let previousBlocks = []
+        let blocks = []
+        while (true) {
+            for (let i = 0; i < 2; i++) {
+                if (!block) break
+                block = await Block.load({ hash: block.previousHash })
+                if (!block) break
+                blocks.unshift(block)
+            }
+            if (!blocks.length) break
+            blocks = [
+                ...blocks,
+                ...previousBlocks
+            ]
+            if (!Blockchain.isPartOfChainValid(blocks)) {
+                const info = await schema_block
+                    .deleteOne({
+                        hash: latestBlock.hash
+                    })
+                    .exec()
+                console.log('repairChain', info)
+                return await this.repairChain()
+            }
+            previousBlocks = [
+                blocks[0],
+                blocks[1]
+            ]
+            blocks = []
+        }
+    }
+    // async repairChain() {
+    //     // delete whole invalid chain
+    //     let block = await this.getLatestBlock()
+    //     let previousBlocks = []
+    //     let blocks = []
+    //     const hashes = []
+    //     while (true) {
+    //         for (let i = 0; i < 2; i++) {
+    //             if (!block) break
+    //             block = await Block.load({ hash: block.previousHash })
+    //             if (!block) break
+    //             blocks.unshift(block)
+    //             hashes.push(block.hash)
+    //         }
+    //         if (!blocks.length) break
+    //         blocks = [
+    //             ...blocks,
+    //             ...previousBlocks
+    //         ]
+    //         if (!Blockchain.isPartOfChainValid(blocks)) {
+    //             const info = await schema_block
+    //                 .deleteMany({
+    //                     hash: {
+    //                         $in: hashes
+    //                     }
+    //                 })
+    //                 .exec()
+    //             console.log('repairChain', info)
+    //             return
+    //         }
+    //         previousBlocks = [
+    //             blocks[0],
+    //             blocks[1]
+    //         ]
+    //         blocks = []
+    //     }
+    // }
 }
 export default Blockchain
