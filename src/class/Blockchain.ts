@@ -12,14 +12,12 @@ class Blockchain {
         this.pendingTransactions = []
     }
     createGenesisBlock() {
-        const block = new Block({
+        return new Block({
             transactions: [],
             previousHash: Buffer.alloc(32, 0x00),
             height: 0,
             difficulty: this.difficulty
         })
-        block.save()
-        return block
     }
     async getLatestBlock() {
         const block = await Block.load(null, null, { sort: { height: -1, difficulty: -1 } })
@@ -191,7 +189,7 @@ class Blockchain {
         while (true) {
             block = await Block.load({ hash: block.previousHash })
             if (!block) break
-            hashes.push(block.hash)
+            if (block.height <= height) hashes.push(block.hash)
         }
         if (!hashes.length) return
         const info = await schema_block
@@ -212,25 +210,20 @@ class Blockchain {
         if (!await this.isChainValid()) return
         let block = await this.getLatestBlock()
         if (!block) return
-        const height = block.height - config.mining.trustedAfterBlocks
-        if (height < 1) return
-        let hash = null
+        let i = 0
         while (true) {
             block = await Block.load({ hash: block.previousHash })
             if (!block) break
-            if (block.height === height) {
-            // if (block.height <= height) {
-                hash = block.hash
-                break
-            }
+            if (i++ === config.mining.trustedAfterBlocks) break
+            // if (i++ <= config.mining.trustedAfterBlocks) break
         }
-        if (!hash) return
+        if (!block) return
         const info = await schema_block
             .deleteMany({
                 hash: {
-                    $ne: hash
+                    $ne: block.hash
                 },
-                height
+                height: block.height
             })
             .exec()
         console.log(info)

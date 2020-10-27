@@ -33,6 +33,7 @@ class Miner extends FullNode {
     _stop(force: boolean) {
         if (force) this.mining = false
         clearImmediate(this.intermediate)
+        this.intermediate = null
     }
     restart() {
         this._stop(false)
@@ -45,6 +46,7 @@ class Miner extends FullNode {
             this.blockchain.pendingTransactions = []
             await this.blockchain.addBlock(block)
             this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
+            if (this.intermediate) this._stop(false)
             if (config.use.process.nextTick) {
                 process.nextTick(() => {
                     this.intermediate = setImmediate(async () => {
@@ -60,6 +62,7 @@ class Miner extends FullNode {
         }
         else {
             this.emit('hash', found)
+            if (this.intermediate) this._stop(false)
             if (config.use.process.nextTick) {
                 process.nextTick(() => {
                     this.intermediate = setImmediate(() => {
@@ -76,7 +79,10 @@ class Miner extends FullNode {
     }
     async getNewBlock() {
         const previousBlock = await this.blockchain.getLatestBlock()
-        if (previousBlock.height === 0) this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(previousBlock)))
+        if (previousBlock.height === 0) {
+            await previousBlock.save()
+            this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(previousBlock)))
+        }
         const transactions = [
             new Transaction({
                 fromAddress: config.mining.reward.fromAddress,
