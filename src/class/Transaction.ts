@@ -19,6 +19,7 @@ class Transaction {
         this.timestamp = timestamp
         this.minerFee = minerFee
         if (signature instanceof Buffer) this.signature = signature
+        else if (signature && signature._bsontype === 'Binary') this.signature = Buffer.from(signature.buffer)
         else if (signature) this.signature = Buffer.from(signature)
     }
     calculateHash() {
@@ -44,7 +45,20 @@ class Transaction {
     }
     isValid() {
         if (this.fromAddress === config.mining.reward.fromAddress) return true
-        if (!this.signature || !Buffer.byteLength(this.signature)) return false
+        try {
+            crypto.createPublicKey({
+                key: base58.decode(this.toAddress),
+                type: 'spki',
+                format: 'der'
+            })
+        } catch {
+            console.log('catch crypto.createPublicKey')
+            return false
+        }
+        if (!this.signature || !Buffer.byteLength(this.signature)) {
+            console.log('!this.signature || !Buffer.byteLength(this.signature)')
+            return false
+        }
         return crypto.verify(null, this.calculateHash(), crypto.createPublicKey({
             key: base58.decode(this.fromAddress),
             type: 'spki',
