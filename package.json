@@ -24,6 +24,7 @@
   "dependencies": {
     "base-x": "^3.0.8",
     "dotenv": "^8.2.0",
-    "mongoose": "^5.10.9"
+    "mongoose": "^5.10.9",
+    "prompts": "^2.4.0"
   }
 }
