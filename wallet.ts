@@ -8,13 +8,13 @@ wallet.connectToNetwork(nodes)
 wallet.on('block', block => {
     console.log(block.hash.toString('hex'))
 })
-const transaction = wallet.send({
-    address: 'uwu',
-    amount: 2,
-    minerFee: 1
-})
-console.log(transaction)
 setInterval(async () => {
+    const transaction = wallet.send({
+        address: 'uwu',
+        amount: 2,
+        minerFee: 1
+    })
+    console.log(transaction)
     // console.log(wallet.clientNode.sockets.length)
     console.log(await wallet.balance())
 }, 1000)

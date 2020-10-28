@@ -18,7 +18,8 @@ class Transaction {
         this.amount = amount
         this.timestamp = timestamp
         this.minerFee = minerFee
-        if (signature) this.signature = signature
+        if (signature instanceof Buffer) this.signature = signature
+        else if (signature) this.signature = Buffer.from(signature)
     }
     calculateHash() {
         return crypto.createHash('sha256')
@@ -43,9 +44,7 @@ class Transaction {
     }
     isValid() {
         if (this.fromAddress === config.mining.reward.fromAddress) return true
-        if (!this.signature || this.signature.length === 0) {
-            throw new Error('No signature in this transaction!')
-        }
+        if (!this.signature || !Buffer.byteLength(this.signature)) return false
         return crypto.verify(null, this.calculateHash(), crypto.createPublicKey({
             key: base58.decode(this.fromAddress),
             type: 'spki',

@@ -8,7 +8,7 @@ const miner = new Miner(keys[0].publicKey)
 miner.hostNetworkNode()
 miner.connectToNetwork(nodes)
 miner.start()
-miner.on('transaction', (transaction, code) => console.log(transaction.signature))
+miner.on('transaction', (transaction, code) => console.log('transaction', transaction.signature.toString('hex')))
 miner.on('hash', async (found, block) => {
     if (found) {
         console.log(block.height, block.hash.toString('hex'))
