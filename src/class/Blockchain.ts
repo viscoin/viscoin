@@ -38,6 +38,8 @@ class Blockchain {
         return 0
     }
     async addBlock(block) {
+        const latestBlock = await this.getLatestBlock()
+        if (block.height < latestBlock.height - config.mining.trustedAfterBlocks) return
         const previousBlock = await Block.load({ hash: block.previousHash, height: block.height - 1 })
         if (!previousBlock) return
         const valid = Blockchain.isPartOfChainValid([
@@ -160,6 +162,35 @@ class Blockchain {
         }
         return true
     }
+    async isLastTrustedChainValid() {
+        let block = await this.getLatestBlock()
+        let previousBlocks = []
+        let blocks = []
+        let counter = 0
+        while (true) {
+            for (let i = 0; i < 2; i++) {
+                if (!block) break
+                block = await Block.load({ hash: block.previousHash })
+                if (!block) break
+                blocks.unshift(block)
+                counter++
+            }
+            if (!blocks.length) break
+            blocks = [
+                ...blocks,
+                ...previousBlocks
+            ]
+            // return object with info about invalidity
+            if (!Blockchain.isPartOfChainValid(blocks)) return false
+            if (counter >= config.mining.trustedAfterBlocks) break
+            previousBlocks = [
+                blocks[0],
+                blocks[1]
+            ]
+            blocks = []
+        }
+        return true
+    }
     async getWork() {
         let block = await Block.load(null, null, { sort: { height: -1, difficulty: -1 } }),
         work = 0
@@ -209,10 +240,11 @@ class Blockchain {
                 }
             })
             .exec()
-        console.log(info)
+        // console.log(info)
+        return info
     }
     async cleanLastTrustedChain() {
-        if (!await this.isChainValid()) await this.repairChain()
+        if (!await this.isLastTrustedChainValid()) await this.repairChain()
         let block = await this.getLatestBlock()
         if (!block) return
         let i = 0
@@ -231,7 +263,8 @@ class Blockchain {
                 height: block.height
             })
             .exec()
-        console.log(info)
+        // console.log(info)
+        return info
     }
     async repairChain() {
         // delete whole invalid chain
@@ -260,8 +293,8 @@ class Blockchain {
                         }
                     })
                     .exec()
-                console.log('repairChain', info)
-                return
+                // console.log('repairChain', info)
+                return info
             }
             previousBlocks = [
                 blocks[0],
