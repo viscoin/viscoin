@@ -40,7 +40,7 @@ let privateKeyImported = crypto.createPrivateKey({
     key: privateKeyDecoded,
     type: 'pkcs8',
     format: 'der'
-}) 
+})
 console.log(publicKeyImported)
 console.log(privateKeyImported)
 

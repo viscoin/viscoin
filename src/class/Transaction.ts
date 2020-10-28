@@ -1,11 +1,14 @@
 import * as crypto from 'crypto'
 import * as config from '../../config.json'
+import * as baseX from 'base-x'
+const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+const base58 = baseX(BASE58)
 interface Transaction {
     fromAddress: string
     toAddress: string
     amount: number
     minerFee: number
-    signature: string
+    signature: Buffer
     timestamp: number
 }
 class Transaction {
@@ -19,33 +22,35 @@ class Transaction {
     }
     calculateHash() {
         return crypto.createHash('sha256')
-        .update(
-            this.fromAddress
-            + this.toAddress
-            + this.amount
-            + this.minerFee
-            + this.timestamp
-        )
-        .digest('hex')
+            .update(
+                this.fromAddress
+                + this.toAddress
+                + this.amount
+                + this.minerFee
+                + this.timestamp
+            )
+            .digest()
     }
     signTransaction({ publicKey, privateKey }) {
         if (publicKey !== this.fromAddress) {
             throw new Error('You cannot sign transactions for other wallets!')
         }
-        const sign = crypto.createSign('sha256')
-        sign.update(this.calculateHash())
-        sign.end()
-        this.signature = sign.sign(privateKey, 'base64')
+        this.signature = crypto.sign(null, this.calculateHash(), crypto.createPrivateKey({
+            key: base58.decode(privateKey),
+            type: 'pkcs8',
+            format: 'der'
+        }))
     }
     isValid() {
         if (this.fromAddress === config.mining.reward.fromAddress) return true
         if (!this.signature || this.signature.length === 0) {
             throw new Error('No signature in this transaction!')
         }
-        const verify = crypto.createVerify('sha256')
-        verify.update(this.calculateHash())
-        verify.end()
-        return verify.verify(this.fromAddress, this.signature, 'base64')
+        return crypto.verify(null, this.calculateHash(), crypto.createPublicKey({
+            key: base58.decode(this.fromAddress),
+            type: 'spki',
+            format: 'der'
+        }), this.signature)
     }
 }
 export default Transaction
