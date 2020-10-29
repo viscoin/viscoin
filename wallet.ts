@@ -128,8 +128,8 @@ const commands = {
             type: 'pkcs8',
             format: 'der'
         }))
-        console.log(`${chalk.whiteBright(chalk.bold('Address'))} (${chalk.greenBright('SHARE')}): ${chalk.blueBright(address)}`)
-        console.log(`${chalk.whiteBright(chalk.bold('Private key'))} (${chalk.redBright('SECRET')}): ${chalk.blueBright(secret)}`)
+        console.log(`${chalk.whiteBright(chalk.bold('Address'))}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(address)}`)
+        console.log(`${chalk.whiteBright(chalk.bold('Private key'))} (${chalk.redBright('SECRET')}) ${chalk.blueBright(secret)}`)
         commands.commands()
     }
 }
