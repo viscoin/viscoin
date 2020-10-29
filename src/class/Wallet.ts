@@ -30,7 +30,7 @@ class Wallet extends FullNode {
             amount,
             minerFee
         })
-        transaction.signTransaction({
+        transaction.sign({
             publicKey,
             privateKey
         })

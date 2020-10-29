@@ -53,7 +53,7 @@ class Block {
         let amount = config.mining.reward.amount
         for (const transaction of this.transactions) {
             amount += transaction.minerFee
-            if (!transaction.isValid()) {
+            if (!transaction.verify()) {
                 console.log('!transaction.isValid()')
                 return false
             }

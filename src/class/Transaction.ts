@@ -6,17 +6,17 @@ const base58 = baseX(BASE58)
 interface Transaction {
     fromAddress: string
     toAddress: string
+    timestamp: number
     amount: number
     minerFee: number
     signature: Buffer
-    timestamp: number
 }
 class Transaction {
     constructor({ fromAddress, toAddress, amount, timestamp = Date.now(), minerFee = 0, signature = undefined }) {
         this.fromAddress = fromAddress
         this.toAddress = toAddress
-        this.amount = amount
         this.timestamp = timestamp
+        this.amount = amount
         this.minerFee = minerFee
         if (signature instanceof Buffer) this.signature = signature
         else if (signature && signature._bsontype === 'Binary') this.signature = Buffer.from(signature.buffer)
@@ -33,7 +33,7 @@ class Transaction {
             )
             .digest()
     }
-    signTransaction({ publicKey, privateKey }) {
+    sign({ publicKey, privateKey }) {
         if (publicKey !== this.fromAddress) {
             throw new Error('You cannot sign transactions for other wallets!')
         }
@@ -43,18 +43,8 @@ class Transaction {
             format: 'der'
         }))
     }
-    isValid() {
+    verify() {
         if (this.fromAddress === config.mining.reward.fromAddress) return true
-        try {
-            crypto.createPublicKey({
-                key: base58.decode(this.toAddress),
-                type: 'spki',
-                format: 'der'
-            })
-        } catch {
-            console.log('catch crypto.createPublicKey')
-            return false
-        }
         if (!this.signature || !Buffer.byteLength(this.signature)) {
             console.log('!this.signature || !Buffer.byteLength(this.signature)')
             return false
