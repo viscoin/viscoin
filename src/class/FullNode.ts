@@ -52,13 +52,13 @@ class FullNode extends events.EventEmitter {
         switch (processed.type) {
             case 'block':
                 const block = new Block(processed.data)
-                await this.blockchain.addBlock(block)
-                this.emit('block', block)
+                const blockCode = await this.blockchain.addBlock(block)
+                this.emit('block', block, blockCode)
                 break
             case 'transaction':
                 const transaction = new Transaction(processed.data)
-                const code = await this.blockchain.addTransaction(transaction)
-                this.emit('transaction', transaction, code)
+                const transactionCode = await this.blockchain.addTransaction(transaction)
+                this.emit('transaction', transaction, transactionCode)
                 break
         }
         this.broadcastAndStoreDataHash(data)

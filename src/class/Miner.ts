@@ -44,7 +44,8 @@ class Miner extends FullNode {
         if (found) {
             this.emit('hash', found, block)
             this.blockchain.pendingTransactions = []
-            await this.blockchain.addBlock(block)
+            const code = await this.blockchain.addBlock(block)
+            console.log(code)
             this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
             if (this.intermediate) this._stop(false)
             if (config.use.process.nextTick) {

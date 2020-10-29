@@ -58,21 +58,31 @@ class Blockchain {
         this.pendingTransactions.push(transaction)
         return 0
     }
-    async addBlock(block) {
-        const latestBlock = await this.getLatestBlock()
-        if (block.height < latestBlock.height - config.mining.trustedAfterBlocks) return
+    async addBlock(block: Block) {
+        // sync
+        if (typeof block.nonce !== 'number') return 1
+        if (typeof block.height !== 'number') return 2
+        if (typeof block.timestamp !== 'number') return 3
+        if (typeof block.difficulty !== 'number') return 4
+        if (typeof block.hash !== 'object') return 5
+        if (typeof block.previousHash !== 'object') return 6
+        if (typeof block.transactions !== 'object') return 7
+        if (block.hash instanceof Buffer === false) return 8
+        if (block.previousHash instanceof Buffer === false) return 9
+        if (Array.isArray(block.transactions) === false) return 10
+        // async
+        if (block.height < (await this.getLatestBlock()).height - config.mining.trustedAfterBlocks) return 11
         const previousBlock = await Block.load({ hash: block.previousHash, height: block.height - 1 })
-        if (!previousBlock) return
+        if (!previousBlock) return 12
         const valid = Blockchain.isPartOfChainValid([
             previousBlock,
             block
         ])
-        if (valid) {
-            if (!(await Block.exists({ hash: block.hash }))) {
-                await block.save()
-                await this.cleanLastTrustedChain()
-            }
-        }
+        if (valid === false) return 13
+        if (await Block.exists({ hash: block.hash })) return 14
+        await block.save()
+        await this.cleanLastTrustedChain()
+        return 0
     }
     async getBalanceOfAddress(address: string) {
         let block = await this.getLatestBlock(),

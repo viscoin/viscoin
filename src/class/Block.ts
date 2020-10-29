@@ -3,14 +3,14 @@ import Transaction from './Transaction'
 import schema_block from '../mongoose/schema/block'
 import * as config from '../../config.json'
 interface Block {
-    timestamp: number
-    transactions: Array<Transaction>
-    previousHash: Buffer
-    hash: Buffer
     nonce: number
     height: number
+    timestamp: number
     difficulty: number
+    hash: Buffer
+    previousHash: Buffer
     preAllocatedBuffer: Buffer
+    transactions: Array<Transaction>
 }
 class Block {
     constructor({ timestamp = Date.now(), transactions, previousHash, height, nonce = 0, hash = null, difficulty }) {
