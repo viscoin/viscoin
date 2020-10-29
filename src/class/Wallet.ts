@@ -1,6 +1,7 @@
 import Transaction from './Transaction'
 import ClientNode from './ClientNode'
 import FullNode from './FullNode'
+import { type } from 'os'
 interface Wallet {
     keys: Array<{ publicKey: string, privateKey: string }>
 }
@@ -20,7 +21,9 @@ class Wallet extends FullNode {
             return sum
         }
     }
-    send({ publicKey, privateKey, toAddress, amount, minerFee }: { publicKey: string, privateKey: string, toAddress: string, amount: number, minerFee: number }) {
+    send({ publicKey, privateKey, toAddress, amount, minerFee }: { publicKey: string, privateKey: string, toAddress: string, amount: number | string, minerFee: number | string }) {
+        if (typeof amount === 'string') amount = parseFloat(amount)
+        if (typeof minerFee === 'string') minerFee = parseFloat(minerFee)
         const transaction = new Transaction({
             fromAddress: publicKey,
             toAddress,

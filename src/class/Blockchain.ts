@@ -25,15 +25,17 @@ class Blockchain {
         return block
     }
     async addTransaction(transaction: Transaction) {
-        if (!transaction.fromAddress || !transaction.toAddress) return 1
-        if (!transaction.isValid()) return 2
-        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 3
-        if (transaction.timestamp > Date.now()) return 4
-        if (transaction.amount <= 0) return 5
-        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 6
-        if (transaction.minerFee > transaction.amount) return 7
-        if (transaction.minerFee < 0) return 8
-        if (await this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) return 9
+        if (typeof transaction.amount !== 'number') return 1
+        if (typeof transaction.minerFee !== 'number') return 2
+        if (!transaction.fromAddress || !transaction.toAddress) return 3
+        if (!transaction.isValid()) return 4
+        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 5
+        if (transaction.timestamp > Date.now()) return 6
+        if (transaction.amount <= 0) return 7
+        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 8
+        if (transaction.minerFee > transaction.amount) return 9
+        if (transaction.minerFee < 0) return 10
+        if (await this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) return 11
         this.pendingTransactions.push(transaction)
         return 0
     }
