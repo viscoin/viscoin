@@ -3,6 +3,7 @@ mongoose.init()
 import * as crypto from 'crypto'
 import * as prompts from 'prompts'
 import * as baseX from 'base-x'
+import * as chalk from 'chalk'
 import * as keys from './keys.json'
 import * as nodes from './nodes.json'
 import Wallet from './src/class/Wallet'
@@ -23,7 +24,8 @@ const commands = {
                 { title: 'Address', description: 'Get wallet address', value: commands.address },
                 { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
                 { title: 'Commands', description: 'Lists all avaliable commands', value: commands.commands },
-                { title: 'Exit', description: 'Exits', value: commands.exit }
+                { title: 'Exit', description: 'Exits', value: commands.exit },
+                { title: 'Generate', description: 'Generates new wallet', value: commands.generate }
             ]
         })
         if (typeof res.value !== 'function') return commands.commands()
@@ -115,6 +117,20 @@ const commands = {
         console.log(await wallet.balance(res.address))
         commands.commands()
     },
-    exit: () => {}
+    exit: () => {},
+    generate: async () => {
+        const key = crypto.generateKeyPairSync('ed25519')
+        const address = base58.encode(key.publicKey.export({
+            type: 'spki',
+            format: 'der'
+        }))
+        const secret = base58.encode(key.privateKey.export({
+            type: 'pkcs8',
+            format: 'der'
+        }))
+        console.log(`${chalk.whiteBright(chalk.bold('Address'))} (${chalk.greenBright('SHARE')}): ${chalk.blueBright(address)}`)
+        console.log(`${chalk.whiteBright(chalk.bold('Private key'))} (${chalk.redBright('SECRET')}): ${chalk.blueBright(secret)}`)
+        commands.commands()
+    }
 }
 commands.commands()
