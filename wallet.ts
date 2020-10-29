@@ -9,7 +9,7 @@ import Wallet from './src/class/Wallet'
 const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 const base58 = baseX(BASE58)
 
-const wallet = new Wallet(keys[0])
+const wallet = new Wallet(keys)
 wallet.connectToNetwork(nodes)
 
 const commands = {
@@ -33,12 +33,12 @@ const commands = {
         const res = await prompts([
             {
                 type: 'text',
-                name: 'address',
+                name: 'toAddress',
                 message: 'Address',
-                validate: address => {
+                validate: toAddress => {
                     try {
                         crypto.createPublicKey({
-                            key: base58.decode(address),
+                            key: base58.decode(toAddress),
                             type: 'spki',
                             format: 'der'
                         })
@@ -70,13 +70,27 @@ const commands = {
             }
         ])
         if (res.confirm) {
-            const transaction = await wallet.send(res)
+            const transaction = await wallet.send({
+                ...res,
+                publicKey: keys[0].publicKey,
+                privateKey: keys[0].privateKey
+            })
             console.log(transaction)
         }
         commands.commands()
     },
-    address: () => {
-        console.log(wallet.publicKey)
+    address: async () => {
+        const res = await prompts({
+            type: 'autocomplete',
+            name: 'address',
+            message: 'Addresses',
+            choices: wallet.keys.map(e => {
+                return {
+                    title: e.publicKey
+                }
+            })
+        })
+        console.log(res.address)
         commands.commands()
     },
     balance: async () => {
