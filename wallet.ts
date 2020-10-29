@@ -120,14 +120,16 @@ const commands = {
     exit: () => {},
     generate: async () => {
         const key = crypto.generateKeyPairSync('ed25519')
-        const address = base58.encode(key.publicKey.export({
+        const publicKey = key.publicKey.export({
             type: 'spki',
             format: 'der'
-        }))
-        const secret = base58.encode(key.privateKey.export({
+        })
+        const privateKey = key.privateKey.export({
             type: 'pkcs8',
             format: 'der'
-        }))
+        })
+        const address = base58.encode(publicKey)
+        const secret = base58.encode(privateKey)
         console.log(`${chalk.whiteBright(chalk.bold('Address'))}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(address)}`)
         console.log(`${chalk.whiteBright(chalk.bold('Private key'))} (${chalk.redBright('SECRET')}) ${chalk.blueBright(secret)}`)
         commands.commands()
