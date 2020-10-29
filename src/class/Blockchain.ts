@@ -1,7 +1,11 @@
 import Transaction from './Transaction'
 import Block from './Block'
+import * as crypto from 'crypto'
 import * as config from '../../config.json'
 import schema_block from '../mongoose/schema/block'
+import * as baseX from 'base-x'
+const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+const base58 = baseX(BASE58)
 interface Blockchain {
     difficulty: number
     pendingTransactions: Array<Transaction>
@@ -25,17 +29,32 @@ class Blockchain {
         return block
     }
     async addTransaction(transaction: Transaction) {
-        if (typeof transaction.amount !== 'number') return 1
-        if (typeof transaction.minerFee !== 'number') return 2
-        if (!transaction.fromAddress || !transaction.toAddress) return 3
-        if (!transaction.isValid()) return 4
-        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 5
-        if (transaction.timestamp > Date.now()) return 6
-        if (transaction.amount <= 0) return 7
-        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 8
-        if (transaction.minerFee > transaction.amount) return 9
-        if (transaction.minerFee < 0) return 10
-        if (await this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) return 11
+        // sync
+        if (typeof transaction.fromAddress !== 'string') return 1
+        if (typeof transaction.toAddress !== 'string') return 2
+        if (typeof transaction.timestamp !== 'number') return 3
+        if (typeof transaction.amount !== 'number') return 4
+        if (typeof transaction.minerFee !== 'number') return 5
+        if (typeof transaction.signature !== 'object') return 6
+        if (transaction.signature instanceof Buffer === false) return 7
+        if (transaction.amount <= 0) return 8
+        if (transaction.minerFee < 0) return 9
+        if (transaction.minerFee > transaction.amount) return 10
+        if (transaction.timestamp > Date.now()) return 11
+        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 12
+        try {
+            crypto.createPublicKey({
+                key: base58.decode(transaction.toAddress),
+                type: 'spki',
+                format: 'der'
+            })
+        } catch {
+            return 13
+        }
+        if (!transaction.verify()) return 14
+        // async
+        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 15
+        if (await this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) return 16
         this.pendingTransactions.push(transaction)
         return 0
     }
