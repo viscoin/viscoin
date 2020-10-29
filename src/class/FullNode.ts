@@ -30,6 +30,10 @@ class FullNode extends events.EventEmitter {
         this.serverNode.broadcastAndStoreDataHash(data)
         this.clientNode.broadcastAndStoreDataHash(data)
     }
+    broadcast(data: Buffer) {
+        this.serverNode.broadcast(data)
+        this.clientNode.broadcast(data)
+    }
     hostNetworkNode() {
         this.serverNode.start(config.network.port, config.network.address)
     }

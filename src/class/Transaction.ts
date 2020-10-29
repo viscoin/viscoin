@@ -1,7 +1,6 @@
 import * as crypto from 'crypto'
 import * as config from '../../config.json'
 import * as baseX from 'base-x'
-import schema_transaction from '../mongoose/schema/transaction'
 const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 const base58 = baseX(BASE58)
 interface Transaction {
@@ -11,7 +10,6 @@ interface Transaction {
     minerFee: number
     signature: Buffer
     timestamp: number
-    hash: Buffer
 }
 class Transaction {
     constructor({ fromAddress, toAddress, amount, timestamp = Date.now(), minerFee = 0, signature = undefined }) {
@@ -23,7 +21,6 @@ class Transaction {
         if (signature instanceof Buffer) this.signature = signature
         else if (signature && signature._bsontype === 'Binary') this.signature = Buffer.from(signature.buffer)
         else if (signature) this.signature = Buffer.from(signature)
-        this.hash = this.calculateHash()
     }
     calculateHash() {
         return crypto.createHash('sha256')
@@ -67,27 +64,6 @@ class Transaction {
             type: 'spki',
             format: 'der'
         }), this.signature)
-    }
-    async save() {
-        await new schema_transaction({
-            hash: this.hash,
-            fromAddress: this.fromAddress,
-            toAddress: this.toAddress,
-            amount: this.amount,
-            minerFee: this.minerFee,
-            signature: this.signature,
-            timestamp: this.timestamp
-        }).save()
-    }
-    static async load(query: object | null, projection: string | null = null, options: object | null = null) {
-        let transaction = await schema_transaction
-            .findOne(query, projection, options)
-            .exec()
-        if (!transaction) return null
-        return new Transaction(transaction)
-    }
-    static async exists(query: object) {
-        return await schema_transaction.exists(query)
     }
 }
 export default Transaction

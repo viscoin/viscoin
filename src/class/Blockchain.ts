@@ -30,11 +30,10 @@ class Blockchain {
         if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 3
         if (transaction.timestamp > Date.now()) return 4
         if (transaction.amount <= 0) return 5
-        if (this.pendingTransactions.find(e => e.fromAddress === transaction.fromAddress)) return 6
+        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 6
         if (transaction.minerFee > transaction.amount) return 7
         if (transaction.minerFee < 0) return 8
         if (await this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) return 9
-        if (await Transaction.exists({ hash: transaction.hash })) return 10
         this.pendingTransactions.push(transaction)
         return 0
     }
