@@ -6,6 +6,7 @@ import * as baseX from 'base-x'
 import * as chalk from 'chalk'
 import * as keys from './keys.json'
 import * as nodes from './nodes.json'
+import * as net from 'net'
 import Wallet from './src/class/Wallet'
 const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 const base58 = baseX(BASE58)
@@ -25,7 +26,8 @@ const commands = {
                 { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
                 { title: 'Commands', description: 'Lists all avaliable commands', value: commands.commands },
                 { title: 'Exit', description: 'Exits', value: commands.exit },
-                { title: 'Generate', description: 'Generates new wallet', value: commands.generate }
+                { title: 'Generate', description: 'Generates new wallet', value: commands.generate },
+                { title: 'Network', description: 'View network nodes', value: commands.network }
             ]
         })
         if (typeof res.value !== 'function') return commands.commands()
@@ -132,6 +134,18 @@ const commands = {
         const secret = base58.encode(privateKey)
         console.log(`${chalk.whiteBright(chalk.bold('Address'))}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(address)}`)
         console.log(`${chalk.whiteBright(chalk.bold('Private key'))} (${chalk.redBright('SECRET')}) ${chalk.blueBright(secret)}`)
+        commands.commands()
+    },
+    network: () => {
+        if (wallet.clientNode.sockets.length) {
+            for (const socket of wallet.clientNode.sockets) {
+                const info = <net.AddressInfo> socket.address()
+                console.log(chalk.whiteBright(`${info.address}${chalk.grey(':')}${chalk.white(info.port)} ${chalk.greenBright('=>')} ${socket.remoteAddress}${chalk.grey(':')}${chalk.blueBright(socket.remotePort)}`))
+            }
+        }
+        else {
+            console.log(chalk.redBright('Wallet is disconnected from the network'))
+        }
         commands.commands()
     }
 }

@@ -1,7 +1,6 @@
 import Transaction from './Transaction'
 import ClientNode from './ClientNode'
 import FullNode from './FullNode'
-import { type } from 'os'
 interface Wallet {
     keys: Array<{ publicKey: string, privateKey: string }>
 }
