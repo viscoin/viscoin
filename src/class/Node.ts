@@ -22,6 +22,7 @@ class Node extends events.EventEmitter {
             }
             else if (index !== -1) this.sockets[index] = socket
             else this.sockets.push(socket)
+            this.emit('socket', socket)
         }
         if (socket.connecting) socket.on('connect', () => addSocket())
         else addSocket()
@@ -57,7 +58,8 @@ class Node extends events.EventEmitter {
     static types = [
         'null',
         'block',
-        'transaction'
+        'transaction',
+        'node'
     ]
     static getType(type: string | number): string | number {
         if (typeof type === 'string') {

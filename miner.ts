@@ -9,6 +9,8 @@ miner.hostNetworkNode()
 miner.connectToNetwork(nodes)
 miner.start()
 miner.on('transaction', (transaction, code) => console.log('transaction', code))
+// miner.on('block', (block, code) => console.log('block', code))
+miner.on('node', info => console.log('node', info))
 miner.on('hash', async (found, block) => {
     if (found) {
         console.log(block.height, block.hash.toString('hex'))

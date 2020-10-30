@@ -21,10 +21,15 @@ class FullNode extends events.EventEmitter {
         this.serverNode
             .on('data', data => this.emit('data', data))
             .on('listening', () => this.emit('listening'))
+            // Or disable this one to make sure only emitted sockets are of remote type serverNode
+            // .on('socket', socket => this.emit('socket', socket))
         this.clientNode = new ClientNode()
-        this.clientNode.on('data', data => this.emit('data', data))
+        this.clientNode
+            .on('data', data => this.emit('data', data))
+            .on('socket', socket => this.emit('socket', socket))
         this.node = new Node()
         this.on('data', this.handleData)
+        this.on('socket', this.handleSocket)
     }
     broadcastAndStoreDataHash(data: Buffer) {
         this.serverNode.broadcastAndStoreDataHash(data)
@@ -60,8 +65,24 @@ class FullNode extends events.EventEmitter {
                 const transactionCode = await this.blockchain.addTransaction(transaction)
                 this.emit('transaction', transaction, transactionCode)
                 break
+            case 'node':
+                // if remote socket is serverNode (probably)
+                if ([8333, 8334, 8335].includes(processed.data.port)) {
+                    this.emit('node', processed.data)
+                }
+                break
         }
         this.broadcastAndStoreDataHash(data)
+    }
+    handleSocket(socket) {
+        this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('node')) + JSON.stringify({
+            address: socket.remoteAddress,
+            family: socket.remoteFamily,
+            port: socket.remotePort
+        })))
+        // const info = socket.address()
+        // console.log(info)
+        // this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('node')) + JSON.stringify(info)))
     }
 }
 export default FullNode
