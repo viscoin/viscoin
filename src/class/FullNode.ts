@@ -63,11 +63,13 @@ class FullNode extends events.EventEmitter {
         if (processed === null) return
         switch (processed.type) {
             case 'block':
+                if (!processed.data) return
                 const block = new Block(processed.data)
                 const blockCode = await this.blockchain.addBlock(block)
                 this.emit('block', block, blockCode)
                 break
             case 'transaction':
+                if (!processed.data) return
                 const transaction = new Transaction(processed.data)
                 const transactionCode = await this.blockchain.addTransaction(transaction)
                 this.emit('transaction', transaction, transactionCode)
@@ -77,6 +79,8 @@ class FullNode extends events.EventEmitter {
                 // if ([8333, 8334, 8335].includes(processed.data.port)) {
                 //     this.emit('node', processed.data)
                 // }
+                if (!processed.data) return
+                // if (processed.data.port !== 8333) processed.data.port = 8333
                 this.connectToNetwork([ processed.data ])
                 this.emit('node', processed.data)
                 break
