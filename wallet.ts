@@ -2,14 +2,12 @@ import * as mongoose from './src/mongoose/mongoose'
 mongoose.init()
 import * as crypto from 'crypto'
 import * as prompts from 'prompts'
-import * as baseX from 'base-x'
 import * as chalk from 'chalk'
 import * as keys from './keys.json'
 import * as nodes from './nodes.json'
 import * as net from 'net'
 import Wallet from './src/class/Wallet'
-const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-const base58 = baseX(BASE58)
+import base58 from './src/function/base58'
 
 const wallet = new Wallet(keys)
 wallet.connectToNetwork(nodes)

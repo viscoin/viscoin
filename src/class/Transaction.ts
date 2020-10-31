@@ -1,8 +1,6 @@
 import * as crypto from 'crypto'
 import * as config from '../../config.json'
-import * as baseX from 'base-x'
-const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-const base58 = baseX(BASE58)
+import base58 from '../function/base58'
 interface Transaction {
     fromAddress: string
     toAddress: string

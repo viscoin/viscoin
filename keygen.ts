@@ -1,9 +1,7 @@
 import * as fs from 'fs'
 import * as keys from './keys.json'
 import * as crypto from 'crypto'
-import * as baseX from 'base-x'
-const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-const base58 = baseX(BASE58)
+import base58 from './src/function/base58'
 
 let key = crypto.generateKeyPairSync('ed25519')
 
