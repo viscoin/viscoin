@@ -13,15 +13,19 @@ class Node extends events.EventEmitter {
         this.sockets = []
     }
     addSocket(socket: net.Socket) {
-        const index = this.sockets.indexOf(undefined)
+        let index = this.sockets.indexOf(undefined)
         const addSocket = () => {
             const _socket = this.hasSocket(socket)
             if (_socket !== false) {
                 _socket.destroy()
-                this.sockets[this.sockets.indexOf(_socket)] = socket
+                index = this.sockets.indexOf(_socket)
+                this.sockets[index] = socket
             }
             else if (index !== -1) this.sockets[index] = socket
-            else this.sockets.push(socket)
+            else {
+                this.sockets.push(socket)
+                index = this.sockets.length - 1
+            }
             this.emit('socket', socket)
         }
         if (socket.connecting) socket.on('connect', () => addSocket())
@@ -86,6 +90,12 @@ class Node extends events.EventEmitter {
             const _info = <net.AddressInfo> _socket.address()
             if (info.port === _info.port
                 && info.address === _info.address) return _socket
+            if (info.port === _socket.remotePort
+                && info.address === _socket.remoteAddress) return _socket
+            if (_info.port === socket.remotePort
+                && _info.address === socket.remoteAddress) return _socket
+            if (socket.remotePort === _socket.remotePort
+                && socket.remoteAddress === _socket.remoteAddress) return _socket
         }
         return false
     }

@@ -44,6 +44,13 @@ class FullNode extends events.EventEmitter {
     }
     connectToNetwork(nodes: Array<{ port: number, address: string }>) {
         for (const node of nodes) {
+            if (typeof node.port !== 'number') continue
+            if (typeof node.address !== 'string') continue
+            if (node.port < 0 || node.port > 65535) continue
+            if (node.address !== 'localhost') {
+                if (Buffer.byteLength(Buffer.from(node.address.split('.'))) !== 4
+                    && Buffer.byteLength(Buffer.from(node.address.split(':'))) > 16) continue
+            }
             if (node.port === config.network.port
                 && node.address === config.network.address) continue
             const socket = this.clientNode.createSocket(node.port, node.address)
@@ -67,9 +74,11 @@ class FullNode extends events.EventEmitter {
                 break
             case 'node':
                 // if remote socket is serverNode (probably)
-                if ([8333, 8334, 8335].includes(processed.data.port)) {
-                    this.emit('node', processed.data)
-                }
+                // if ([8333, 8334, 8335].includes(processed.data.port)) {
+                //     this.emit('node', processed.data)
+                // }
+                this.connectToNetwork([ processed.data ])
+                this.emit('node', processed.data)
                 break
         }
         this.broadcastAndStoreDataHash(data)

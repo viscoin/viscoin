@@ -18,7 +18,15 @@ miner.on('hash', async (found, block) => {
 })
 setInterval(async () => {
     console.log('socket connections (server)', miner.serverNode.sockets.length)
+    for (const socket of miner.serverNode.sockets) {
+        if (!socket) continue
+        console.log(socket.remoteAddress, socket.remotePort)
+    }
     console.log('socket connections (client)', miner.clientNode.sockets.length)
+    for (const socket of miner.clientNode.sockets) {
+        if (!socket) continue
+        console.log(socket.remoteAddress, socket.remotePort)
+    }
     // const work = await miner.blockchain.getWork()
     // console.log('work', work)
     // const valid = await miner.blockchain.isChainValid()
