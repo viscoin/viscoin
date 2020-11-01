@@ -3,15 +3,18 @@ mongoose.init()
 import Miner from './src/class/Miner'
 import * as keys from './keys.json'
 import * as nodes from './nodes.json'
+import * as config from './config.json'
 
 const miner = new Miner(keys[0].publicKey)
 miner.hostNetworkNode()
 miner.connectToNetwork(nodes)
 miner.start()
-setTimeout(async function loop() {
-    await miner.blockchainSync()
-    setTimeout(loop, 1000)
-})
+if (config.sync.enabled) {
+    setTimeout(async function loop() {
+        await miner.blockchainSync()
+        setTimeout(loop, config.sync.timeout)
+    })
+}
 
 miner.on('transaction', (transaction, code) => console.log('transaction', code))
 miner.on('block', (block, code) => console.log('block', code))

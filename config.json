@@ -7,6 +7,10 @@
         "blockTime": 10000,
         "trustedAfterBlocks": 10
     },
+    "sync": {
+        "enabled": true,
+        "timeout": 1000
+    },
     "byteLength": {
         "block": 1000000,
         "verifyData": 1000000
@@ -32,6 +36,6 @@
     },
     "network": {
         "address": "192.168.0.7",
-        "port": 8333
+        "port": 8334
     }
 }
