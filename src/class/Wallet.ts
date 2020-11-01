@@ -1,6 +1,7 @@
 import Transaction from './Transaction'
 import ClientNode from './ClientNode'
 import FullNode from './FullNode'
+import Node from './Node'
 interface Wallet {
     keys: Array<{ publicKey: string, privateKey: string }>
 }
@@ -34,7 +35,7 @@ class Wallet extends FullNode {
             privateKey
         })
         this.blockchain.addTransaction(transaction)
-        this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('transaction')) + JSON.stringify(transaction)))
+        this.broadcastAndStoreDataHash(Node.constructDataBuffer('transction', transaction))
         return transaction
     }
 }

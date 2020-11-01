@@ -60,7 +60,7 @@ class FullNode extends events.EventEmitter {
         }
     }
     async blockchainSync() {
-        const block = await Block.load({ height: this.blockchainSyncIndex++ })
+        const block = await this.blockchain.getBlockByHeight(this.blockchainSyncIndex++)
         if (this.blockchainSyncIndex >= (await this.blockchain.getLatestBlock()).height - config.mining.trustedAfterBlocks) this.blockchainSyncIndex = 0
         const data = Node.constructDataBuffer('block', block)
         this.broadcast(data)
@@ -96,14 +96,11 @@ class FullNode extends events.EventEmitter {
         this.broadcastAndStoreDataHash(data)
     }
     handleSocket(socket) {
-        this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('node')) + JSON.stringify({
+        this.broadcastAndStoreDataHash(Node.constructDataBuffer('node', {
             address: socket.remoteAddress,
             family: socket.remoteFamily,
             port: socket.remotePort
-        })))
-        // const info = socket.address()
-        // console.log(info)
-        // this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('node')) + JSON.stringify(info)))
+        }))
     }
 }
 export default FullNode

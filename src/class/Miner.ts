@@ -4,6 +4,7 @@ import Transaction from './Transaction'
 import ClientNode from './ClientNode'
 import * as config from '../../config.json'
 import FullNode from './FullNode'
+import Node from './Node'
 interface Miner {
     walletAddress: string
     mining: boolean
@@ -46,7 +47,7 @@ class Miner extends FullNode {
             this.blockchain.pendingTransactions = []
             const code = await this.blockchain.addBlock(block)
             // console.log(code)
-            this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(block)))
+            this.broadcastAndStoreDataHash(Node.constructDataBuffer('block', block))
             if (this.intermediate) this._stop(false)
             if (config.use.process.nextTick) {
                 process.nextTick(() => {
@@ -82,7 +83,7 @@ class Miner extends FullNode {
         const previousBlock = await this.blockchain.getLatestBlock()
         if (previousBlock.height === 0) {
             await previousBlock.save()
-            this.broadcastAndStoreDataHash(Buffer.from(Buffer.alloc(1, ClientNode.getType('block')) + JSON.stringify(previousBlock)))
+            this.broadcastAndStoreDataHash(Node.constructDataBuffer('block', previousBlock))
         }
         const transactions = [
             new Transaction({
