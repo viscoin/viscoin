@@ -69,7 +69,10 @@ class Blockchain {
         if (block.previousHash instanceof Buffer === false) return 9
         if (Array.isArray(block.transactions) === false) return 10
         // async
-        if (block.height < (await this.getLatestBlock()).height - config.mining.trustedAfterBlocks) return 11
+        if (block.height < (await this.getLatestBlock()).height - config.mining.trustedAfterBlocks) {
+            const _block = await Block.load({ height: block.height })
+            if (_block && _block.difficulty < block.difficulty) return 11
+        }
         const previousBlock = await Block.load({ hash: block.previousHash, height: block.height - 1 })
         if (previousBlock) {
             const valid = Blockchain.isPartOfChainValid([
