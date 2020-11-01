@@ -71,13 +71,14 @@ class Blockchain {
         // async
         if (block.height < (await this.getLatestBlock()).height - config.mining.trustedAfterBlocks) return 11
         const previousBlock = await Block.load({ hash: block.previousHash, height: block.height - 1 })
-        if (!previousBlock) return 12
-        const valid = Blockchain.isPartOfChainValid([
-            previousBlock,
-            block
-        ])
-        if (valid === false) return 13
-        if (await Block.exists({ hash: block.hash })) return 14
+        if (previousBlock) {
+            const valid = Blockchain.isPartOfChainValid([
+                previousBlock,
+                block
+            ])
+            if (valid === false) return 12
+        }
+        if (await Block.exists({ hash: block.hash })) return 13
         await block.save()
         await this.cleanLastTrustedChain()
         return 0
