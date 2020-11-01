@@ -5,7 +5,6 @@ import * as nodes from './nodes.json'
 import * as config from './config.json'
 
 const fullNode = new FullNode()
-fullNode.hostNetworkNode()
 fullNode.connectToNetwork(nodes)
 if (config.sync.enabled) {
     setTimeout(async function loop() {
