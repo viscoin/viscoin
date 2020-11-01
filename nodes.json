@@ -1,14 +1,26 @@
 [
     {
-        "address": "localhost",
+        "address": "192.168.0.7",
         "port": 8333
     },
     {
-        "address": "localhost",
+        "address": "192.168.0.7",
         "port": 8334
     },
     {
-        "address": "localhost",
+        "address": "192.168.0.7",
+        "port": 8335
+    },
+    {
+        "address": "192.168.0.10",
+        "port": 8333
+    },
+    {
+        "address": "192.168.0.10",
+        "port": 8334
+    },
+    {
+        "address": "192.168.0.10",
         "port": 8335
     }
 ]

@@ -10,7 +10,6 @@ miner.connectToNetwork(nodes)
 miner.start()
 setTimeout(async function loop() {
     await miner.blockchainSync()
-    console.log('broadcasted block')
     setTimeout(loop, 1000)
 })
 

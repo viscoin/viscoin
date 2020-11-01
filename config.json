@@ -4,7 +4,7 @@
             "amount": 100,
             "fromAddress": "mining reward"
         },
-        "blockTime": 1000,
+        "blockTime": 10000,
         "trustedAfterBlocks": 10
     },
     "byteLength": {
@@ -31,7 +31,7 @@
         "loop": 1000
     },
     "network": {
-        "address": "localhost",
+        "address": "192.168.0.7",
         "port": 8333
     }
 }
