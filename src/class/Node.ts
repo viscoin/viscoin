@@ -73,6 +73,9 @@ class Node extends events.EventEmitter {
             return Node.types[type]
         }
     }
+    static constructDataBuffer(type: string, data: any) {
+        return Buffer.from(Buffer.alloc(1, this.getType(type)) + JSON.stringify(data))
+    }
     processData(data: Buffer) {
         try {
             return {

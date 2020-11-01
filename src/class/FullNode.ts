@@ -12,6 +12,7 @@ interface FullNode {
     clientNode: ClientNode
     node: Node
     intermediate: NodeJS.Immediate
+    blockchainSyncIndex: number
 }
 class FullNode extends events.EventEmitter {
     constructor() {
@@ -30,6 +31,7 @@ class FullNode extends events.EventEmitter {
         this.node = new Node()
         this.on('data', this.handleData)
         this.on('socket', this.handleSocket)
+        this.blockchainSyncIndex = 0
     }
     broadcastAndStoreDataHash(data: Buffer) {
         this.serverNode.broadcastAndStoreDataHash(data)
@@ -56,6 +58,12 @@ class FullNode extends events.EventEmitter {
             const socket = this.clientNode.createSocket(node.port, node.address)
             socket.on('connect', () => console.log('connected to socket :)'))
         }
+    }
+    async blockchainSync() {
+        const block = await Block.load({ height: this.blockchainSyncIndex++ })
+        if (this.blockchainSyncIndex >= (await this.blockchain.getLatestBlock()).height - config.mining.trustedAfterBlocks) this.blockchainSyncIndex = 0
+        const data = Node.constructDataBuffer('block', block)
+        this.broadcast(data)
     }
     async handleData(data) {
         if (!this.node.verifyData(data)) return

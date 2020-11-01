@@ -8,8 +8,14 @@ const miner = new Miner(keys[0].publicKey)
 miner.hostNetworkNode()
 miner.connectToNetwork(nodes)
 miner.start()
+setTimeout(async function loop() {
+    await miner.blockchainSync()
+    console.log('broadcasted block')
+    setTimeout(loop, 1000)
+})
+
 miner.on('transaction', (transaction, code) => console.log('transaction', code))
-// miner.on('block', (block, code) => console.log('block', code))
+miner.on('block', (block, code) => console.log('block', code))
 miner.on('node', info => console.log('node', info))
 miner.on('hash', async (found, block) => {
     if (found) {
