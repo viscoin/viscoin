@@ -3,11 +3,21 @@ mongoose.init()
 import * as crypto from 'crypto'
 import * as prompts from 'prompts'
 import * as chalk from 'chalk'
-import * as keys from './keys.json'
 import * as nodes from './nodes.json'
 import * as net from 'net'
+import * as fs from 'fs'
 import Wallet from './src/class/Wallet'
 import base58 from './src/function/base58'
+
+const keys = []
+const files = fs.readdirSync('./keys')
+for (const file of files) {
+    keys.push({
+        publicKey: file,
+        privateKey: String(fs.readFileSync(`./keys/${file}`))
+    })
+}
+console.log(keys)
 
 const wallet = new Wallet()
 wallet.setKeys(keys)

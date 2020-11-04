@@ -110,4 +110,4 @@ dist
 # Keys
 *keys.json
 keys/*
-!keys/_
+!keys/config.json
