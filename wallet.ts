@@ -118,7 +118,11 @@ const commands = {
         console.log(await wallet.balance(res.address))
         commands.commands()
     },
-    exit: () => {},
+    exit: () => {
+        wallet.closeNetworkNode()
+        wallet.disconnectFromNetwork()
+        process.exit(0)
+    },
     generate: async () => {
         const key = crypto.generateKeyPairSync('ed25519')
         const publicKey = key.publicKey.export({

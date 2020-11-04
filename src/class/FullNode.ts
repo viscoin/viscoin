@@ -44,6 +44,9 @@ class FullNode extends events.EventEmitter {
     hostNetworkNode() {
         this.serverNode.start(config.network.port, config.network.address)
     }
+    closeNetworkNode() {
+        this.serverNode.stop()
+    }
     connectToNetwork(nodes: Array<{ port: number, address: string }>) {
         for (const node of nodes) {
             if (typeof node.port !== 'number') continue
@@ -58,6 +61,12 @@ class FullNode extends events.EventEmitter {
             const socket = this.clientNode.createSocket(node.port, node.address)
             socket.on('connect', () => console.log('connected to socket :)'))
         }
+    }
+    disconnectFromNetwork() {
+        for (const socket of this.clientNode.sockets) {
+            socket.destroy()
+        }
+        this.clientNode.sockets = []
     }
     async blockchainSync() {
         const block = await this.blockchain.getBlockByHeight(this.blockchainSyncIndex++)
