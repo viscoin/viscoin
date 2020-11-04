@@ -9,7 +9,8 @@ import * as net from 'net'
 import Wallet from './src/class/Wallet'
 import base58 from './src/function/base58'
 
-const wallet = new Wallet(keys)
+const wallet = new Wallet()
+wallet.setKeys(keys)
 wallet.connectToNetwork(nodes)
 
 const commands = {

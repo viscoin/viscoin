@@ -1,15 +1,13 @@
 import Transaction from './Transaction'
-import ClientNode from './ClientNode'
 import FullNode from './FullNode'
 import Node from './Node'
 interface Wallet {
     keys: Array<{ publicKey: string, privateKey: string }>
 }
 class Wallet extends FullNode {
-    constructor(keys: Array<{ publicKey: string, privateKey: string }>) {
+    constructor() {
         super()
-        if (keys) this.keys = keys
-        else this.keys = []
+        this.keys = []
     }
     async balance(address: string = undefined) {
         if (address) return await this.blockchain.getBalanceOfAddress(address)
@@ -37,6 +35,15 @@ class Wallet extends FullNode {
         this.blockchain.addTransaction(transaction)
         this.broadcastAndStoreDataHash(Node.constructDataBuffer('transction', transaction))
         return transaction
+    }
+    setKeys(keys: Array<{ publicKey: string, privateKey: string }>) {
+        this.keys = keys
+    }
+    addKey(key: { publicKey: string, privateKey: string }) {
+        this.keys.push(key)
+    }
+    listKeys() {
+        console.log(this.keys)
     }
 }
 export default Wallet
