@@ -18,6 +18,7 @@ const commands = {
             name: 'value',
             message: 'Command',
             choices: [
+                { title: 'Info', description: 'View details about your current wallet', value: commands.info },
                 { title: 'Send', description: 'Send money to address', value: commands.send },
                 { title: 'Address', description: 'Get wallet address', value: commands.address },
                 { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
@@ -30,23 +31,13 @@ const commands = {
         if (typeof res.value !== 'function') return commands.commands()
         res.value()
     },
+    info: () => {
+        console.log(`${chalk.whiteBright.bold('Name')}                 ${chalk.blueBright(wallet.wallet.name)}`)
+        console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(wallet.wallet.address)}`)
+        console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(wallet.wallet.secret)}`)
+        commands.commands()
+    },
     send: async () => {
-        const choices = wallet.keys.map(e => {
-            return {
-                title: e.publicKey
-            }
-        })
-        if (!choices.length) {
-            console.log('No keys stored in wallet')
-            return commands.commands()
-        }
-        const { fromAddress } = await prompts({
-            type: 'autocomplete',
-            name: 'fromAddress',
-            message: 'Choose wallet',
-            choices
-        })
-        const key = wallet.keys.find(e => e.publicKey === fromAddress)
         const res = await prompts([
             {
                 type: 'text',
@@ -89,32 +80,14 @@ const commands = {
         if (res.confirm) {
             const transaction = await wallet.send({
                 ...res,
-                ...key
-                // publicKey: key.publicKey,
-                // privateKey: key.privateKey
+                ...wallet.wallet
             })
             console.log(transaction)
         }
         commands.commands()
     },
     address: async () => {
-        const choices = wallet.keys.map(e => {
-            return {
-                title: e.publicKey
-            }
-        })
-        if (choices.length) {
-            const res = await prompts({
-                type: 'autocomplete',
-                name: 'address',
-                message: 'Addresses',
-                choices
-            })
-            console.log(res.address)
-        }
-        else {
-            console.log('No keys stored in wallet')
-        }
+        console.log(wallet.wallet.address)
         commands.commands()
     },
     balance: async () => {
@@ -156,9 +129,9 @@ const commands = {
         })
         const address = base58.encode(publicKey)
         const secret = base58.encode(privateKey)
-        console.log(`${chalk.whiteBright(chalk.bold('Address'))}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(address)}`)
-        console.log(`${chalk.whiteBright(chalk.bold('Private key'))} (${chalk.redBright('SECRET')}) ${chalk.blueBright(secret)}`)
-        const res = await prompts({
+        console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(address)}`)
+        console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(secret)}`)
+        const { save } = await prompts({
             type: 'toggle',
             name: 'save',
             message: 'Save key?',
@@ -166,13 +139,35 @@ const commands = {
             active: 'yes',
             inactive: 'no'
         })
-        if (res.save) {
-            if (!fs.existsSync('./keys')) fs.mkdirSync('./keys')
-            fs.writeFileSync(`./keys/${address}`, secret)
-            // const password = ''
-            // const hash = crypto.createHash('sha256').update(password).digest('hex')
-            // fs.writeFileSync(`./keys/${address}`, `${secret}\n${hash}`)
-        }
+        if (!save) return commands.commands()
+        const { name, passphrase } = await prompts([
+            {
+                type: 'text',
+                name: 'name',
+                message: 'Name wallet'
+            },
+            {
+                type: 'password',
+                name: 'passphrase',
+                message: 'Enter passphrase'
+            }
+        ])
+        const iv = crypto.randomBytes(16)
+        const cipher = crypto.createCipheriv('aes-256-cbc', crypto.createHash('sha256').update(passphrase).digest(), iv)
+        if (!fs.existsSync('./keys')) fs.mkdirSync('./keys')
+        fs.writeFileSync(`./keys/${name}`, Buffer.concat([
+            iv,
+            cipher.update(JSON.stringify({
+                address,
+                secret
+            })),
+            cipher.final()
+        ]))
+        wallet.import({
+            name,
+            address,
+            secret
+        })
         commands.commands()
     },
     network: () => {
@@ -193,7 +188,6 @@ const commands = {
             name: 'value',
             message: 'Command',
             choices: [
-                { title: 'Password', description: 'Configure password options for wallet', value: commands.password },
                 { title: 'Nodes', description: 'Configure network nodes for wallet', value: commands.nodes },
                 { title: 'Back', value: commands.commands }
             ]
@@ -201,107 +195,50 @@ const commands = {
         if (typeof res.value !== 'function') return commands.commands()
         res.value()
     },
-    password: async () => {
-        const res = await prompts({
-            type: 'autocomplete',
-            name: 'value',
-            message: 'Command',
-            choices: [
-                { title: 'Enable', description: 'Enable password encryption for wallet', value: commands.enable_password },
-                { title: 'Update', description: 'Update password', value: commands.update_password },
-                { title: 'Back', value: commands.settings }
-            ]
-        })
-        if (typeof res.value !== 'function') return commands.commands()
-        res.value()
-    },
-    enable_password: async () => {
-        const res = await prompts({
-            type: 'toggle',
-            name: 'enable',
-            message: 'Enable password',
-            initial: false,
-            active: 'yes',
-            inactive: 'no'
-        })
-        console.log(res)
-        if (res.enable) {
-            console.log(chalk.greenBright('Successfully enabled password encryption for wallet'))
-        }
-        else {
-            console.log(chalk.yellowBright('Successfully disabled password encryption for wallet'))
-        }
-        return commands.password()
-    },
-    update_password: async () => {
-        let password = ''
-        const res = await prompts([
-            {
-                type: 'password',
-                name: 'new_password',
-                message: 'New password',
-                validate: new_password => {
-                    password = new_password
-                    // calculate strength of password
-                    return true
-                }
-            },
-            {
-                type: 'password',
-                name: 'confirm_new_password',
-                message: 'Confirm new password',
-                validate: confirm_new_password => {
-                    // compare passwords
-                    return password === confirm_new_password ? true : 'Passwords do not match'
-                }
-            }
-        ])
-        console.log(chalk.greenBright('Successfully updated password'))
-        commands.password()
-    },
     nodes: () => {
         console.log('nodes')
         commands.commands()
     },
-    decrypt: async (address) => {
-        // const { password } = await prompts({
-        //     type: 'password',
-        //     name: 'password',
-        //     message: 'Decrypt wallet',
-        //     validate: password => {
-        //         const algorithm = 'aes-512-cbc'
-        //         const length = 64
-        //         const key = crypto.scryptSync(password, 'key.salt', length)
-        //         const iv = crypto.randomBytes(length)
-        //         const output = crypto.createDecipheriv(algorithm, key, iv)
-        //         return true
-        //     }
-        // })
+    load_wallet: async (name) => {
+        const data = fs.readFileSync(`./keys/${name}`)
+        await prompts({
+            type: 'password',
+            name: 'passphrase',
+            message: 'Enter passphrase',
+            // message: `Enter passphrase for "${name}"`,
+            validate: passphrase => {
+                try {
+                    const decipher = crypto.createDecipheriv('aes-256-cbc', crypto.createHash('sha256').update(passphrase).digest(), data.slice(0, 16))
+                    wallet.import({
+                        name,
+                        ...JSON.parse(String(Buffer.concat([
+                            decipher.update(data.slice(16)),
+                            decipher.final()
+                        ])))
+                    })
+                    return true
+                } catch { return 'Failed to decrypt' }
+            }
+        })
+        commands.commands()
     },
     select_wallet: async () => {
         if (!fs.existsSync('./keys')) fs.mkdirSync('./keys')
         const files = fs.readdirSync('./keys')
-        if (!files.length) {
-            console.log('No keys stored in wallet generating new...')
-            // return commands.generate()
-            return
-        }
+        if (!files.length) return commands.generate()
         const choices = files.map(e => {
             return {
-                title: `${e.slice(0, 3)}...${e.slice(16)}`,
-                // title: e,
+                title: e,
                 value: e
             }
         })
-        console.log(choices)
-        const res = await prompts({
+        const { name } = await prompts({
             type: 'autocomplete',
-            name: 'address',
+            name: 'name',
             message: 'Select wallet',
             choices
         })
-        console.log(res)
-        commands.decrypt(res.address)
+        commands.load_wallet(name)
     },
     init: () => {
         wallet.connectToNetwork(nodes)
