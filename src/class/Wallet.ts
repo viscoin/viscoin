@@ -1,6 +1,8 @@
 import Transaction from './Transaction'
 import FullNode from './FullNode'
 import Node from './Node'
+import * as crypto from 'crypto'
+import base58 from '../function/base58'
 interface Wallet {
     wallet: { name: string, address: string, secret: string }
 }
@@ -31,6 +33,23 @@ class Wallet extends FullNode {
     }
     import(wallet: { name: string, address: string, secret: string }) {
         this.wallet = wallet
+    }
+    generate() {
+        const key = crypto.generateKeyPairSync('ed25519')
+        const publicKey = key.publicKey.export({
+            type: 'spki',
+            format: 'der'
+        })
+        const privateKey = key.privateKey.export({
+            type: 'pkcs8',
+            format: 'der'
+        })
+        const address = base58.encode(publicKey)
+        const secret = base58.encode(privateKey)
+        return {
+            address,
+            secret
+        }
     }
 }
 export default Wallet

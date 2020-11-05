@@ -1,11 +1,10 @@
 import * as mongoose from './src/mongoose/mongoose'
 mongoose.init()
 import Miner from './src/class/Miner'
-import * as keys from './keys.json'
 import * as nodes from './nodes.json'
 import * as config from './config.json'
 
-const miner = new Miner(keys[0].publicKey)
+const miner = new Miner(config.mining.address)
 miner.hostNetworkNode()
 miner.connectToNetwork(nodes)
 miner.start()

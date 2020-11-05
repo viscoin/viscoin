@@ -25,7 +25,8 @@ const commands = {
                 { title: 'Exit', description: 'Exits', value: commands.exit },
                 { title: 'Generate', description: 'Generates new wallet', value: commands.generate },
                 { title: 'Network', description: 'View network nodes', value: commands.network },
-                { title: 'Settings', description: 'Configure wallet settings', value: commands.settings }
+                { title: 'Settings', description: 'Configure wallet settings', value: commands.settings },
+                { title: 'Wallet', description: 'Select wallet', value: commands.select_wallet }
             ]
         })
         if (typeof res.value !== 'function') return commands.commands()
@@ -118,17 +119,7 @@ const commands = {
         process.exit(0)
     },
     generate: async () => {
-        const key = crypto.generateKeyPairSync('ed25519')
-        const publicKey = key.publicKey.export({
-            type: 'spki',
-            format: 'der'
-        })
-        const privateKey = key.privateKey.export({
-            type: 'pkcs8',
-            format: 'der'
-        })
-        const address = base58.encode(publicKey)
-        const secret = base58.encode(privateKey)
+        const { address, secret } = wallet.generate()
         console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(address)}`)
         console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(secret)}`)
         const { save } = await prompts({

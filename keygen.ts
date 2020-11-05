@@ -1,5 +1,3 @@
-import * as fs from 'fs'
-import * as keys from './keys.json'
 import * as crypto from 'crypto'
 import base58 from './src/function/base58'
 
@@ -50,9 +48,3 @@ const test = (publicKey, privateKey) => {
     console.log('Verified', verified)
 }
 test(publicKeyImported, privateKeyImported)
-
-keys.unshift({
-    publicKey: publicKeyEncoded,
-    privateKey: privateKeyEncoded
-})
-fs.writeFileSync('./keys.json', JSON.stringify(keys, null, 4))

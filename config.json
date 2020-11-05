@@ -4,6 +4,7 @@
             "amount": 100,
             "fromAddress": "mining reward"
         },
+        "address": "GfHq2tTVk9z4eXgyVzFH6hqmDvegPctvtGev5tgQzoMmGzbNd6NPqQJVqHrh",
         "blockTime": 10000,
         "trustedAfterBlocks": 10
     },
