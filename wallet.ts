@@ -154,8 +154,8 @@ const commands = {
         ])
         const iv = crypto.randomBytes(16)
         const cipher = crypto.createCipheriv('aes-256-cbc', crypto.createHash('sha256').update(passphrase).digest(), iv)
-        if (!fs.existsSync('./keys')) fs.mkdirSync('./keys')
-        fs.writeFileSync(`./keys/${name}`, Buffer.concat([
+        if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
+        fs.writeFileSync(`./wallets/${name}.wallet`, Buffer.concat([
             iv,
             cipher.update(JSON.stringify({
                 address,
@@ -200,12 +200,11 @@ const commands = {
         commands.commands()
     },
     load_wallet: async (name) => {
-        const data = fs.readFileSync(`./keys/${name}`)
+        const data = fs.readFileSync(`./wallets/${name}`)
         await prompts({
             type: 'password',
             name: 'passphrase',
             message: 'Enter passphrase',
-            // message: `Enter passphrase for "${name}"`,
             validate: passphrase => {
                 try {
                     const decipher = crypto.createDecipheriv('aes-256-cbc', crypto.createHash('sha256').update(passphrase).digest(), data.slice(0, 16))
@@ -223,8 +222,8 @@ const commands = {
         commands.commands()
     },
     select_wallet: async () => {
-        if (!fs.existsSync('./keys')) fs.mkdirSync('./keys')
-        const files = fs.readdirSync('./keys')
+        if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
+        const files = fs.readdirSync('./wallets')
         if (!files.length) return commands.generate()
         const choices = files.map(e => {
             return {

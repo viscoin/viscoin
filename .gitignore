@@ -108,6 +108,4 @@ dist
 !*_.js
 
 # Keys
-*keys.json
-keys/*
-!keys/config.json
+wallets/*
