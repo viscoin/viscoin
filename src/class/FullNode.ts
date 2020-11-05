@@ -6,6 +6,7 @@ import * as config from '../../config.json'
 import Blockchain from './Blockchain'
 import Block from './Block'
 import Transaction from './Transaction'
+import schema_node from '../mongoose/schema/node'
 interface FullNode {
     blockchain: Blockchain
     serverNode: ServerNode
@@ -104,12 +105,17 @@ class FullNode extends events.EventEmitter {
         }
         this.broadcastAndStoreDataHash(data)
     }
-    handleSocket(socket) {
+    async handleSocket(socket) {
         this.broadcastAndStoreDataHash(Node.constructDataBuffer('node', {
             address: socket.remoteAddress,
             family: socket.remoteFamily,
             port: socket.remotePort
         }))
+        await new schema_node({
+            address: socket.remoteAddress,
+            family: socket.remoteFamily,
+            port: socket.remotePort
+        }).save()
     }
 }
 export default FullNode
