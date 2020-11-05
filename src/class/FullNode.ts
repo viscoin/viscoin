@@ -111,7 +111,7 @@ class FullNode extends events.EventEmitter {
             family: socket.remoteFamily,
             port: socket.remotePort
         }))
-        await new schema_node({
+        if (config.save_connected_nodes) await new schema_node({
             address: socket.remoteAddress,
             family: socket.remoteFamily,
             port: socket.remotePort

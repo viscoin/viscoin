@@ -38,5 +38,6 @@
     "network": {
         "address": "192.168.0.7",
         "port": 8334
-    }
+    },
+    "save_connected_nodes": true
 }
