@@ -9,19 +9,7 @@ import * as fs from 'fs'
 import Wallet from './src/class/Wallet'
 import base58 from './src/function/base58'
 
-const keys = []
-const files = fs.readdirSync('./keys')
-for (const file of files) {
-    keys.push({
-        publicKey: file,
-        privateKey: String(fs.readFileSync(`./keys/${file}`))
-    })
-}
-console.log(keys)
-
 const wallet = new Wallet()
-wallet.setKeys(keys)
-wallet.connectToNetwork(nodes)
 
 const commands = {
     commands: async () => {
@@ -43,6 +31,22 @@ const commands = {
         res.value()
     },
     send: async () => {
+        const choices = wallet.keys.map(e => {
+            return {
+                title: e.publicKey
+            }
+        })
+        if (!choices.length) {
+            console.log('No keys stored in wallet')
+            return commands.commands()
+        }
+        const { fromAddress } = await prompts({
+            type: 'autocomplete',
+            name: 'fromAddress',
+            message: 'Choose wallet',
+            choices
+        })
+        const key = wallet.keys.find(e => e.publicKey === fromAddress)
         const res = await prompts([
             {
                 type: 'text',
@@ -85,25 +89,32 @@ const commands = {
         if (res.confirm) {
             const transaction = await wallet.send({
                 ...res,
-                publicKey: keys[0].publicKey,
-                privateKey: keys[0].privateKey
+                ...key
+                // publicKey: key.publicKey,
+                // privateKey: key.privateKey
             })
             console.log(transaction)
         }
         commands.commands()
     },
     address: async () => {
-        const res = await prompts({
-            type: 'autocomplete',
-            name: 'address',
-            message: 'Addresses',
-            choices: wallet.keys.map(e => {
-                return {
-                    title: e.publicKey
-                }
-            })
+        const choices = wallet.keys.map(e => {
+            return {
+                title: e.publicKey
+            }
         })
-        console.log(res.address)
+        if (choices.length) {
+            const res = await prompts({
+                type: 'autocomplete',
+                name: 'address',
+                message: 'Addresses',
+                choices
+            })
+            console.log(res.address)
+        }
+        else {
+            console.log('No keys stored in wallet')
+        }
         commands.commands()
     },
     balance: async () => {
@@ -147,6 +158,21 @@ const commands = {
         const secret = base58.encode(privateKey)
         console.log(`${chalk.whiteBright(chalk.bold('Address'))}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(address)}`)
         console.log(`${chalk.whiteBright(chalk.bold('Private key'))} (${chalk.redBright('SECRET')}) ${chalk.blueBright(secret)}`)
+        const res = await prompts({
+            type: 'toggle',
+            name: 'save',
+            message: 'Save key?',
+            initial: false,
+            active: 'yes',
+            inactive: 'no'
+        })
+        if (res.save) {
+            if (!fs.existsSync('./keys')) fs.mkdirSync('./keys')
+            fs.writeFileSync(`./keys/${address}`, secret)
+            // const password = ''
+            // const hash = crypto.createHash('sha256').update(password).digest('hex')
+            // fs.writeFileSync(`./keys/${address}`, `${secret}\n${hash}`)
+        }
         commands.commands()
     },
     network: () => {
@@ -236,6 +262,50 @@ const commands = {
     nodes: () => {
         console.log('nodes')
         commands.commands()
+    },
+    decrypt: async (address) => {
+        // const { password } = await prompts({
+        //     type: 'password',
+        //     name: 'password',
+        //     message: 'Decrypt wallet',
+        //     validate: password => {
+        //         const algorithm = 'aes-512-cbc'
+        //         const length = 64
+        //         const key = crypto.scryptSync(password, 'key.salt', length)
+        //         const iv = crypto.randomBytes(length)
+        //         const output = crypto.createDecipheriv(algorithm, key, iv)
+        //         return true
+        //     }
+        // })
+    },
+    select_wallet: async () => {
+        if (!fs.existsSync('./keys')) fs.mkdirSync('./keys')
+        const files = fs.readdirSync('./keys')
+        if (!files.length) {
+            console.log('No keys stored in wallet generating new...')
+            // return commands.generate()
+            return
+        }
+        const choices = files.map(e => {
+            return {
+                title: `${e.slice(0, 3)}...${e.slice(16)}`,
+                // title: e,
+                value: e
+            }
+        })
+        console.log(choices)
+        const res = await prompts({
+            type: 'autocomplete',
+            name: 'address',
+            message: 'Select wallet',
+            choices
+        })
+        console.log(res)
+        commands.decrypt(res.address)
+    },
+    init: () => {
+        wallet.connectToNetwork(nodes)
+        commands.select_wallet()
     }
 }
-commands.commands()
+commands.init()
