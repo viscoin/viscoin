@@ -8,6 +8,7 @@ const hashes = [
     'sha384',
     'sha3-256',
     'sha256',
+    'blake2s256',
     'shake256'
 ],
 N = 256,
