@@ -4,6 +4,10 @@ const hashes = [
     'sha512',
     'blake2b512',
     'whirlpool',
+    'sha3-384',
+    'sha384',
+    'sha3-256',
+    'sha256',
     'shake256'
 ],
 N = 256,
