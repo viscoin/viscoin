@@ -1,6 +1,7 @@
 import * as crypto from 'crypto'
 import * as config from '../../config.json'
 import base58 from '../function/base58'
+import customHash from '../function/customHash'
 interface Transaction {
     fromAddress: string
     toAddress: string
@@ -21,15 +22,13 @@ class Transaction {
         else if (signature) this.signature = Buffer.from(signature)
     }
     calculateHash() {
-        return crypto.createHash('sha256')
-            .update(
-                this.fromAddress
-                + this.toAddress
-                + this.amount
-                + this.minerFee
-                + this.timestamp
-            )
-            .digest()
+        return customHash(
+            this.fromAddress
+            + this.toAddress
+            + this.amount
+            + this.minerFee
+            + this.timestamp
+        )
     }
     sign({ publicKey, privateKey }) {
         if (publicKey !== this.fromAddress) {

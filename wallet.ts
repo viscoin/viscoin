@@ -8,6 +8,7 @@ import * as net from 'net'
 import * as fs from 'fs'
 import Wallet from './src/class/Wallet'
 import base58 from './src/function/base58'
+import customHash from './src/function/customHash'
 
 const wallet = new Wallet()
 
@@ -144,7 +145,7 @@ const commands = {
             }
         ])
         const iv = crypto.randomBytes(16)
-        const cipher = crypto.createCipheriv('aes-256-cbc', crypto.createHash('sha256').update(passphrase).digest(), iv)
+        const cipher = crypto.createCipheriv('aes-256-cbc', customHash(passphrase), iv)
         if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
         fs.writeFileSync(`./wallets/${name}.wallet`, Buffer.concat([
             iv,
@@ -202,7 +203,7 @@ const commands = {
             message: 'Enter passphrase',
             validate: passphrase => {
                 try {
-                    const decipher = crypto.createDecipheriv('aes-256-cbc', crypto.createHash('sha256').update(passphrase).digest(), data.slice(0, 16))
+                    const decipher = crypto.createDecipheriv('aes-256-cbc', customHash(passphrase), data.slice(0, 16))
                     wallet.import({
                         name,
                         ...JSON.parse(String(Buffer.concat([

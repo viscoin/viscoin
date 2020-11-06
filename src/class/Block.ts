@@ -2,6 +2,7 @@ import * as crypto from 'crypto'
 import Transaction from './Transaction'
 import schema_block from '../mongoose/schema/block'
 import * as config from '../../config.json'
+import customHash from '../function/customHash'
 interface Block {
     nonce: number
     height: number
@@ -38,8 +39,7 @@ class Block {
         this.preAllocatedBuffer = Buffer.alloc(32).fill(Math.pow(2, 7 - remainder), index, index + 1)
     }
     calculateHash() {
-        return crypto.createHash('sha256')
-        .update(
+        return customHash(
             String(this.previousHash)
             + this.timestamp
             + JSON.stringify(this.transactions)
@@ -47,7 +47,6 @@ class Block {
             + this.height
             + this.difficulty
         )
-        .digest()
     }
     hasValidTransactions() {
         let amount = config.mining.reward.amount

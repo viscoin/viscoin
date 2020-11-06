@@ -2,6 +2,7 @@ import * as net from 'net'
 import * as crypto from 'crypto'
 import * as events from 'events'
 import * as config from '../../config.json'
+import customHash from '../function/customHash'
 interface Node {
     dataHashes: Array<Buffer>
     sockets: Array<net.Socket>
@@ -42,7 +43,7 @@ class Node extends events.EventEmitter {
     }
     verifyData(data: Buffer) {
         if (Buffer.byteLength(data) > config.byteLength.verifyData) return false
-        const hash = crypto.createHash('sha256').update(data).digest()
+        const hash = customHash(data)
         if (this.dataHashes.find(e => e.compare(hash) === 0)) return false
         if (this.processData(data) === null) return false
         this.dataHashes.push(hash)
