@@ -191,6 +191,10 @@ const commands = {
         commands.commands()
     },
     load_wallet: async (name) => {
+        if (!fs.existsSync(`./wallets/${name}`)) {
+            console.log(chalk.redBright('Wallet not found'))
+            return commands.select_wallet()
+        }
         const data = fs.readFileSync(`./wallets/${name}`)
         await prompts({
             type: 'password',
