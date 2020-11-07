@@ -8,6 +8,7 @@ import Node from './Node'
 interface Miner {
     walletAddress: string
     mining: boolean
+    hashrate: number
 }
 class Miner extends FullNode {
     constructor(wallet: string) {
@@ -20,6 +21,7 @@ class Miner extends FullNode {
         this.on('transaction', (transaction, code) => {
             this.restart()
         })
+        this.hashrate = 0
     }
     start() {
         this._start(true)
@@ -42,7 +44,10 @@ class Miner extends FullNode {
     }
     async mine(block: Block) {
         const found = block.recalculateHash()
+        this.hashrate++
         if (found) {
+            this.emit('hashrate', this.hashrate)
+            this.hashrate = 0
             this.emit('hash', found, block)
             this.blockchain.pendingTransactions = []
             const code = await this.blockchain.addBlock(block)

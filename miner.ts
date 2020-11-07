@@ -23,6 +23,7 @@ miner.on('hash', async (found, block) => {
         console.log(block.height, block.hash.toString('hex'))
     }
 })
+miner.on('hashrate', hashrate => console.log(hashrate))
 setInterval(async () => {
     // console.log('socket connections (server)', miner.serverNode.sockets.length)
     // for (const socket of miner.serverNode.sockets) {
