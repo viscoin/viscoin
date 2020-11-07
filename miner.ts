@@ -3,6 +3,7 @@ mongoose.init()
 import Miner from './src/class/Miner'
 import * as nodes from './nodes.json'
 import * as config from './config.json'
+import * as chalk from 'chalk'
 
 const miner = new Miner(config.mining.address)
 miner.hostNetworkNode()
@@ -23,7 +24,7 @@ miner.on('hash', async (found, block) => {
         console.log(block.height, block.hash.toString('hex'))
     }
 })
-miner.on('hashrate', hashrate => console.log(hashrate))
+miner.on('hashrate', hashrate => console.log(`${chalk.magentaBright('Hashrate')}: ${chalk.yellowBright(hashrate)} H/s`))
 setInterval(async () => {
     // console.log('socket connections (server)', miner.serverNode.sockets.length)
     // for (const socket of miner.serverNode.sockets) {

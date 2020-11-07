@@ -22,6 +22,10 @@ class Miner extends FullNode {
             this.restart()
         })
         this.hashrate = 0
+        setInterval(() => {
+            this.emit('hashrate', this.hashrate)
+            this.hashrate = 0
+        }, 1000)
     }
     start() {
         this._start(true)
@@ -46,8 +50,6 @@ class Miner extends FullNode {
         const found = block.recalculateHash()
         this.hashrate++
         if (found) {
-            this.emit('hashrate', this.hashrate)
-            this.hashrate = 0
             this.emit('hash', found, block)
             this.blockchain.pendingTransactions = []
             const code = await this.blockchain.addBlock(block)

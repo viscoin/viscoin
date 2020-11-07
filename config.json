@@ -5,7 +5,7 @@
             "fromAddress": "mining reward"
         },
         "address": "GfHq2tTVk9z4eXgyVzFH6hqmDvegPctvtGev5tgQzoMmGzbNd6NPqQJVqHrh",
-        "blockTime": 1000,
+        "blockTime": 10000,
         "trustedAfterBlocks": 10
     },
     "sync": {
@@ -37,7 +37,7 @@
     },
     "network": {
         "address": "192.168.0.7",
-        "port": 8334
+        "port": 8333
     },
     "save_connected_nodes": true
 }
