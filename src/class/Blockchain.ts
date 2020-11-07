@@ -338,13 +338,12 @@ class Blockchain {
     }
     async getBlockByHeight(height: number) {
         let block = await this.getLatestBlock()
-        if (!block) return null
         while (true) {
             if (!block) break
             block = await Block.load({ hash: block.previousHash })
             if (!block || block.height === height) break
         }
-        if (block.height !== height) return null
+        if (!block || block.height !== height) return null
         return block
     }
     // async repairChain() {
