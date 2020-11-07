@@ -5,14 +5,14 @@ import * as nodes from './nodes.json'
 import * as config from './config.json'
 import * as chalk from 'chalk'
 
-const miner = new Miner(config.mining.address)
+const miner = new Miner('address')
 miner.hostNetworkNode()
 miner.connectToNetwork(nodes)
 miner.start()
-if (config.sync.enabled) {
+if (config.blockchainSynchronization.enabled) {
     setTimeout(async function loop() {
         await miner.blockchainSync()
-        setTimeout(loop, config.sync.timeout)
+        setTimeout(loop, config.blockchainSynchronization.timeout)
     })
 }
 

@@ -6,10 +6,10 @@ import * as config from './config.json'
 
 const fullNode = new FullNode()
 fullNode.connectToNetwork(nodes)
-if (config.sync.enabled) {
+if (config.blockchainSynchronization.enabled) {
     setTimeout(async function loop() {
         await fullNode.blockchainSync()
-        setTimeout(loop, config.sync.timeout)
+        setTimeout(loop, config.blockchainSynchronization.timeout)
     })
 }
 

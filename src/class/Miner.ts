@@ -56,34 +56,12 @@ class Miner extends FullNode {
             // console.log(code)
             this.broadcastAndStoreDataHash(Node.constructDataBuffer('block', block))
             if (this.intermediate) this._stop(false)
-            if (config.use.process.nextTick) {
-                process.nextTick(() => {
-                    this.intermediate = setImmediate(async () => {
-                        this.mine(await this.getNewBlock())
-                    })
-                })
-            }
-            else {
-                this.intermediate = setImmediate(async () => {
-                    this.mine(await this.getNewBlock())
-                })
-            }
+            this.intermediate = setImmediate(async () => this.mine(await this.getNewBlock()))
         }
         else {
             this.emit('hash', found)
             if (this.intermediate) this._stop(false)
-            if (config.use.process.nextTick) {
-                process.nextTick(() => {
-                    this.intermediate = setImmediate(() => {
-                        this.mine(block)
-                    })
-                })
-            }
-            else {
-                this.intermediate = setImmediate(() => {
-                    this.mine(block)
-                })
-            }
+            this.intermediate = setImmediate(() => this.mine(block))
         }
     }
     async getNewBlock() {

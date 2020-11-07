@@ -1,14 +1,9 @@
 {
-    "mining": {
-        "reward": {
-            "amount": 100,
-            "fromAddress": "mining reward"
-        },
-        "address": "GfHq2tTVk9z4eXgyVzFH6hqmDvegPctvtGev5tgQzoMmGzbNd6NPqQJVqHrh",
-        "blockTime": 10000,
-        "trustedAfterBlocks": 10
+    "network": {
+        "address": "192.168.0.7",
+        "port": 8333
     },
-    "sync": {
+    "blockchainSynchronization": {
         "enabled": true,
         "timeout": 1000
     },
@@ -16,28 +11,15 @@
         "block": 1000000,
         "verifyData": 1000000
     },
-    "length": {
-        "dataHashes": 100
-    },
-    "limit": {
-        "blocksPerQuery": 10,
-        "serverNodeConnections": 100
-    },
-    "use": {
-        "process": {
-            "nextTick": true
+    "dataHashesLength": 100,
+    "maxConnections": 100,
+    "save_connected_nodes": true,
+    "mining": {
+        "reward": {
+            "amount": 100,
+            "fromAddress": ""
         },
-        "cluster": false
-    },
-    "log": {
-        "memory": false
-    },
-    "delay": {
-        "loop": 1000
-    },
-    "network": {
-        "address": "192.168.0.7",
-        "port": 8333
-    },
-    "save_connected_nodes": true
+        "blockTime": 10000,
+        "trustedAfterBlocks": 10
+    }
 }
