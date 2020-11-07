@@ -10,13 +10,8 @@ const hashes = [
     'sha256',
     'blake2s256',
     'shake256'
-],
-N = 256,
-r = 8,
-p = 1
-const maxmem = 128 * N * r * 2
+]
 export default (data) => {
-    data = crypto.scryptSync(data, '', 64, { N, r, p, maxmem })
     for (const hash of hashes) {
         data = crypto.createHash(hash).update(data).digest()
     }
