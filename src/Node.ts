@@ -1,8 +1,8 @@
 import * as net from 'net'
 import * as crypto from 'crypto'
 import * as events from 'events'
-import * as config from '../../config.json'
-import customHash from '../function/customHash'
+import * as config from '../config.json'
+import customHash from './customHash'
 interface Node {
     dataHashes: Array<Buffer>
     sockets: Array<net.Socket>

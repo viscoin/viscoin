@@ -2,11 +2,11 @@ import * as events from 'events'
 import ServerNode from './ServerNode'
 import ClientNode from './ClientNode'
 import Node from './Node'
-import * as config from '../../config.json'
+import * as config from '../config.json'
 import Blockchain from './Blockchain'
 import Block from './Block'
 import Transaction from './Transaction'
-import schema_node from '../mongoose/schema/node'
+import schema_node from './mongoose/schema/node'
 interface FullNode {
     blockchain: Blockchain
     serverNode: ServerNode

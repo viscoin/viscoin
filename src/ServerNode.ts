@@ -1,5 +1,5 @@
 import * as net from 'net'
-import * as config from '../../config.json'
+import * as config from '../config.json'
 import Node from './Node'
 interface ServerNode extends Node {
     server: net.Server

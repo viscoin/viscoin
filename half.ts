@@ -1,6 +1,6 @@
 import * as mongoose from './src/mongoose/mongoose'
 mongoose.init()
-import FullNode from './src/class/FullNode'
+import FullNode from './src/FullNode'
 import * as nodes from './nodes.json'
 import * as config from './config.json'
 

@@ -2,7 +2,7 @@ import Transaction from './Transaction'
 import FullNode from './FullNode'
 import Node from './Node'
 import * as crypto from 'crypto'
-import base58 from '../function/base58'
+import base58 from './base58'
 interface Wallet {
     wallet: { name: string, address: string, secret: string }
 }

@@ -1,8 +1,8 @@
 import * as crypto from 'crypto'
 import Transaction from './Transaction'
-import schema_block from '../mongoose/schema/block'
-import * as config from '../../config.json'
-import customHash from '../function/customHash'
+import schema_block from './mongoose/schema/block'
+import * as config from '../config.json'
+import customHash from './customHash'
 interface Block {
     nonce: number
     height: number

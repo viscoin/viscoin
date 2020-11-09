@@ -1,6 +1,6 @@
 import * as mongoose from './src/mongoose/mongoose'
 mongoose.init()
-import Miner from './src/class/Miner'
+import Miner from './src/Miner'
 import * as nodes from './nodes.json'
 import * as config from './config.json'
 import * as chalk from 'chalk'

@@ -6,9 +6,9 @@ import * as chalk from 'chalk'
 import * as nodes from './nodes.json'
 import * as net from 'net'
 import * as fs from 'fs'
-import Wallet from './src/class/Wallet'
-import base58 from './src/function/base58'
-import customHash from './src/function/customHash'
+import Wallet from './src/Wallet'
+import base58 from './src/base58'
+import customHash from './src/customHash'
 
 const wallet = new Wallet()
 

@@ -2,7 +2,7 @@ import Blockchain from './Blockchain'
 import Block from './Block'
 import Transaction from './Transaction'
 import ClientNode from './ClientNode'
-import * as config from '../../config.json'
+import * as config from '../config.json'
 import FullNode from './FullNode'
 import Node from './Node'
 interface Miner {

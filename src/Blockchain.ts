@@ -1,9 +1,9 @@
 import Transaction from './Transaction'
 import Block from './Block'
 import * as crypto from 'crypto'
-import * as config from '../../config.json'
-import schema_block from '../mongoose/schema/block'
-import base58 from '../function/base58'
+import * as config from '../config.json'
+import schema_block from './mongoose/schema/block'
+import base58 from './base58'
 interface Blockchain {
     difficulty: number
     pendingTransactions: Array<Transaction>

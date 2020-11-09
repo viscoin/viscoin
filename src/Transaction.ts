@@ -1,7 +1,7 @@
 import * as crypto from 'crypto'
-import * as config from '../../config.json'
-import base58 from '../function/base58'
-import customHash from '../function/customHash'
+import * as config from '../config.json'
+import base58 from './base58'
+import customHash from './customHash'
 interface Transaction {
     fromAddress: string
     toAddress: string
