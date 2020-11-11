@@ -4,14 +4,17 @@ import * as nodes from './nodes.json'
 import * as config from './config.json'
 import TCPNetworkNode from './src/TCPNetworkNode'
 import Blockchain from './src/Blockchain'
+import protocol from './src/protocol'
 
 const node = new TCPNetworkNode()
 const blockchain = new Blockchain()
 node.connectToNetwork(nodes)
-if (config.blockchainSynchronization.enabled) {
+if (config.node.blockchainSynchronization.enabled) {
     setTimeout(async function loop() {
-        await blockchain.getNextSyncBlock()
-        setTimeout(loop, config.blockchainSynchronization.timeout)
+        const block = await blockchain.getNextSyncBlock()
+        const buffer = protocol.constructDataBuffer('block', block)
+        node.broadcast(buffer)
+        setTimeout(loop, config.node.blockchainSynchronization.timeout)
     })
 }
 node.on('block', block => {

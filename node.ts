@@ -9,10 +9,10 @@ const node = new TCPNetworkNode()
 const blockchain = new Blockchain()
 if (config.node.hostNode) node.start(config.network.port, config.network.address)
 if (config.node.connectToNodes) node.connectToNetwork(nodes)
-if (config.blockchainSynchronization.enabled) {
+if (config.node.blockchainSynchronization.enabled) {
     setTimeout(async function loop() {
         await blockchain.getNextSyncBlock()
-        setTimeout(loop, config.blockchainSynchronization.timeout)
+        setTimeout(loop, config.node.blockchainSynchronization.timeout)
     })
 }
 node.on('block', block => {

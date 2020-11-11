@@ -414,7 +414,7 @@ class Blockchain {
     async getNextSyncBlock() {
         const block = await this.getBlockByHeight(this.syncIndex++)
         if (this.syncIndex >= (await this.getLatestBlock()).height - config.mining.trustedAfterBlocks) this.syncIndex = 0
-        return protocol.constructDataBuffer('block', block)
+        return block
     }
 }
 export default Blockchain
