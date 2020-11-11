@@ -19,6 +19,7 @@ class TCPNetworkNode extends events.EventEmitter {
         this.dataHashes = []
         this.sockets = []
         this.on('data', data => this.handleData(data))
+        this.on('socket', socket => this.handleSocket(socket))
         // server
         this.server = new net.Server()
         this.server.maxConnections = config.maxConnections

@@ -8,8 +8,8 @@ client.on('block', block => {
 client.on('transaction', transaction => {
     console.log('transaction')
 })
-client.on('node', data => {
-    console.log('node')
+client.on('node', node => {
+    console.log('node', node)
 })
 client.on('listening', () => {
     console.log('listening')
