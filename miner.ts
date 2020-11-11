@@ -14,53 +14,51 @@ if (isMainThread) {
     mongoose.init()
     const blockchain = new Blockchain()
     const node = new TCPNetworkNode()
-    node.start(config.network.port, config.network.address)
-    node.connectToNetwork(nodes)
+    if (config.miner.hostNode) node.start(config.network.port, config.network.address)
+    if (config.miner.connectToNodes) node.connectToNetwork(nodes)
+    const mineNewBlock = async () => {
+        const block = await blockchain.getNewBlock('address')
+        for (const worker of workers) {
+            worker.postMessage(JSON.stringify({ code: 'mine', block }))
+        }
+    }
     node.on('block', block => {
         blockchain.addBlock(block)
+        mineNewBlock()
     })
     node.on('transaction', transaction => {
         blockchain.addTransaction(transaction)
+        mineNewBlock()
     })
     node.on('node', data => {
-        node.connectToNetwork([ data.data ])
+        if (config.miner.connectToNodes) node.connectToNetwork([ data.data ])
     })
     let threads = cpus().length,
+    threadsReady = 0,
     hashrate = 0
     setInterval(() => {
         console.log(`${chalk.magentaBright('Hashrate')}: ${chalk.yellowBright(hashrate)} ${chalk.redBright('H/s')}`)
         hashrate = 0
     }, 1000)
     if (config.threads) threads = config.threads
-    const workers = [],
-    getNewBlock = (address) => {
-        return blockchain.getNewBlock(address)
-    }
+    const workers = []
     for (let i = 0; i < threads; i++) {
         const worker = new Worker(__filename)
         workers.push(worker)
         worker.on('error', e => console.log('error', e))
         worker.on('exit', e => console.log('exit', e))
         worker.on('message', async e => {
-            try {
-                e = JSON.parse(e)
-            }
-            catch (err) {
-                console.log(err)
-            }
+            e = JSON.parse(e)
             switch (e.code) {
                 case 'ready':
-                    console.log('ready')
-                    worker.postMessage(JSON.stringify({ code: 'mine', block: await getNewBlock('address') }))
+                    if (++threadsReady === threads) mineNewBlock()
                     break
                 case 'mined':
                     console.log('mined', e.block.height)
                     await blockchain.addBlock(new Block(e.block))
                     blockchain.pendingTransactions = []
                     node.broadcastAndStoreDataHash(protocol.constructDataBuffer('block', e.block))
-                    for (const worker of workers) {
-                        worker.postMessage(JSON.stringify({ code: 'mine', block: await getNewBlock('address') }))
-                    }
+                    mineNewBlock()
                     break
                 case 'hashrate':
                     hashrate += e.hashrate
@@ -79,12 +77,7 @@ else {
     parentPort.postMessage(JSON.stringify({ code: 'ready' }))
     const miner = new Miner()
     parentPort.on('message', e => {
-        try {
-            e = JSON.parse(e)
-        }
-        catch (err) {
-            console.log(err)
-        }
+        e = JSON.parse(e)
         switch (e.code) {
             case 'mine':
                 miner.emit('mine', e.block)

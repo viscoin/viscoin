@@ -108,19 +108,19 @@ class TCPNetworkNode extends events.EventEmitter {
         }
         this.sockets = []
     }
-    async handleData(data) {
-        if (!this.verifyData(data)) return
-        data = protocol.parseDataBuffer(data)
-        if (data === null) return
-        switch (data.type) {
+    async handleData(raw) {
+        if (!this.verifyData(raw)) return
+        const parsed = protocol.parseDataBuffer(raw)
+        if (parsed === null) return
+        switch (parsed.type) {
             case 'block':
-                if (!data.data) return
-                const block = new Block(data.data)
+                if (!parsed.data) return
+                const block = new Block(parsed.data)
                 this.emit('block', block)
                 break
             case 'transaction':
-                if (!data.data) return
-                const transaction = new Transaction(data.data)
+                if (!parsed.data) return
+                const transaction = new Transaction(parsed.data)
                 this.emit('transaction', transaction)
                 break
             case 'node':
@@ -128,12 +128,12 @@ class TCPNetworkNode extends events.EventEmitter {
                 // if ([8333, 8334, 8335].includes(processed.data.port)) {
                 //     this.emit('node', processed.data)
                 // }
-                if (!data.data) return
+                if (!parsed.data) return
                 // if (processed.data.port !== 8333) processed.data.port = 8333
-                this.emit('node', data.data)
+                this.emit('node', parsed.data)
                 break
         }
-        this.broadcastAndStoreDataHash(data)
+        this.broadcastAndStoreDataHash(raw)
     }
     async handleSocket(socket) {
         this.broadcastAndStoreDataHash(protocol.constructDataBuffer('node', {

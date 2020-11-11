@@ -1,9 +1,17 @@
 {
+    "miner": {
+        "hostNode": true,
+        "connectToNodes": true
+    },
+    "node": {
+        "hostNode": true,
+        "connectToNodes": true
+    },
     "network": {
         "address": "192.168.0.7",
-        "port": 8333
+        "port": 8334
     },
-    "threads": 0,
+    "threads": 1,
     "blockchainSynchronization": {
         "enabled": true,
         "timeout": 1000
