@@ -1,8 +1,8 @@
 import * as config from '../config.json'
 import * as chalk from 'chalk'
 import BaseClient from "./BaseClient"
-import Block from './Block'
 import protocol from './protocol'
+import Block from './Block'
 import { Worker } from 'worker_threads'
 import { cpus } from 'os'
 interface MinerClient {
@@ -29,6 +29,31 @@ class MinerClient extends BaseClient {
         for (const worker of this.workers) {
             worker.postMessage(JSON.stringify({ code: 'mine', block }))
         }
+    }
+    addWorker(worker: Worker) {
+        this.workers.push(worker)
+        worker.on('message', async e => {
+            e = JSON.parse(e)
+            switch (e.code) {
+                case 'ready':
+                    if (++this.threadsReady === this.threads) await this.mineNewBlock()
+                    break
+                case 'mined':
+                    console.log('mined', e.block.height)
+                    await this.blockchain.addBlock(new Block(e.block))
+                    this.blockchain.pendingTransactions = []
+                    this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('block', e.block))
+                    await this.mineNewBlock()
+                    break
+                case 'hashrate':
+                    this.hashrate += e.hashrate
+                    break
+            }
+        })
+        worker.on('error', e => console.log('error', e))
+        worker.on('exit', e => console.log('exit', e))
+        worker.on('messageerror', e => console.log('messageerror', e))
+        // worker.on('online', e => console.log('online', e))
     }
 }
 export default MinerClient
