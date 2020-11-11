@@ -2,13 +2,15 @@ import Blockchain from "./Blockchain"
 import TCPNetworkNode from "./TCPNetworkNode"
 import * as config from '../config.json'
 import * as nodes from '../nodes.json'
+import * as events from 'events'
 import protocol from './protocol'
 interface BaseClient {
     node: TCPNetworkNode
     blockchain: Blockchain
 }
-class BaseClient {
+class BaseClient extends events.EventEmitter {
     constructor() {
+        super()
         this.node = new TCPNetworkNode()
         this.blockchain = new Blockchain()
         if (config.node.hostNode) this.node.start(config.network.port, config.network.address)
@@ -22,16 +24,19 @@ class BaseClient {
         //     })
         // }
         this.node.on('block', block => {
-            console.log('block')
+            this.emit('block', block)
             this.blockchain.addBlock(block)
         })
         this.node.on('transaction', transaction => {
-            console.log('transaction')
+            this.emit('transaction', transaction)
             this.blockchain.addTransaction(transaction)
         })
         this.node.on('node', data => {
-            console.log('node')
+            this.emit('node', data)
             if (config.node.connectToNodes) this.node.connectToNetwork([ data.data ])
+        })
+        this.node.server.on('listening', () => {
+            this.emit('listening')
         })
     }
 }

@@ -154,7 +154,7 @@ class TCPNetworkNode extends events.EventEmitter {
                 this.addSocket(socket)
                 socket.on('data', data => this.emit('data', data))
             })
-            .on('listening', () => this.emit('listening'))
+            .on('listening', () => {})
             .on('close', () => {})
             .on('error', () => {})
             .listen(port, address)
