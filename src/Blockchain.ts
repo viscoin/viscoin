@@ -1,17 +1,20 @@
-import Transaction from './Transaction'
-import Block from './Block'
 import * as crypto from 'crypto'
 import * as config from '../config.json'
+import Transaction from './Transaction'
+import Block from './Block'
 import schema_block from './mongoose/schema/block'
 import base58 from './base58'
+import protocol from './protocol'
 interface Blockchain {
     difficulty: number
     pendingTransactions: Array<Transaction>
+    syncIndex: number
 }
 class Blockchain {
     constructor() {
         this.difficulty = 0
         this.pendingTransactions = []
+        this.syncIndex = 0
     }
     createGenesisBlock() {
         return new Block({
@@ -381,5 +384,37 @@ class Blockchain {
     //         blocks = []
     //     }
     // }
+    async getNewBlock(walletAddress) {
+        const previousBlock = await this.getLatestBlock()
+        if (previousBlock.height === 0) await previousBlock.save()
+        const transactions = [
+            new Transaction({
+                fromAddress: config.mining.reward.fromAddress,
+                toAddress: walletAddress,
+                amount: config.mining.reward.amount
+            }),
+            ...this.pendingTransactions
+                .filter(e => e.timestamp >= previousBlock.timestamp)
+                .sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
+        ]
+        await this.updateDifficulty()
+        const block = new Block({
+            transactions,
+            previousHash: previousBlock.hash,
+            height: previousBlock.height + 1,
+            difficulty: this.difficulty
+        })
+        block.transactions.map(e => block.transactions[0].amount += e.minerFee)
+        while (Buffer.byteLength(JSON.stringify(block)) > config.byteLength.block) {
+            const transaction = block.transactions.pop()
+            block.transactions[0].amount -= transaction.minerFee
+        }
+        return block
+    }
+    async getNextSyncBlock() {
+        const block = await this.getBlockByHeight(this.syncIndex++)
+        if (this.syncIndex >= (await this.getLatestBlock()).height - config.mining.trustedAfterBlocks) this.syncIndex = 0
+        return protocol.constructDataBuffer('block', block)
+    }
 }
 export default Blockchain

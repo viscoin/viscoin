@@ -1,4 +1,4 @@
-import { Worker, isMainThread, parentPort } from 'worker_threads'
+import { Worker, isMainThread, parentPort, threadId } from 'worker_threads'
 import { cpus } from 'os'
 import * as crypto from 'crypto'
 
@@ -15,9 +15,11 @@ if (isMainThread) {
         worker.on('message', () => i++)
         worker.on('messageerror', e => console.log('messageerror', e))
         worker.on('online', () => console.log('online'))
+        console.log(worker.threadId)
     }
 }
 else {
+    console.log(threadId)
     let i = 0
     while (true) {
         crypto.createHash('sha256').update('').digest()

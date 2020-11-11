@@ -1,98 +1,30 @@
-import Blockchain from './Blockchain'
+import * as events from 'events'
 import Block from './Block'
-import Transaction from './Transaction'
-import ClientNode from './ClientNode'
-import * as config from '../config.json'
-import FullNode from './FullNode'
-import Node from './Node'
 interface Miner {
-    walletAddress: string
-    mining: boolean
+    immediate: NodeJS.Immediate
     hashrate: number
 }
-class Miner extends FullNode {
-    constructor(wallet: string) {
+class Miner extends events.EventEmitter {
+    constructor() {
         super()
-        this.walletAddress = wallet
-        this.mining = false
-        this.on('block', block => {
-            this.restart()
-        })
-        this.on('transaction', (transaction, code) => {
-            this.restart()
-        })
         this.hashrate = 0
         setInterval(() => {
             this.emit('hashrate', this.hashrate)
             this.hashrate = 0
         }, 1000)
+        this.on('mine', block => {
+            this.loop(new Block(block))
+        })
     }
-    start() {
-        this._start(true)
-    }
-    stop() {
-        this._stop(true)
-    }
-    async _start(force: boolean) {
-        if (force) this.mining = true
-        if (this.mining) this.mine(await this.getNewBlock())
-    }
-    _stop(force: boolean) {
-        if (force) this.mining = false
-        clearImmediate(this.intermediate)
-        this.intermediate = null
-    }
-    restart() {
-        this._stop(false)
-        this._start(false)
+    loop(block) {
+        clearImmediate(this.immediate)
+        this.immediate = setImmediate(() => this.mine(block))
     }
     async mine(block: Block) {
         const found = block.recalculateHash()
+        if (found) this.emit('mined', block)
+        else this.loop(block)
         this.hashrate++
-        if (found) {
-            this.emit('hash', found, block)
-            this.blockchain.pendingTransactions = []
-            const code = await this.blockchain.addBlock(block)
-            // console.log(code)
-            this.broadcastAndStoreDataHash(Node.constructDataBuffer('block', block))
-            if (this.intermediate) this._stop(false)
-            this.intermediate = setImmediate(async () => this.mine(await this.getNewBlock()))
-        }
-        else {
-            this.emit('hash', found)
-            if (this.intermediate) this._stop(false)
-            this.intermediate = setImmediate(() => this.mine(block))
-        }
-    }
-    async getNewBlock() {
-        const previousBlock = await this.blockchain.getLatestBlock()
-        if (previousBlock.height === 0) {
-            await previousBlock.save()
-            this.broadcastAndStoreDataHash(Node.constructDataBuffer('block', previousBlock))
-        }
-        const transactions = [
-            new Transaction({
-                fromAddress: config.mining.reward.fromAddress,
-                toAddress: this.walletAddress,
-                amount: config.mining.reward.amount
-            }),
-            ...this.blockchain.pendingTransactions
-                .filter(e => e.timestamp >= previousBlock.timestamp)
-                .sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
-        ]
-        await this.blockchain.updateDifficulty()
-        const block = new Block({
-            transactions,
-            previousHash: previousBlock.hash,
-            height: previousBlock.height + 1,
-            difficulty: this.blockchain.difficulty
-        })
-        block.transactions.map(e => block.transactions[0].amount += e.minerFee)
-        while (Buffer.byteLength(JSON.stringify(block)) > config.byteLength.block) {
-            const transaction = block.transactions.pop()
-            block.transactions[0].amount -= transaction.minerFee
-        }
-        return block
     }
 }
 export default Miner

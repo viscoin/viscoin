@@ -1,18 +1,28 @@
 import * as mongoose from './src/mongoose/mongoose'
 mongoose.init()
-import FullNode from './src/FullNode'
 import * as nodes from './nodes.json'
 import * as config from './config.json'
+import TCPNetworkNode from './src/TCPNetworkNode'
+import Blockchain from './src/Blockchain'
 
-const fullNode = new FullNode()
-fullNode.connectToNetwork(nodes)
+const node = new TCPNetworkNode()
+const blockchain = new Blockchain()
+node.connectToNetwork(nodes)
 if (config.blockchainSynchronization.enabled) {
     setTimeout(async function loop() {
-        await fullNode.blockchainSync()
+        await blockchain.getNextSyncBlock()
         setTimeout(loop, config.blockchainSynchronization.timeout)
     })
 }
-
-fullNode.on('block', (block, code) => console.log('block', code))
-fullNode.on('transaction', (transaction, code) => console.log('transaction', code))
-fullNode.on('node', node => console.log('node', node))
+node.on('block', block => {
+    blockchain.addBlock(block)
+    console.log('block', block)
+})
+node.on('transaction', transaction => {
+    blockchain.addTransaction(transaction)
+    console.log('transaction', transaction)
+})
+node.on('node', data => {
+    node.connectToNetwork([ data.data ])
+    console.log('node', node)
+})

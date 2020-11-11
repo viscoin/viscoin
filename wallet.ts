@@ -115,8 +115,6 @@ const commands = {
         commands.commands()
     },
     exit: () => {
-        wallet.closeNetworkNode()
-        wallet.disconnectFromNetwork()
         process.exit(0)
     },
     generate: async () => {
@@ -163,8 +161,8 @@ const commands = {
         commands.commands()
     },
     network: () => {
-        if (wallet.clientNode.sockets.length) {
-            for (const socket of wallet.clientNode.sockets) {
+        if (wallet.node.sockets.length) {
+            for (const socket of wallet.node.sockets) {
                 const info = <net.AddressInfo> socket.address()
                 console.log(chalk.whiteBright(`${info.address}${chalk.grey(':')}${chalk.white(info.port)} ${chalk.greenBright('=>')} ${socket.remoteAddress}${chalk.grey(':')}${chalk.blueBright(socket.remotePort)}`))
             }
@@ -236,7 +234,7 @@ const commands = {
         commands.load_wallet(name)
     },
     init: () => {
-        wallet.connectToNetwork(nodes)
+        wallet.node.connectToNetwork(nodes)
         commands.select_wallet()
     }
 }

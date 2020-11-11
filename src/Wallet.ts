@@ -1,14 +1,29 @@
-import Transaction from './Transaction'
-import FullNode from './FullNode'
-import Node from './Node'
 import * as crypto from 'crypto'
+import * as events from 'events'
+import Transaction from './Transaction'
+import TCPNetworkNode from './TCPNetworkNode'
 import base58 from './base58'
+import Blockchain from './Blockchain'
+import protocol from './protocol'
 interface Wallet {
     wallet: { name: string, address: string, secret: string }
+    blockchain: Blockchain
+    node: TCPNetworkNode
 }
-class Wallet extends FullNode {
+class Wallet extends events.EventEmitter {
     constructor() {
         super()
+        this.blockchain = new Blockchain()
+        this.node = new TCPNetworkNode()
+        this.node.on('block', block => {
+            this.blockchain.addBlock(block)
+        })
+        this.node.on('transaction', transaction => {
+            this.blockchain.addTransaction(transaction)
+        })
+        this.node.on('node', data => {
+            this.node.connectToNetwork([ data.data ])
+        })
     }
     async balance(address: string = undefined) {
         if (address) return await this.blockchain.getBalanceOfAddress(address)
@@ -28,7 +43,7 @@ class Wallet extends FullNode {
             privateKey
         })
         this.blockchain.addTransaction(transaction)
-        this.broadcastAndStoreDataHash(Node.constructDataBuffer('transction', transaction))
+        this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('transction', transaction))
         return transaction
     }
     import(wallet: { name: string, address: string, secret: string }) {
