@@ -14,3 +14,12 @@ client.on('node', node => {
 client.on('listening', () => {
     console.log('listening')
 })
+client.on('connect', socket => {
+    console.log('connect')
+})
+client.on('connection', socket => {
+    console.log('connection')
+})
+client.on('socket', socket => {
+    console.log(`socket ${socket.address().address}:${socket.address().port} <---> ${socket.remoteAddress}:${socket.remotePort}`)
+})

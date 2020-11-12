@@ -27,7 +27,7 @@ class TCPNetworkNode extends events.EventEmitter {
     }
     addSocket(socket: net.Socket) {
         let index = this.sockets.indexOf(undefined)
-        const addSocket = () => {
+        const add = () => {
             const _socket = this.hasSocket(socket)
             if (_socket !== false) {
                 _socket.destroy()
@@ -41,17 +41,25 @@ class TCPNetworkNode extends events.EventEmitter {
             }
             this.emit('socket', socket)
         }
-        if (socket.connecting) socket.on('connect', () => addSocket())
-        else addSocket()
+        if (!socket.connecting) add()
         socket
-            .on('error', err => {
+            .on('connect', () => {
+                this.emit('connect', socket)
+                add()
+            })
+            .on('error', () => {
                 socket.destroy()
                 this.sockets[index] = undefined
             })
-            .on('close', err => {
+            .on('close', () => {
                 socket.destroy()
                 this.sockets[index] = undefined
             })
+            .on('data', data => this.emit('data', data))
+            .on('drain', () => {})
+            .on('end', () => {})
+            .on('lookup', () => {})
+            .on('timeout', () => {})
     }
     verifyData(data: Buffer) {
         if (Buffer.byteLength(data) > config.byteLength.verifyData) return false
@@ -99,8 +107,8 @@ class TCPNetworkNode extends events.EventEmitter {
             }
             if (node.port === config.network.port
                 && node.address === config.network.address) continue
-            const socket = this.createSocket(node.port, node.address)
-            socket.on('connect', () => console.log('connected to socket :)'))
+            const socket = net.connect(node.port, node.address)
+            this.addSocket(socket)
         }
     }
     disconnectFromNetwork() {
@@ -152,8 +160,8 @@ class TCPNetworkNode extends events.EventEmitter {
     start(port: number, address: string) {
         this.server
             .on('connection', socket => {
+                this.emit('connection', socket)
                 this.addSocket(socket)
-                socket.on('data', data => this.emit('data', data))
             })
             .on('listening', () => {})
             .on('close', () => {})
@@ -164,11 +172,5 @@ class TCPNetworkNode extends events.EventEmitter {
         this.server.close()
     }
     // client
-    createSocket(port: number, address: string) {
-        const socket = net.connect(port, address)
-        this.addSocket(socket)
-        socket.on('data', data => this.emit('data', data))
-        return socket
-    }
 }
 export default TCPNetworkNode
