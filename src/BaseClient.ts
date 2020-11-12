@@ -15,14 +15,7 @@ class BaseClient extends events.EventEmitter {
         this.blockchain = new Blockchain()
         if (config.node.hostNode) this.node.start(config.network.port, config.network.address)
         if (config.node.connectToNodes) this.node.connectToNetwork(nodes)
-        // if (config.node.blockchainSynchronization.enabled) {
-        //     setTimeout(async function loop() {
-        //         const block = await this.blockchain.getNextSyncBlock()
-        //         const buffer = protocol.constructDataBuffer('block', block)
-        //         this.node.broadcastAndStoreDataHash(buffer)
-        //         setTimeout(loop, config.node.blockchainSynchronization.timeout)
-        //     })
-        // }
+        if (config.node.blockchainSynchronization) this.nextSync()
         this.node.on('block', block => {
             this.emit('block', block)
             this.blockchain.addBlock(block)
@@ -38,6 +31,12 @@ class BaseClient extends events.EventEmitter {
         this.node.server.on('listening', () => {
             this.emit('listening')
         })
+    }
+    async nextSync() {
+        const block = await this.blockchain.getNextSyncBlock()
+        const buffer = protocol.constructDataBuffer('block', block)
+        this.node.broadcastAndStoreDataHash(buffer)
+        setTimeout(this.nextSync.bind(this), config.node.blockchainSynchronization.timeout)
     }
 }
 export default BaseClient
