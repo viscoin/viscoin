@@ -1,5 +1,5 @@
 import * as crypto from 'crypto'
-import base58 from './src/base58'
+import base58 from '../src/base58'
 
 let key = crypto.generateKeyPairSync('ed25519')
 
