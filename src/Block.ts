@@ -72,8 +72,8 @@ class Block {
             difficulty: this.difficulty
         }).save()
     }
-    recalculateHash() {
-        this.nonce++
+    recalculateHash(add: number) {
+        this.nonce += add
         this.hash = this.calculateHash()
         return this.meetsDifficulty()
     }

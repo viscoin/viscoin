@@ -1,6 +1,7 @@
 {
     "miner": {
         "miningRewardAddress": "GfHq2tTVk9z4eXgyPWUxsWcFwT4nz2kB6aLZ5j9SaxuFpYwFN62x8pTiGuzC",
+        "threads": 0,
         "hostNode": true,
         "connectToNodes": true
     },
@@ -16,7 +17,6 @@
         "address": "192.168.0.7",
         "port": 8335
     },
-    "threads": 0,
     "byteLength": {
         "block": 1000000,
         "verifyData": 1000000

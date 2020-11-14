@@ -17,7 +17,7 @@ class MinerClient extends BaseClient {
         super()
         this.workers = []
         this.threads = cpus().length
-        if (config.threads) this.threads = config.threads
+        if (config.miner.threads) this.threads = config.miner.threads
         this.threadsReady = 0
         this.hashrate = 0
         setInterval(() => {
@@ -26,10 +26,10 @@ class MinerClient extends BaseClient {
         }, 1000)
         this.miningRewardAddress = miningRewardAddress
     }
-    async mineNewBlock() {
+    async emitThreadsMineNewBlock() {
         const block = await this.blockchain.getNewBlock(this.miningRewardAddress)
         for (const worker of this.workers) {
-            worker.postMessage(JSON.stringify({ code: 'mine', block }))
+            worker.postMessage(JSON.stringify({ code: 'mine', block, threads: this.threads }))
         }
     }
     addWorker(worker: Worker) {
@@ -38,14 +38,14 @@ class MinerClient extends BaseClient {
             e = JSON.parse(e)
             switch (e.code) {
                 case 'ready':
-                    if (++this.threadsReady === this.threads) await this.mineNewBlock()
+                    if (++this.threadsReady === this.threads) await this.emitThreadsMineNewBlock()
                     break
                 case 'mined':
                     console.log('mined', e.block.height)
                     await this.blockchain.addBlock(new Block(e.block))
                     this.blockchain.pendingTransactions = []
                     this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('block', e.block))
-                    await this.mineNewBlock()
+                    await this.emitThreadsMineNewBlock()
                     break
                 case 'hashrate':
                     this.hashrate += e.hashrate

@@ -1,6 +1,7 @@
 import * as events from 'events'
 import Block from './Block'
 interface Miner {
+    threads: number
     immediate: NodeJS.Immediate
     hashrate: number
 }
@@ -12,7 +13,8 @@ class Miner extends events.EventEmitter {
             this.emit('hashrate', this.hashrate)
             this.hashrate = 0
         }, 1000)
-        this.on('mine', block => {
+        this.on('mine', (block, threads) => {
+            this.threads = threads
             this.loop(new Block(block))
         })
     }
@@ -21,7 +23,7 @@ class Miner extends events.EventEmitter {
         this.immediate = setImmediate(() => this.mine(block))
     }
     async mine(block: Block) {
-        const found = block.recalculateHash()
+        const found = block.recalculateHash(this.threads)
         if (found) this.emit('mined', block)
         else this.loop(block)
         this.hashrate++

@@ -19,7 +19,8 @@ else {
         e = JSON.parse(e)
         switch (e.code) {
             case 'mine':
-                miner.emit('mine', e.block)
+                e.block.nonce = threadId
+                miner.emit('mine', e.block, e.threads)
                 break
         }
     })
