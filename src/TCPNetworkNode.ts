@@ -29,12 +29,14 @@ class TCPNetworkNode extends events.EventEmitter {
         let index = this.sockets.indexOf(undefined)
         const add = () => {
             const _socket = this.hasSocket(socket)
-            if (_socket !== false) {
-                _socket.destroy()
+            if (index !== -1 && _socket !== false) {
                 index = this.sockets.indexOf(_socket)
+                _socket.destroy()
                 this.sockets[index] = socket
             }
-            else if (index !== -1) this.sockets[index] = socket
+            else if (index !== -1) {
+                this.sockets[index] = socket
+            }
             else {
                 this.sockets.push(socket)
                 index = this.sockets.length - 1
