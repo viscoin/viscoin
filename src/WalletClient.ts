@@ -1,8 +1,7 @@
-import * as crypto from 'crypto'
 import Transaction from './Transaction'
-import base58 from './base58'
 import protocol from './protocol'
 import BaseClient from "./BaseClient"
+import keygen from './keygen'
 interface WalletClient {
     wallet: { name: string, address: string, secret: string }
 }
@@ -11,23 +10,7 @@ class WalletClient extends BaseClient {
         super()
         this.wallet = null
     }
-    static generate() {
-        const key = crypto.generateKeyPairSync('ed25519')
-        const publicKey = key.publicKey.export({
-            type: 'spki',
-            format: 'der'
-        })
-        const privateKey = key.privateKey.export({
-            type: 'pkcs8',
-            format: 'der'
-        })
-        const address = base58.encode(publicKey)
-        const secret = base58.encode(privateKey)
-        return {
-            address,
-            secret
-        }
-    }
+    static generate = keygen
     send({ publicKey, privateKey, toAddress, amount, minerFee }: { publicKey: string, privateKey: string, toAddress: string, amount: number | string, minerFee: number | string }) {
         if (typeof amount === 'string') amount = parseFloat(amount)
         if (typeof minerFee === 'string') minerFee = parseFloat(minerFee)
