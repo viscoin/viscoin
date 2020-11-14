@@ -6,11 +6,11 @@ import * as chalk from 'chalk'
 import * as nodes from './nodes.json'
 import * as net from 'net'
 import * as fs from 'fs'
-import Wallet from './src/Wallet'
+import WalletClient from './src/WalletClient'
 import base58 from './src/base58'
 import customHash from './src/customHash'
 
-const wallet = new Wallet()
+const wallet = new WalletClient()
 
 const commands = {
     commands: async () => {
@@ -118,7 +118,7 @@ const commands = {
         process.exit(0)
     },
     generate: async () => {
-        const { address, secret } = wallet.generate()
+        const { address, secret } = WalletClient.generate()
         console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(address)}`)
         console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(secret)}`)
         const { save } = await prompts({
