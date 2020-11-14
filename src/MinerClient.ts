@@ -10,9 +10,10 @@ interface MinerClient {
     threads: number
     threadsReady: number
     hashrate: number
+    miningRewardAddress: string
 }
 class MinerClient extends BaseClient {
-    constructor() {
+    constructor(miningRewardAddress: string) {
         super()
         this.workers = []
         this.threads = cpus().length
@@ -23,9 +24,10 @@ class MinerClient extends BaseClient {
             console.log(`${chalk.magentaBright('Hashrate')}: ${chalk.yellowBright(this.hashrate)} ${chalk.redBright('H/s')}`)
             this.hashrate = 0
         }, 1000)
+        this.miningRewardAddress = miningRewardAddress
     }
     async mineNewBlock() {
-        const block = await this.blockchain.getNewBlock('address')
+        const block = await this.blockchain.getNewBlock(this.miningRewardAddress)
         for (const worker of this.workers) {
             worker.postMessage(JSON.stringify({ code: 'mine', block }))
         }

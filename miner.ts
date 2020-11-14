@@ -1,11 +1,12 @@
 import * as mongoose from './src/mongoose/mongoose'
+import * as config from './config.json'
 import Miner from './src/Miner'
 import { Worker, isMainThread, parentPort, threadId } from 'worker_threads'
 import MinerClient from './src/MinerClient'
 
 if (isMainThread) {
     mongoose.init()
-    const client = new MinerClient()
+    const client = new MinerClient(config.miner.miningRewardAddress)
     for (let i = 0; i < client.threads; i++) {
         client.addWorker(new Worker(__filename))
     }
