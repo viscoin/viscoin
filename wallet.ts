@@ -93,24 +93,34 @@ const commands = {
         commands.commands()
     },
     balance: async () => {
-        const res = await prompts({
-            type: 'text',
-            name: 'address',
-            message: 'Address',
-            validate: address => {
-                if (!address) return true
-                try {
-                    crypto.createPublicKey({
-                        key: base58.decode(address),
-                        type: 'spki',
-                        format: 'der'
-                    })
-                    return true
-                } catch {
-                    return 'Invalid address'
+        const res = await prompts([
+            {
+                type: 'toggle',
+                name: 'this',
+                message: 'This wallet?',
+                initial: true,
+                active: 'yes',
+                inactive: 'no'
+            },
+            {
+                type: prev => prev === true ? null : 'text',
+                name: 'address',
+                message: 'Address',
+                validate: address => {
+                    if (!address) return true
+                    try {
+                        crypto.createPublicKey({
+                            key: base58.decode(address),
+                            type: 'spki',
+                            format: 'der'
+                        })
+                        return true
+                    } catch {
+                        return 'Invalid address'
+                    }
                 }
             }
-        })
+        ])
         console.log(await wallet.balance(res.address))
         commands.commands()
     },
