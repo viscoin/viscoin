@@ -28,13 +28,10 @@ class TCPNetworkNode extends events.EventEmitter {
     addSocket(socket: net.Socket) {
         let index = this.sockets.indexOf(undefined)
         const add = () => {
-            const _socket = this.hasSocket(socket)
-            if (index !== -1 && _socket !== false) {
-                index = this.sockets.indexOf(_socket)
-                _socket.destroy()
-                this.sockets[index] = socket
+            if (this.hasSocket(socket)) {
+                return socket.destroy()
             }
-            else if (index !== -1) {
+            if (index !== -1) {
                 this.sockets[index] = socket
             }
             else {
@@ -83,18 +80,10 @@ class TCPNetworkNode extends events.EventEmitter {
         this.broadcast(data)
     }
     hasSocket(socket) {
-        const info = <net.AddressInfo> socket.address()
         for (const _socket of this.sockets) {
             if (!_socket) continue
-            const _info = <net.AddressInfo> _socket.address()
-            if (info.port === _info.port
-                && info.address === _info.address) return _socket
-            if (info.port === _socket.remotePort
-                && info.address === _socket.remoteAddress) return _socket
-            if (_info.port === socket.remotePort
-                && _info.address === socket.remoteAddress) return _socket
             if (socket.remotePort === _socket.remotePort
-                && socket.remoteAddress === _socket.remoteAddress) return _socket
+                && socket.remoteAddress === _socket.remoteAddress) return true
         }
         return false
     }
