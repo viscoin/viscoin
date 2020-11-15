@@ -188,7 +188,7 @@ const commands = {
         commands.commands()
     },
     network: async () => {
-        if (wallet.node.sockets.length) {
+        if (wallet.node.sockets.filter(e => e !== undefined).length) {
             for (const socket of wallet.node.sockets) {
                 if (!socket) continue
                 const info = <net.AddressInfo> socket.address()
