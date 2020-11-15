@@ -156,7 +156,11 @@ const commands = {
             {
                 type: 'text',
                 name: 'name',
-                message: 'Name wallet'
+                message: 'Name wallet',
+                validate: name => {
+                    const exists = fs.existsSync(`./wallets/${name}.wallet`)
+                    return exists ? 'Wallet already exists' : true
+                }
             },
             {
                 type: 'password',
