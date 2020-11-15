@@ -14,6 +14,7 @@ const wallet = new WalletClient()
 
 const commands = {
     commands: async () => {
+        if (!wallet.wallet) return commands.select_wallet()
         const res = await prompts({
             type: 'autocomplete',
             name: 'value',
@@ -25,7 +26,7 @@ const commands = {
                 { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
                 { title: 'Generate', description: 'Generates new wallet', value: commands.generate },
                 { title: 'Network', description: 'View network nodes', value: commands.network },
-                { title: 'Wallet', description: 'Select wallet', value: commands.select_wallet },
+                { title: 'Wallet', description: 'Load a stored wallet', value: commands.select_wallet },
                 { title: 'Exit', description: 'Exits', value: commands.exit }
             ]
         })
@@ -229,6 +230,7 @@ const commands = {
     },
     select_wallet: async () => {
         console.clear()
+        wallet.wallet = null
         if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
         const files = fs.readdirSync('./wallets')
         if (!files.length) return commands.generate()
