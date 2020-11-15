@@ -30,12 +30,12 @@ class Transaction {
             + this.timestamp
         )
     }
-    sign({ publicKey, privateKey }) {
-        if (publicKey !== this.fromAddress) {
+    sign({ address, secret }) {
+        if (address !== this.fromAddress) {
             throw new Error('You cannot sign transactions for other wallets!')
         }
         this.signature = crypto.sign(null, this.calculateHash(), crypto.createPrivateKey({
-            key: base58.decode(privateKey),
+            key: base58.decode(secret),
             type: 'pkcs8',
             format: 'der'
         }))

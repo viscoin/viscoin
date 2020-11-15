@@ -11,18 +11,18 @@ class WalletClient extends BaseClient {
         this.wallet = null
     }
     static generate = keygen
-    send({ publicKey, privateKey, toAddress, amount, minerFee }: { publicKey: string, privateKey: string, toAddress: string, amount: number | string, minerFee: number | string }) {
+    send({ address, secret, toAddress, amount, minerFee }: { address: string, secret: string, toAddress: string, amount: number | string, minerFee: number | string }) {
         if (typeof amount === 'string') amount = parseFloat(amount)
         if (typeof minerFee === 'string') minerFee = parseFloat(minerFee)
         const transaction = new Transaction({
-            fromAddress: publicKey,
+            fromAddress: address,
             toAddress,
             amount,
             minerFee
         })
         transaction.sign({
-            publicKey,
-            privateKey
+            address,
+            secret
         })
         this.blockchain.addTransaction(transaction)
         this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('transction', transaction))

@@ -23,20 +23,22 @@ const commands = {
                 { title: 'Send', description: 'Send money to address', value: commands.send },
                 { title: 'Address', description: 'Get wallet address', value: commands.address },
                 { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
-                { title: 'Exit', description: 'Exits', value: commands.exit },
                 { title: 'Generate', description: 'Generates new wallet', value: commands.generate },
                 { title: 'Network', description: 'View network nodes', value: commands.network },
                 { title: 'Settings', description: 'Configure wallet settings', value: commands.settings },
-                { title: 'Wallet', description: 'Select wallet', value: commands.select_wallet }
+                { title: 'Wallet', description: 'Select wallet', value: commands.select_wallet },
+                { title: 'Exit', description: 'Exits', value: commands.exit }
             ]
         })
         if (typeof res.value !== 'function') return commands.commands()
         res.value()
     },
-    info: () => {
+    info: async () => {
         console.log(`${chalk.whiteBright.bold('Name')}                 ${chalk.blueBright(wallet.wallet.name)}`)
         console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(wallet.wallet.address)}`)
         console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(wallet.wallet.secret)}`)
+        await commands.pause()
+        console.clear()
         commands.commands()
     },
     send: async () => {
@@ -73,7 +75,7 @@ const commands = {
             {
                 type: 'toggle',
                 name: 'confirm',
-                message: (prev, values) => `Total ${parseFloat(values.amount) + parseFloat(values.minerFee)}. Sign and broadcast?`,
+                message: (prev, values) => `Sum: ${values.amount} + ${values.minerFee} = ${parseFloat(values.amount) + parseFloat(values.minerFee)}\nSign and broadcast?`,
                 initial: false,
                 active: 'yes',
                 inactive: 'no'
@@ -85,11 +87,15 @@ const commands = {
                 ...wallet.wallet
             })
             console.log(transaction)
+            await commands.pause()
         }
+        console.clear()
         commands.commands()
     },
     address: async () => {
-        console.log(wallet.wallet.address)
+        console.log(chalk.blueBright(wallet.wallet.address))
+        await commands.pause()
+        console.clear()
         commands.commands()
     },
     balance: async () => {
@@ -121,10 +127,13 @@ const commands = {
                 }
             }
         ])
-        console.log(await wallet.balance(res.address))
+        console.log(chalk.yellowBright(await wallet.balance(res.address)))
+        await commands.pause()
+        console.clear()
         commands.commands()
     },
     exit: () => {
+        console.clear()
         process.exit(0)
     },
     generate: async () => {
@@ -139,7 +148,10 @@ const commands = {
             active: 'yes',
             inactive: 'no'
         })
-        if (!save) return commands.commands()
+        if (!save) {
+            console.clear()
+            return commands.commands()
+        }
         const { name, passphrase } = await prompts([
             {
                 type: 'text',
@@ -168,9 +180,10 @@ const commands = {
             address,
             secret
         })
+        console.clear()
         commands.commands()
     },
-    network: () => {
+    network: async () => {
         if (wallet.node.sockets.length) {
             for (const socket of wallet.node.sockets) {
                 const info = <net.AddressInfo> socket.address()
@@ -180,6 +193,8 @@ const commands = {
         else {
             console.log(chalk.redBright('Wallet is disconnected from the network'))
         }
+        await commands.pause()
+        console.clear()
         commands.commands()
     },
     settings: async () => {
@@ -223,9 +238,11 @@ const commands = {
                 } catch { return 'Failed to decrypt' }
             }
         })
+        console.clear()
         commands.commands()
     },
     select_wallet: async () => {
+        console.clear()
         if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
         const files = fs.readdirSync('./wallets')
         if (!files.length) return commands.generate()
@@ -246,6 +263,13 @@ const commands = {
     init: () => {
         wallet.node.connectToNetwork(nodes)
         commands.select_wallet()
+    },
+    pause: () => {
+        return new Promise(resolve => {
+            process.stdin.setRawMode(true)
+            process.stdin.resume()
+            process.stdin.once('data', () => resolve())
+        })
     }
 }
 commands.init()
