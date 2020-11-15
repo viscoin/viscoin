@@ -205,18 +205,47 @@ const commands = {
         const res = await prompts({
             type: 'autocomplete',
             name: 'value',
-            message: 'Command',
+            message: 'Settings',
             choices: [
                 { title: 'Nodes', description: 'Configure network nodes for wallet', value: commands.nodes },
-                { title: 'Back', value: commands.commands }
+                { title: 'Back', description: 'Commands', value: commands.commands }
             ]
         })
-        if (typeof res.value !== 'function') return commands.commands()
+        if (typeof res.value !== 'function') return commands.settings()
         res.value()
     },
-    nodes: () => {
-        console.log('nodes')
-        commands.commands()
+    nodes: async () => {
+        const res = await prompts({
+            type: 'autocomplete',
+            name: 'value',
+            message: 'Nodes',
+            choices: [
+                { title: 'List', description: 'Lists all saved ip addresses of network nodes', value: commands.list_nodes },
+                { title: 'Add', description: 'Add new network node', value: commands.add_node },
+                { title: 'Remove', description: 'Delete saved network node', value: commands.remove_node },
+                { title: 'Back', description: 'Settings', value: commands.settings }
+            ]
+        })
+        if (typeof res.value !== 'function') return commands.nodes()
+        res.value()
+    },
+    list_nodes: async () => {
+        console.log(nodes)
+        await commands.pause()
+        console.clear()
+        commands.nodes()
+    },
+    add_node: async () => {
+        console.log('Add node')
+        await commands.pause()
+        console.clear()
+        commands.nodes()
+    },
+    remove_node: async () => {
+        console.log('Remove node')
+        await commands.pause()
+        console.clear()
+        commands.nodes()
     },
     load_wallet: async (name) => {
         if (!fs.existsSync(`./wallets/${name}`)) {
