@@ -190,6 +190,7 @@ const commands = {
     network: async () => {
         if (wallet.node.sockets.length) {
             for (const socket of wallet.node.sockets) {
+                if (!socket) continue
                 const info = <net.AddressInfo> socket.address()
                 console.log(chalk.whiteBright(`${info.address}${chalk.grey(':')}${chalk.white(info.port)} ${chalk.greenBright('=>')} ${socket.remoteAddress}${chalk.grey(':')}${chalk.blueBright(socket.remotePort)}`))
             }
