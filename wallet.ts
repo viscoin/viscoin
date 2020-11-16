@@ -20,12 +20,12 @@ const commands = {
             name: 'value',
             message: 'Command',
             choices: [
-                { title: 'Info', description: 'View details about your current wallet', value: commands.info },
-                { title: 'Send', description: 'Send money to address', value: commands.send },
                 { title: 'Address', description: 'Get wallet address', value: commands.address },
                 { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
-                { title: 'Generate', description: 'Generates new wallet', value: commands.generate },
+                { title: 'Send', description: 'Send money to address', value: commands.send },
                 { title: 'Network', description: 'View network nodes', value: commands.network },
+                { title: 'Generate', description: 'Generates new wallet', value: commands.generate },
+                { title: 'Info', description: 'View details about your current wallet', value: commands.info },
                 { title: 'Wallet', description: 'Load a stored wallet', value: commands.select_wallet },
                 { title: 'Exit', description: 'Exits', value: commands.exit }
             ]
