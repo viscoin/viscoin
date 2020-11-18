@@ -60,14 +60,20 @@ class TCPNetworkNode extends events.EventEmitter {
             .on('lookup', () => {})
             .on('timeout', () => {})
     }
-    verifyData(data: Buffer) {
-        if (Buffer.byteLength(data) > config.byteLength.verifyData) return false
-        const hash = customHash(data)
-        if (this.dataHashes.find(e => e.compare(hash) === 0)) return false
+    isValidBuffer(data: Buffer) {
+        if (Buffer.byteLength(data) > config.byteLength.isValidBuffer) return false
         if (protocol.parseDataBuffer(data) === null) return false
-        this.dataHashes.push(hash)
         if (this.dataHashes.length > config.dataHashesLength) this.dataHashes.shift()
         return true
+    }
+    compareHash(data: Buffer) {
+        const hash = customHash(data)
+        if (this.dataHashes.find(e => e.compare(hash) === 0)) return true
+        return false
+    }
+    addHash(data: Buffer) {
+        const hash = customHash(data)
+        this.dataHashes.push(hash)
     }
     broadcast(data: Buffer) {
         for (const socket of this.sockets) {
@@ -76,7 +82,7 @@ class TCPNetworkNode extends events.EventEmitter {
         }
     }
     broadcastAndStoreDataHash(data: Buffer) {
-        if (!this.verifyData(data)) return
+        this.addHash(data)
         this.broadcast(data)
     }
     hasSocket(socket) {
@@ -109,7 +115,8 @@ class TCPNetworkNode extends events.EventEmitter {
         this.sockets = []
     }
     async handleData(raw) {
-        if (!this.verifyData(raw)) return
+        if (!this.isValidBuffer(raw)) return
+        if (this.compareHash(raw)) return
         const parsed = protocol.parseDataBuffer(raw)
         if (parsed === null) return
         switch (parsed.type) {
