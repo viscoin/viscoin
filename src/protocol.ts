@@ -23,6 +23,9 @@ export default {
                 data: JSON.parse(String(data.slice(1)))
             }
         } catch (err) {
+            console.error(err)
+            console.error(this.getType(data[0]))
+            console.error(String(data.slice(1)))
             return null
         }
     }

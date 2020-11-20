@@ -4,7 +4,7 @@ import * as nodes from '../nodes.json'
 import BaseClient from '../src/BaseClient'
 mongoose.init()
 
-for (let i = 0; i < 3; i++) {
+for (let i = 0; i < 2; i++) {
     config.network.port++
     nodes.push({ address: '192.168.0.7', port: config.network.port })
     const client = new BaseClient()

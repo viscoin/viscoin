@@ -70,7 +70,7 @@ class TCPNetworkNode extends events.EventEmitter {
         if (protocol.parseDataBuffer(buf) === null) return false
         return true
     }
-    compareHash(data: Buffer) {
+    compareAndStoreHash(data: Buffer) {
         const hash = customHash(data)
         this.addHash(hash)
         if (this.dataHashes.find(e => e.compare(hash) === 0)) return true
@@ -136,15 +136,15 @@ class TCPNetworkNode extends events.EventEmitter {
     async handleData(buf: Buffer, socket: Socket) {
         if (!this.isValidBuffer(buf)) {
             console.warn('!isValidBuffer destroying socket')
-            return socket.destroy()
+            return
+        }
+        if (this.compareAndStoreHash(buf)) {
+            console.warn('this.compareAndStoreHash')
+            return
         }
         if (this.isAbuse(buf, socket)) {
             console.warn('isAbuse destroying socket')
             return socket.destroy()
-        }
-        if (this.compareHash(buf)) {
-            console.warn('this.compareHash')
-            return
         }
         const parsed = protocol.parseDataBuffer(buf)
         switch (parsed.type) {
