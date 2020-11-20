@@ -17,10 +17,6 @@
         "address": "192.168.0.7",
         "port": 8335
     },
-    "byteLength": {
-        "block": 1000000,
-        "isValidBuffer": 1000000
-    },
     "dataHashesLength": 100,
     "maxConnections": 100,
     "save_connected_nodes": true,
@@ -30,6 +26,7 @@
             "fromAddress": ""
         },
         "blockTime": 10000,
-        "trustedAfterBlocks": 10
+        "trustedAfterBlocks": 10,
+        "blockSize": 1048576
     }
 }

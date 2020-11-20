@@ -18,8 +18,8 @@ class TCPNetworkNode extends events.EventEmitter {
         super()
         this.dataHashes = []
         this.sockets = []
-        this.on('data', data => this.handleData(data))
         this.on('socket', socket => this.handleSocket(socket))
+        this.on('data', (data, socket) => this.handleData(data, socket))
         // server
         this.server = new net.Server()
         this.server.maxConnections = config.maxConnections
@@ -54,15 +54,16 @@ class TCPNetworkNode extends events.EventEmitter {
                 socket.destroy()
                 this.sockets[index] = undefined
             })
-            .on('data', data => this.emit('data', data))
+            .on('data', data => this.emit('data', data, socket))
             .on('drain', () => {})
             .on('end', () => {})
             .on('lookup', () => {})
             .on('timeout', () => {})
     }
-    isValidBuffer(data: Buffer) {
-        if (Buffer.byteLength(data) > config.byteLength.isValidBuffer) return false
-        if (protocol.parseDataBuffer(data) === null) return false
+    isValidBuffer(buf: Buffer) {
+        // + 1 for the protocol byte in the beginning of the buffer
+        if (Buffer.byteLength(buf) > 1 + config.mining.blockSize) return false
+        if (protocol.parseDataBuffer(buf) === null) return false
         if (this.dataHashes.length > config.dataHashesLength) this.dataHashes.shift()
         return true
     }
@@ -114,10 +115,22 @@ class TCPNetworkNode extends events.EventEmitter {
         }
         this.sockets = []
     }
-    async handleData(raw) {
-        if (!this.isValidBuffer(raw)) return
-        if (this.compareHash(raw)) return
-        const parsed = protocol.parseDataBuffer(raw)
+    async handleSocket(socket) {
+        this.broadcastAndStoreDataHash(protocol.constructDataBuffer('node', {
+            address: socket.remoteAddress,
+            family: socket.remoteFamily,
+            port: socket.remotePort
+        }))
+        if (config.save_connected_nodes) await new schema_node({
+            address: socket.remoteAddress,
+            family: socket.remoteFamily,
+            port: socket.remotePort
+        }).save()
+    }
+    async handleData(buf: Buffer, socket: net.Socket) {
+        if (!this.isValidBuffer(buf)) return socket.destroy()
+        if (this.compareHash(buf)) return
+        const parsed = protocol.parseDataBuffer(buf)
         if (parsed === null) return
         switch (parsed.type) {
             case 'block':
@@ -140,19 +153,7 @@ class TCPNetworkNode extends events.EventEmitter {
                 this.emit('node', parsed.data)
                 break
         }
-        this.broadcastAndStoreDataHash(raw)
-    }
-    async handleSocket(socket) {
-        this.broadcastAndStoreDataHash(protocol.constructDataBuffer('node', {
-            address: socket.remoteAddress,
-            family: socket.remoteFamily,
-            port: socket.remotePort
-        }))
-        if (config.save_connected_nodes) await new schema_node({
-            address: socket.remoteAddress,
-            family: socket.remoteFamily,
-            port: socket.remotePort
-        }).save()
+        this.broadcastAndStoreDataHash(buf)
     }
     // server
     start(port: number, address: string) {

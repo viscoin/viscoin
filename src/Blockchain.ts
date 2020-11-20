@@ -405,7 +405,7 @@ class Blockchain {
             difficulty: this.difficulty
         })
         block.transactions.map(e => block.transactions[0].amount += e.minerFee)
-        while (Buffer.byteLength(JSON.stringify(block)) > config.byteLength.block) {
+        while (Buffer.byteLength(JSON.stringify(block)) > config.mining.blockSize) {
             const transaction = block.transactions.pop()
             block.transactions[0].amount -= transaction.minerFee
         }
