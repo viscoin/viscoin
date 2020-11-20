@@ -6,9 +6,12 @@ import protocol from './protocol'
 import schema_node from './mongoose/schema/node'
 import Transaction from './Transaction'
 import Block from './Block'
+interface Socket extends net.Socket {
+    bytes: number
+}
 interface TCPNetworkNode {
     dataHashes: Array<Buffer>
-    sockets: Array<net.Socket>
+    sockets: Array<Socket>
     // server
     server: net.Server
     // client
@@ -25,7 +28,8 @@ class TCPNetworkNode extends events.EventEmitter {
         this.server.maxConnections = config.maxConnections
         // client
     }
-    addSocket(socket: net.Socket) {
+    addSocket(socket: Socket) {
+        if (isNaN(socket.bytes)) socket.bytes = 0
         let index = this.sockets.indexOf(undefined)
         const add = () => {
             if (this.hasSocket(socket)) {
@@ -105,13 +109,14 @@ class TCPNetworkNode extends events.EventEmitter {
             }
             if (node.port === config.network.port
                 && node.address === config.network.address) continue
-            const socket = net.connect(node.port, node.address)
+            const socket = <Socket> net.connect(node.port, node.address)
             this.addSocket(socket)
         }
     }
     disconnectFromNetwork() {
         for (const socket of this.sockets) {
             socket.destroy()
+            socket.removeAllListeners()
         }
         this.sockets = []
     }
@@ -127,8 +132,9 @@ class TCPNetworkNode extends events.EventEmitter {
             port: socket.remotePort
         }).save()
     }
-    async handleData(buf: Buffer, socket: net.Socket) {
+    async handleData(buf: Buffer, socket: Socket) {
         if (!this.isValidBuffer(buf)) return socket.destroy()
+        if (this.isAbuse(buf, socket)) return socket.destroy()
         if (this.compareHash(buf)) return
         const parsed = protocol.parseDataBuffer(buf)
         if (parsed === null) return
@@ -155,10 +161,21 @@ class TCPNetworkNode extends events.EventEmitter {
         }
         this.broadcastAndStoreDataHash(buf)
     }
+    isAbuse(buf: Buffer, socket: Socket) {
+        socket.bytes += Buffer.byteLength(buf)
+        if (socket.bytes > config.node.socket.maxBytesPerSecond) return true
+        else return false
+    }
+    loop() {
+        for (const socket of this.sockets) {
+            socket.bytes = 0
+        }
+        setTimeout(this.loop.bind(this), 1000)
+    }
     // server
     start(port: number, address: string) {
         this.server
-            .on('connection', socket => {
+            .on('connection', (socket: Socket) => {
                 this.emit('connection', socket)
                 this.addSocket(socket)
             })

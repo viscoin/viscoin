@@ -11,11 +11,14 @@
         "blockchainSynchronization": {
             "enabled": true,
             "timeout": 100
+        },
+        "socket": {
+            "maxBytesPerSecond": 2000
         }
     },
     "network": {
         "address": "192.168.0.7",
-        "port": 8335
+        "port": 8334
     },
     "dataHashesLength": 100,
     "maxConnections": 100,
