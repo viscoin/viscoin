@@ -135,7 +135,7 @@ class TCPNetworkNode extends events.EventEmitter {
     }
     async handleData(buf: Buffer, socket: Socket) {
         if (!this.isValidBuffer(buf)) {
-            console.warn('!isValidBuffer destroying socket')
+            console.warn('!isValidBuffer')
             return
         }
         if (this.compareAndStoreHash(buf)) {
