@@ -68,17 +68,18 @@ class TCPNetworkNode extends events.EventEmitter {
         // + 1 for the protocol byte in the beginning of the buffer
         if (Buffer.byteLength(buf) > 1 + config.mining.blockSize) return false
         if (protocol.parseDataBuffer(buf) === null) return false
-        if (this.dataHashes.length > config.dataHashesLength) this.dataHashes.shift()
         return true
     }
     compareHash(data: Buffer) {
         const hash = customHash(data)
+        this.addHash(hash)
         if (this.dataHashes.find(e => e.compare(hash) === 0)) return true
         return false
     }
     addHash(data: Buffer) {
         const hash = customHash(data)
         this.dataHashes.push(hash)
+        if (this.dataHashes.length > config.dataHashesLength) this.dataHashes.shift()
     }
     broadcast(data: Buffer) {
         for (const socket of this.sockets) {
@@ -146,10 +147,6 @@ class TCPNetworkNode extends events.EventEmitter {
             return
         }
         const parsed = protocol.parseDataBuffer(buf)
-        if (parsed === null) {
-            console.warn('parsed === null destroying socket')
-            return socket.destroy()
-        }
         switch (parsed.type) {
             case 'block':
                 if (!parsed.data) {
