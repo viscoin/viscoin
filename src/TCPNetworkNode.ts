@@ -139,7 +139,7 @@ class TCPNetworkNode extends events.EventEmitter {
             return
         }
         if (this.compareAndStoreHash(buf)) {
-            console.warn('this.compareAndStoreHash')
+            // console.warn('this.compareAndStoreHash')
             return
         }
         if (this.isAbuse(buf, socket)) {
