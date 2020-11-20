@@ -134,14 +134,8 @@ class TCPNetworkNode extends events.EventEmitter {
         }).save()
     }
     async handleData(buf: Buffer, socket: Socket) {
-        if (!this.isValidBuffer(buf)) {
-            console.warn('!isValidBuffer')
-            return
-        }
-        if (this.compareAndStoreHash(buf)) {
-            // console.warn('this.compareAndStoreHash')
-            return
-        }
+        if (!this.isValidBuffer(buf)) return console.warn('!isValidBuffer')
+        if (this.compareAndStoreHash(buf)) return // console.warn('this.compareAndStoreHash')
         if (this.isAbuse(buf, socket)) {
             console.warn('isAbuse destroying socket')
             return socket.destroy()
@@ -149,31 +143,17 @@ class TCPNetworkNode extends events.EventEmitter {
         const parsed = protocol.parseDataBuffer(buf)
         switch (parsed.type) {
             case 'block':
-                if (!parsed.data) {
-                    console.warn('!parsed.data destroying socket')
-                    return socket.destroy()
-                }
+                if (!parsed.data) return console.warn('block !parsed.data')
                 const block = new Block(parsed.data)
                 this.emit('block', block)
                 break
             case 'transaction':
-                if (!parsed.data) {
-                    console.warn('!parsed.data destroying socket')
-                    return socket.destroy()
-                }
+                if (!parsed.data) return console.warn('transaction !parsed.data')
                 const transaction = new Transaction(parsed.data)
                 this.emit('transaction', transaction)
                 break
             case 'node':
-                // if remote socket is serverNode (probably)
-                // if ([8333, 8334, 8335].includes(processed.data.port)) {
-                //     this.emit('node', processed.data)
-                // }
-                if (!parsed.data) {
-                    console.warn('!parsed.data destroying socket')
-                    return socket.destroy()
-                }
-                // if (processed.data.port !== 8333) processed.data.port = 8333
+                if (!parsed.data) return console.warn('node !parsed.data')
                 this.emit('node', parsed.data)
                 break
         }
