@@ -13,6 +13,7 @@ interface Socket extends net.Socket {
 interface TCPNetworkNode {
     dataHashes: Array<Buffer>
     sockets: Array<Socket>
+    socketsBanned: Array<String>
     // server
     server: net.Server
     // client
@@ -22,8 +23,13 @@ class TCPNetworkNode extends events.EventEmitter {
         super()
         this.dataHashes = []
         this.sockets = []
+        this.socketsBanned = []
         this.on('socket', socket => this.handleSocket(socket))
         this.on('data', data => this.handleData(data))
+        this.on('ban', (socket: Socket, reason: string) => {
+            console.log(`Banned socket: ${socket.remoteAddress}:${socket.remotePort} Reason: ${reason}`)
+            this.socketsBanned.push(socket.remoteAddress)
+        })
         setInterval(this.interval[0].bind(this), 1000)
         setInterval(this.interval[1].bind(this), config.node.socket.maxWait)
         // server
@@ -35,17 +41,17 @@ class TCPNetworkNode extends events.EventEmitter {
         () => {
             for (const socket of this.sockets) {
                 if (!socket) continue
-                console.info('bytesReadLastSecond', socket.bytesReadLastSecond)
+                // console.info('bytesReadLastSecond', socket.bytesReadLastSecond)
                 socket.bytesReadLastSecond = 0
             }
         },
         () => {
             for (const socket of this.sockets) {
                 if (!socket) continue
-                console.info('bytesReadLastMeasurement', socket.bytesReadLastSecond)
+                // console.info('bytesReadLastMeasurement', socket.bytesReadLastSecond)
                 if (socket.bytesReadLastMeasurement === 0) {
-                    console.warn('socket sending too little data destroying socket')
                     socket.destroy()
+                    this.emit('ban', socket, 'sending too little data')
                     continue
                 }
                 socket.bytesReadLastMeasurement = 0
@@ -53,6 +59,7 @@ class TCPNetworkNode extends events.EventEmitter {
         }
     ]
     addSocket(socket: Socket) {
+        if (this.socketsBanned.includes(socket.remoteAddress)) return socket.destroy()
         let index = this.sockets.indexOf(undefined)
         const add = () => {
             socket.bytesReadLastSecond = socket.bytesRead
@@ -87,8 +94,8 @@ class TCPNetworkNode extends events.EventEmitter {
                 const byteLength = Buffer.byteLength(data)
                 socket.bytesReadLastSecond += byteLength
                 if (socket.bytesReadLastSecond > config.node.socket.maxBytesPerSecond) {
-                    console.warn('socket sending too much data destroying socket')
-                    return socket.destroy()
+                    socket.destroy()
+                    return this.emit('ban', socket, 'sending too much data')
                 }
                 socket.bytesReadLastMeasurement += byteLength
                 this.emit('data', data)
