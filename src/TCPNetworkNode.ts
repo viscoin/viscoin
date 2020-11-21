@@ -25,7 +25,7 @@ class TCPNetworkNode extends events.EventEmitter {
         this.sockets = []
         this.blacklisted = []
         this.on('socket', socket => this.handleSocket(socket))
-        this.on('data', data => this.handleData(data))
+        this.on('data', (data, socket) => this.handleData(data, socket))
         this.on('blacklist', (socket: Socket, reason: string) => {
             socket.destroy()
             this.blacklisted.push(socket.remoteAddress)
@@ -86,7 +86,7 @@ class TCPNetworkNode extends events.EventEmitter {
                 while (index !== -1) {
                     index = protocol.getEndIndex(socket.data)
                     if (index !== -1) {
-                        this.emit('data', socket.data.slice(0, index))
+                        this.emit('data', socket.data.slice(0, index), socket)
                         socket.data = socket.data.slice(index + 32)
                     }
                 }
@@ -165,23 +165,23 @@ class TCPNetworkNode extends events.EventEmitter {
             port: socket.remotePort
         }).save()
     }
-    async handleData(buf: Buffer) {
-        if (!this.isValidBuffer(buf)) return console.warn('!isValidBuffer')
-        if (this.compareAndStoreHash(buf)) return // console.warn('this.compareAndStoreHash')
+    async handleData(buf: Buffer, socket: Socket) {
+        if (!this.isValidBuffer(buf)) return this.emit('blacklist', socket, 'invalid buffer')
+        if (this.compareAndStoreHash(buf)) return
         const parsed = protocol.parseDataBuffer(buf)
         switch (parsed.type) {
             case 'block':
-                if (!parsed.data) return console.warn('block !parsed.data')
+                if (!parsed.data) return this.emit('blacklist', socket, 'invalid parsed data block')
                 const block = new Block(parsed.data)
                 this.emit('block', block)
                 break
             case 'transaction':
-                if (!parsed.data) return console.warn('transaction !parsed.data')
+                if (!parsed.data) return this.emit('blacklist', socket, 'invalid parsed data transaction')
                 const transaction = new Transaction(parsed.data)
                 this.emit('transaction', transaction)
                 break
             case 'node':
-                if (!parsed.data) return console.warn('node !parsed.data')
+                if (!parsed.data) return this.emit('blacklist', socket, 'invalid parsed data node')
                 this.emit('node', parsed.data)
                 break
         }
