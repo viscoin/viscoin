@@ -10,16 +10,17 @@
         "connectToNodes": true,
         "blockchainSynchronization": {
             "enabled": true,
-            "timeout": 10000
+            "timeout": 1000
         },
         "socket": {
-            "maxBytesPerSecond": 65535,
-            "maxWait": 100000
+            "maxBytesPerSecond": 10485760,
+            "setTimeout": 100000,
+            "maxBytesInMemory": 2097152
         }
     },
     "network": {
         "address": "192.168.0.7",
-        "port": 8334
+        "port": 8335
     },
     "dataHashesLength": 100,
     "maxConnections": 100,

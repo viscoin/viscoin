@@ -8,7 +8,7 @@ import Transaction from './Transaction'
 import Block from './Block'
 interface Socket extends net.Socket {
     bytesReadLastSecond: number
-    bytesReadLastMeasurement: number
+    data: Buffer
 }
 interface TCPNetworkNode {
     dataHashes: Array<Buffer>
@@ -31,7 +31,6 @@ class TCPNetworkNode extends events.EventEmitter {
             this.blacklisted.push(socket.remoteAddress)
         })
         setInterval(this.interval[0].bind(this), 1000)
-        setInterval(this.interval[1].bind(this), config.node.socket.maxWait)
         // server
         this.server = new net.Server()
         this.server.maxConnections = config.maxConnections
@@ -44,26 +43,13 @@ class TCPNetworkNode extends events.EventEmitter {
                 // console.info('bytesReadLastSecond', socket.bytesReadLastSecond)
                 socket.bytesReadLastSecond = 0
             }
-        },
-        () => {
-            for (const socket of this.sockets) {
-                if (!socket) continue
-                // console.info('bytesReadLastMeasurement', socket.bytesReadLastSecond)
-                if (socket.bytesReadLastMeasurement === 0) {
-                    socket.destroy()
-                    this.emit('blacklist', socket, 'sending too little data')
-                    continue
-                }
-                socket.bytesReadLastMeasurement = 0
-            }
         }
     ]
     addSocket(socket: Socket) {
         if (this.blacklisted.includes(socket.remoteAddress)) return socket.destroy()
         let index = this.sockets.indexOf(undefined)
         const add = () => {
-            socket.bytesReadLastSecond = socket.bytesRead
-            socket.bytesReadLastMeasurement = socket.bytesRead
+            socket.setTimeout(config.node.socket.setTimeout)
             if (this.hasSocket(socket)) {
                 return socket.destroy()
             }
@@ -77,6 +63,8 @@ class TCPNetworkNode extends events.EventEmitter {
             this.emit('socket', socket)
         }
         if (!socket.connecting) add()
+        socket.bytesReadLastSecond = socket.bytesRead
+        socket.data = Buffer.alloc(0)
         socket
             .on('connect', () => {
                 this.emit('connect', socket)
@@ -84,26 +72,36 @@ class TCPNetworkNode extends events.EventEmitter {
             })
             .on('error', () => {
                 socket.destroy()
-                this.sockets[index] = undefined
             })
             .on('close', () => {
                 socket.destroy()
                 this.sockets[index] = undefined
             })
-            .on('data', data => {
-                const byteLength = Buffer.byteLength(data)
+            .on('timeout', () => {
+                socket.destroy()
+                this.emit('blacklist', socket, 'not sending data')
+            })
+            .on('data', chunk => {
+                const byteLength = Buffer.byteLength(chunk)
                 socket.bytesReadLastSecond += byteLength
                 if (socket.bytesReadLastSecond > config.node.socket.maxBytesPerSecond) {
                     socket.destroy()
                     return this.emit('blacklist', socket, 'sending too much data')
                 }
-                socket.bytesReadLastMeasurement += byteLength
-                this.emit('data', data)
+                socket.data = Buffer.concat([socket.data, chunk])
+                if (Buffer.byteLength(socket.data) > config.node.socket.maxBytesInMemory) return socket.destroy()
+                let index = null
+                while (index !== -1) {
+                    index = protocol.getEndIndex(socket.data)
+                    if (index !== -1) {
+                        this.emit('data', socket.data.slice(0, index))
+                        socket.data = socket.data.slice(index + 32)
+                    }
+                }
             })
-            .on('drain', () => {})
             .on('end', () => {})
+            .on('drain', () => {})
             .on('lookup', () => {})
-            .on('timeout', () => {})
     }
     isValidBuffer(buf: Buffer) {
         // + 1 for the protocol byte in the beginning of the buffer
@@ -126,6 +124,7 @@ class TCPNetworkNode extends events.EventEmitter {
         for (const socket of this.sockets) {
             if (!socket) continue
             socket.write(data)
+            socket.write(protocol.end)
         }
     }
     broadcastAndStoreDataHash(data: Buffer) {
@@ -178,6 +177,7 @@ class TCPNetworkNode extends events.EventEmitter {
         if (!this.isValidBuffer(buf)) return console.warn('!isValidBuffer')
         if (this.compareAndStoreHash(buf)) return // console.warn('this.compareAndStoreHash')
         const parsed = protocol.parseDataBuffer(buf)
+        console.log(parsed)
         switch (parsed.type) {
             case 'block':
                 if (!parsed.data) return console.warn('block !parsed.data')
