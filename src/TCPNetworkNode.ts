@@ -13,7 +13,7 @@ interface Socket extends net.Socket {
 interface TCPNetworkNode {
     dataHashes: Array<Buffer>
     sockets: Array<Socket>
-    socketsBanned: Array<String>
+    blacklisted: Array<String>
     // server
     server: net.Server
     // client
@@ -23,12 +23,12 @@ class TCPNetworkNode extends events.EventEmitter {
         super()
         this.dataHashes = []
         this.sockets = []
-        this.socketsBanned = []
+        this.blacklisted = []
         this.on('socket', socket => this.handleSocket(socket))
         this.on('data', data => this.handleData(data))
-        this.on('ban', (socket: Socket, reason: string) => {
+        this.on('blacklist', (socket: Socket, reason: string) => {
             console.log(`Banned socket: ${socket.remoteAddress}:${socket.remotePort} Reason: ${reason}`)
-            this.socketsBanned.push(socket.remoteAddress)
+            this.blacklisted.push(socket.remoteAddress)
         })
         setInterval(this.interval[0].bind(this), 1000)
         setInterval(this.interval[1].bind(this), config.node.socket.maxWait)
@@ -51,7 +51,7 @@ class TCPNetworkNode extends events.EventEmitter {
                 // console.info('bytesReadLastMeasurement', socket.bytesReadLastSecond)
                 if (socket.bytesReadLastMeasurement === 0) {
                     socket.destroy()
-                    this.emit('ban', socket, 'sending too little data')
+                    this.emit('blacklist', socket, 'sending too little data')
                     continue
                 }
                 socket.bytesReadLastMeasurement = 0
@@ -59,7 +59,7 @@ class TCPNetworkNode extends events.EventEmitter {
         }
     ]
     addSocket(socket: Socket) {
-        if (this.socketsBanned.includes(socket.remoteAddress)) return socket.destroy()
+        if (this.blacklisted.includes(socket.remoteAddress)) return socket.destroy()
         let index = this.sockets.indexOf(undefined)
         const add = () => {
             socket.bytesReadLastSecond = socket.bytesRead
@@ -95,7 +95,7 @@ class TCPNetworkNode extends events.EventEmitter {
                 socket.bytesReadLastSecond += byteLength
                 if (socket.bytesReadLastSecond > config.node.socket.maxBytesPerSecond) {
                     socket.destroy()
-                    return this.emit('ban', socket, 'sending too much data')
+                    return this.emit('blacklist', socket, 'sending too much data')
                 }
                 socket.bytesReadLastMeasurement += byteLength
                 this.emit('data', data)
