@@ -23,3 +23,6 @@ client.on('connection', socket => {
 client.on('socket', socket => {
     console.log(`socket ${socket.address().address}:${socket.address().port} <---> ${socket.remoteAddress}:${socket.remotePort}`)
 })
+client.on('blacklist', (socket, reason) => {
+    console.log(`Banned socket: ${socket.remoteAddress}:${socket.remotePort} Reason: ${reason}`)
+})

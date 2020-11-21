@@ -27,7 +27,7 @@ class TCPNetworkNode extends events.EventEmitter {
         this.on('socket', socket => this.handleSocket(socket))
         this.on('data', data => this.handleData(data))
         this.on('blacklist', (socket: Socket, reason: string) => {
-            console.log(`Banned socket: ${socket.remoteAddress}:${socket.remotePort} Reason: ${reason}`)
+            socket.destroy()
             this.blacklisted.push(socket.remoteAddress)
         })
         setInterval(this.interval[0].bind(this), 1000)
@@ -70,26 +70,18 @@ class TCPNetworkNode extends events.EventEmitter {
                 this.emit('connect', socket)
                 add()
             })
-            .on('error', () => {
-                socket.destroy()
-            })
+            .on('error', () => socket.destroy())
             .on('close', () => {
                 socket.destroy()
                 this.sockets[index] = undefined
             })
-            .on('timeout', () => {
-                socket.destroy()
-                this.emit('blacklist', socket, 'not sending data')
-            })
+            .on('timeout', () => this.emit('blacklist', socket, 'not sending data'))
             .on('data', chunk => {
                 const byteLength = Buffer.byteLength(chunk)
                 socket.bytesReadLastSecond += byteLength
-                if (socket.bytesReadLastSecond > config.node.socket.maxBytesPerSecond) {
-                    socket.destroy()
-                    return this.emit('blacklist', socket, 'sending too much data')
-                }
+                if (socket.bytesReadLastSecond > config.node.socket.maxBytesPerSecond) return this.emit('blacklist', socket, 'sending data too fast')
                 socket.data = Buffer.concat([socket.data, chunk])
-                if (Buffer.byteLength(socket.data) > config.node.socket.maxBytesInMemory) return socket.destroy()
+                if (Buffer.byteLength(socket.data) > config.node.socket.maxBytesInMemory) return this.emit('blacklist', socket, 'sending too much data without end')
                 let index = null
                 while (index !== -1) {
                     index = protocol.getEndIndex(socket.data)
@@ -99,7 +91,7 @@ class TCPNetworkNode extends events.EventEmitter {
                     }
                 }
             })
-            .on('end', () => {})
+            .on('end', () => socket.destroy())
             .on('drain', () => {})
             .on('lookup', () => {})
     }

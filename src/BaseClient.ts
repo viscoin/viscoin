@@ -33,6 +33,7 @@ class BaseClient extends events.EventEmitter {
         this.node.on('connect', socket => this.emit('connect', socket))
         this.node.on('connection', socket => this.emit('connection', socket))
         this.node.server.on('listening', () => this.emit('listening'))
+        this.node.on('blacklist', (socket, reason) => this.emit('blacklist', socket, reason))
     }
     async nextSync() {
         const block = await this.blockchain.getNextSyncBlock()

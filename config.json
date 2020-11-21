@@ -14,13 +14,13 @@
         },
         "socket": {
             "maxBytesPerSecond": 10485760,
-            "setTimeout": 100000,
+            "setTimeout": 60000,
             "maxBytesInMemory": 2097152
         }
     },
     "network": {
         "address": "192.168.0.7",
-        "port": 8335
+        "port": 8333
     },
     "dataHashesLength": 100,
     "maxConnections": 100,
