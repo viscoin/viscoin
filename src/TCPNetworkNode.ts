@@ -7,7 +7,8 @@ import schema_node from './mongoose/schema/node'
 import Transaction from './Transaction'
 import Block from './Block'
 interface Socket extends net.Socket {
-    bytes: number
+    bytesReadLastSecond: number
+    bytesReadLastMeasurement: number
 }
 interface TCPNetworkNode {
     dataHashes: Array<Buffer>
@@ -22,16 +23,40 @@ class TCPNetworkNode extends events.EventEmitter {
         this.dataHashes = []
         this.sockets = []
         this.on('socket', socket => this.handleSocket(socket))
-        this.on('data', (data, socket) => this.handleData(data, socket))
+        this.on('data', data => this.handleData(data))
+        setInterval(this.interval[0].bind(this), 1000)
+        setInterval(this.interval[1].bind(this), config.node.socket.maxWait)
         // server
         this.server = new net.Server()
         this.server.maxConnections = config.maxConnections
         // client
     }
+    interval: Array<Function> = [
+        () => {
+            for (const socket of this.sockets) {
+                if (!socket) continue
+                console.info('bytesReadLastSecond', socket.bytesReadLastSecond)
+                socket.bytesReadLastSecond = 0
+            }
+        },
+        () => {
+            for (const socket of this.sockets) {
+                if (!socket) continue
+                console.info('bytesReadLastMeasurement', socket.bytesReadLastSecond)
+                if (socket.bytesReadLastMeasurement === 0) {
+                    console.warn('socket sending too little data destroying socket')
+                    socket.destroy()
+                    continue
+                }
+                socket.bytesReadLastMeasurement = 0
+            }
+        }
+    ]
     addSocket(socket: Socket) {
-        if (isNaN(socket.bytes)) socket.bytes = 0
         let index = this.sockets.indexOf(undefined)
         const add = () => {
+            socket.bytesReadLastSecond = socket.bytesRead
+            socket.bytesReadLastMeasurement = socket.bytesRead
             if (this.hasSocket(socket)) {
                 return socket.destroy()
             }
@@ -58,7 +83,16 @@ class TCPNetworkNode extends events.EventEmitter {
                 socket.destroy()
                 this.sockets[index] = undefined
             })
-            .on('data', data => this.emit('data', data, socket))
+            .on('data', data => {
+                const byteLength = Buffer.byteLength(data)
+                socket.bytesReadLastSecond += byteLength
+                if (socket.bytesReadLastSecond > config.node.socket.maxBytesPerSecond) {
+                    console.warn('socket sending too much data destroying socket')
+                    return socket.destroy()
+                }
+                socket.bytesReadLastMeasurement += byteLength
+                this.emit('data', data)
+            })
             .on('drain', () => {})
             .on('end', () => {})
             .on('lookup', () => {})
@@ -133,13 +167,9 @@ class TCPNetworkNode extends events.EventEmitter {
             port: socket.remotePort
         }).save()
     }
-    async handleData(buf: Buffer, socket: Socket) {
+    async handleData(buf: Buffer) {
         if (!this.isValidBuffer(buf)) return console.warn('!isValidBuffer')
         if (this.compareAndStoreHash(buf)) return // console.warn('this.compareAndStoreHash')
-        if (this.isAbuse(buf, socket)) {
-            console.warn('isAbuse destroying socket')
-            return socket.destroy()
-        }
         const parsed = protocol.parseDataBuffer(buf)
         switch (parsed.type) {
             case 'block':
@@ -158,17 +188,6 @@ class TCPNetworkNode extends events.EventEmitter {
                 break
         }
         this.broadcastAndStoreDataHash(buf)
-    }
-    isAbuse(buf: Buffer, socket: Socket) {
-        socket.bytes += Buffer.byteLength(buf)
-        if (socket.bytes > config.node.socket.maxBytesPerSecond) return true
-        else return false
-    }
-    loop() {
-        for (const socket of this.sockets) {
-            socket.bytes = 0
-        }
-        setTimeout(this.loop.bind(this), 1000)
     }
     // server
     start(port: number, address: string) {
