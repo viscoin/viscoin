@@ -83,7 +83,7 @@ class TCPNetworkNode extends events.EventEmitter {
                 socket.data = Buffer.concat([socket.data, chunk])
                 if (Buffer.byteLength(socket.data) > config.node.socket.maxBytesInMemory) return this.emit('blacklist', socket, 'sending too much data without end')
                 let index = null
-                while (index !== -1) {
+                while (index !== -1 && !socket.destroyed) {
                     index = protocol.getEndIndex(socket.data)
                     if (index !== -1) {
                         this.emit('data', socket.data.slice(0, index), socket)
