@@ -177,7 +177,6 @@ class TCPNetworkNode extends events.EventEmitter {
         if (!this.isValidBuffer(buf)) return console.warn('!isValidBuffer')
         if (this.compareAndStoreHash(buf)) return // console.warn('this.compareAndStoreHash')
         const parsed = protocol.parseDataBuffer(buf)
-        console.log(parsed)
         switch (parsed.type) {
             case 'block':
                 if (!parsed.data) return console.warn('block !parsed.data')

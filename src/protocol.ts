@@ -35,7 +35,7 @@ export default {
             const part = data.slice(i, i + 32)
             // console.log(i, part)
             if (part.equals(this.end)) {
-                console.log(i, part)
+                // console.log(i, part)
                 return i
             }
         }
