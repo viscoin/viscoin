@@ -31,14 +31,6 @@ export default {
     },
     end: Buffer.alloc(32, 0),
     getEndIndex(data: Buffer) {
-        for (let i = 0; i < Buffer.byteLength(data); i++) {
-            const part = data.slice(i, i + 32)
-            // console.log(i, part)
-            if (part.equals(this.end)) {
-                // console.log(i, part)
-                return i
-            }
-        }
-        return -1
+        return data.indexOf(this.end)
     }
 }
