@@ -12,6 +12,22 @@ import customHash from './src/customHash'
 
 const wallet = new WalletClient()
 
+const functions = {
+    save_wallet: (address: string, secret: string, name: string, passphrase: string) => {
+        const iv = crypto.randomBytes(16)
+        const cipher = crypto.createCipheriv('aes-256-cbc', customHash(passphrase), iv)
+        if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
+        fs.writeFileSync(`./wallets/${name}.wallet`, Buffer.concat([
+            iv,
+            cipher.update(JSON.stringify({
+                address,
+                secret
+            })),
+            cipher.final()
+        ]))
+    }
+}
+
 const commands = {
     commands: async () => {
         if (!wallet.wallet) return commands.select_wallet()
@@ -27,6 +43,7 @@ const commands = {
                 { title: 'Generate', description: 'Generates new wallet', value: commands.generate },
                 { title: 'Info', description: 'View details about your current wallet', value: commands.info },
                 { title: 'Wallet', description: 'Load a stored wallet', value: commands.select_wallet },
+                { title: 'Import', description: 'Import a new wallet', value: commands.import_wallet },
                 { title: 'Exit', description: 'Exits', value: commands.exit }
             ]
         })
@@ -168,17 +185,7 @@ const commands = {
                 message: 'Enter passphrase'
             }
         ])
-        const iv = crypto.randomBytes(16)
-        const cipher = crypto.createCipheriv('aes-256-cbc', customHash(passphrase), iv)
-        if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
-        fs.writeFileSync(`./wallets/${name}.wallet`, Buffer.concat([
-            iv,
-            cipher.update(JSON.stringify({
-                address,
-                secret
-            })),
-            cipher.final()
-        ]))
+        functions.save_wallet(address, secret, name, passphrase)
         wallet.import({
             name,
             address,
@@ -203,11 +210,11 @@ const commands = {
         commands.commands()
     },
     load_wallet: async (name) => {
-        if (!fs.existsSync(`./wallets/${name}`)) {
+        if (!fs.existsSync(`./wallets/${name}.wallet`)) {
             console.log(chalk.redBright('Wallet not found'))
             return commands.select_wallet()
         }
-        const data = fs.readFileSync(`./wallets/${name}`)
+        const data = fs.readFileSync(`./wallets/${name}.wallet`)
         await prompts({
             type: 'password',
             name: 'passphrase',
@@ -233,12 +240,13 @@ const commands = {
         console.clear()
         wallet.wallet = null
         if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
-        const files = fs.readdirSync('./wallets')
+        let files = fs.readdirSync('./wallets')
+        files = files.filter(e => e.endsWith('.wallet'))
         if (!files.length) return commands.generate()
         const choices = files.map(e => {
             return {
                 title: e,
-                value: e
+                value: e.slice(0, e.length - '.wallet'.length)
             }
         })
         const { name } = await prompts({
@@ -259,6 +267,66 @@ const commands = {
             process.stdin.resume()
             process.stdin.once('data', () => resolve())
         })
+    },
+    import_wallet: async () => {
+        const { address, secret, name, passphrase } = await prompts([
+            {
+                type: 'text',
+                name: 'address',
+                message: 'Address',
+                validate: address => {
+                    try {
+                        crypto.createPublicKey({
+                            key: base58.decode(address),
+                            type: 'spki',
+                            format: 'der'
+                        })
+                        return true
+                    } catch {
+                        return 'Invalid address'
+                    }
+                }
+            },
+            {
+                type: 'text',
+                name: 'secret',
+                message: 'Secret',
+                validate: secret => {
+                    try {
+                        crypto.createPrivateKey({
+                            key: base58.decode(secret),
+                            type: 'pkcs8',
+                            format: 'der'
+                        })
+                        return true
+                    } catch {
+                        return 'Invalid secret'
+                    }
+                }
+            },
+            {
+                type: 'text',
+                name: 'name',
+                message: 'Name wallet',
+                validate: name => {
+                    const exists = fs.existsSync(`./wallets/${name}.wallet`)
+                    return exists ? 'Wallet already exists' : true
+                }
+            },
+            {
+                type: 'password',
+                name: 'passphrase',
+                message: 'Enter passphrase'
+            }
+        ])
+        functions.save_wallet(address, secret, name, passphrase)
+        wallet.import({
+            name,
+            address,
+            secret
+        })
+        console.clear()
+        commands.commands()
     }
 }
 commands.init()
