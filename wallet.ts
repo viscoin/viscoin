@@ -34,6 +34,7 @@ const commands = {
             { title: 'Network', description: 'View network nodes', value: commands.network },
             { title: 'Generate', description: 'Generates new wallet', value: commands.generate },
             { title: 'Import', description: 'Import a new wallet', value: commands.import_wallet },
+            { title: 'Work', description: 'Estimate how much work has been put into the blockchain', value: commands.estimate_work },
             { title: 'Exit', description: 'Exits', value: commands.exit }
         ]
         if (wallet.wallet) choices = [
@@ -375,6 +376,15 @@ const commands = {
             }
         ])
         console.log(await wallet.transactions(res.address))
+        await commands.pause()
+        console.clear()
+        commands.commands()
+    },
+    estimate_work: async () => {
+        const work = await wallet.blockchain.getWork()
+        console.log(chalk.yellowBright(work))
+        console.log(chalk.cyanBright(`2^${Math.log2(work)}`))
+        console.log(chalk.blueBright(`10^${Math.log10(work)}`))
         await commands.pause()
         console.clear()
         commands.commands()
