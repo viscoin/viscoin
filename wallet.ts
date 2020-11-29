@@ -30,22 +30,29 @@ const functions = {
 
 const commands = {
     commands: async () => {
-        if (!wallet.wallet) return commands.select_wallet()
+        let choices: Array<{ title: string, description: string, value: Function }> = [
+            { title: 'Network', description: 'View network nodes', value: commands.network },
+            { title: 'Generate', description: 'Generates new wallet', value: commands.generate },
+            { title: 'Import', description: 'Import a new wallet', value: commands.import_wallet },
+            { title: 'Exit', description: 'Exits', value: commands.exit }
+        ]
+        if (wallet.wallet) choices = [
+            { title: 'Address', description: 'Get wallet address', value: commands.address },
+            { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
+            { title: 'Send', description: 'Send money to address', value: commands.send },
+            { title: 'Info', description: 'View details about your current wallet', value: commands.info },
+            { title: 'Unload', description: 'Unloads your wallet from memory', value: commands.unload_wallet },
+            ...choices
+        ]
+        else choices = [
+            { title: 'Load', description: 'Load a stored wallet', value: commands.select_wallet },
+            ...choices
+        ]
         const res = await prompts({
             type: 'autocomplete',
             name: 'value',
             message: 'Command',
-            choices: [
-                { title: 'Address', description: 'Get wallet address', value: commands.address },
-                { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
-                { title: 'Send', description: 'Send money to address', value: commands.send },
-                { title: 'Network', description: 'View network nodes', value: commands.network },
-                { title: 'Generate', description: 'Generates new wallet', value: commands.generate },
-                { title: 'Info', description: 'View details about your current wallet', value: commands.info },
-                { title: 'Wallet', description: 'Load a stored wallet', value: commands.select_wallet },
-                { title: 'Import', description: 'Import a new wallet', value: commands.import_wallet },
-                { title: 'Exit', description: 'Exits', value: commands.exit }
-            ]
+            choices
         })
         if (typeof res.value !== 'function') return commands.commands()
         res.value()
@@ -238,11 +245,15 @@ const commands = {
     },
     select_wallet: async () => {
         console.clear()
-        wallet.wallet = null
         if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
         let files = fs.readdirSync('./wallets')
         files = files.filter(e => e.endsWith('.wallet'))
-        if (!files.length) return commands.generate()
+        if (!files.length) {
+            console.log(chalk.redBright('No stored wallets found'))
+            await commands.pause()
+            console.clear()
+            return commands.commands()
+        }
         const choices = files.map(e => {
             return {
                 title: e,
@@ -259,7 +270,7 @@ const commands = {
     },
     init: () => {
         wallet.node.connectToNetwork(nodes)
-        commands.select_wallet()
+        commands.commands()
     },
     pause: () => {
         return new Promise(resolve => {
@@ -325,6 +336,11 @@ const commands = {
             address,
             secret
         })
+        console.clear()
+        commands.commands()
+    },
+    unload_wallet: () => {
+        wallet.wallet = null,
         console.clear()
         commands.commands()
     }
