@@ -90,20 +90,29 @@ class Blockchain {
         await this.cleanLastTrustedChain()
         return 0
     }
-    async getBalanceOfAddress(address: string) {
-        let block = await this.getLatestBlock(),
-        balance = 0
+    async getTransactionsOfAddress(address: string) {
+        const transactions = []
+        let block = await this.getLatestBlock()
         while (true) {
             if (!block) break
             block = await Block.load({ hash: block.previousHash })
             if (!block) break
             for (const transaction of block.transactions) {
-                if (transaction.fromAddress === address) {
-                    balance -= transaction.amount
-                }
-                if (transaction.toAddress === address) {
-                    balance += transaction.amount - transaction.minerFee
-                }
+                if (transaction.fromAddress === address
+                    || transaction.toAddress === address) transactions.push(transaction)
+            }
+        }
+        return transactions
+    }
+    async getBalanceOfAddress(address: string) {
+        const transactions = await this.getTransactionsOfAddress(address)
+        let balance = 0
+        for (const transaction of transactions) {
+            if (transaction.fromAddress === address) {
+                balance -= transaction.amount
+            }
+            if (transaction.toAddress === address) {
+                balance += transaction.amount - transaction.minerFee
             }
         }
         return balance

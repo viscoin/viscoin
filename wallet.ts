@@ -40,6 +40,7 @@ const commands = {
             { title: 'Address', description: 'Get wallet address', value: commands.address },
             { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
             { title: 'Send', description: 'Send money to address', value: commands.send },
+            { title: 'Transactions', description: 'Lists all transactions', value: commands.transactions },
             { title: 'Info', description: 'View details about your current wallet', value: commands.info },
             { title: 'Unload', description: 'Unloads your wallet from memory', value: commands.unload_wallet },
             ...choices
@@ -341,6 +342,40 @@ const commands = {
     },
     unload_wallet: () => {
         wallet.wallet = null,
+        console.clear()
+        commands.commands()
+    },
+    transactions: async () => {
+        const res = await prompts([
+            {
+                type: 'toggle',
+                name: 'this',
+                message: 'This wallet?',
+                initial: true,
+                active: 'yes',
+                inactive: 'no'
+            },
+            {
+                type: prev => prev === true ? null : 'text',
+                name: 'address',
+                message: 'Address',
+                validate: address => {
+                    if (!address) return true
+                    try {
+                        crypto.createPublicKey({
+                            key: base58.decode(address),
+                            type: 'spki',
+                            format: 'der'
+                        })
+                        return true
+                    } catch {
+                        return 'Invalid address'
+                    }
+                }
+            }
+        ])
+        console.log(await wallet.transactions(res.address))
+        await commands.pause()
         console.clear()
         commands.commands()
     }
