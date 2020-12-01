@@ -174,6 +174,7 @@ class TCPNetworkNode extends events.EventEmitter {
                 break
             case 'node':
                 if (!parsed.data) return this.emit('blacklist', socket, 'invalid parsed data node')
+                if (config.node.connectToNodes) this.connectToNetwork([ parsed.data ])
                 this.emit('node', parsed.data)
                 break
         }

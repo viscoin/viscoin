@@ -25,10 +25,7 @@ class BaseClient extends events.EventEmitter {
             this.blockchain.addTransaction(transaction)
             this.emit('transaction', transaction)
         })
-        this.node.on('node', node => {
-            if (config.node.connectToNodes) this.node.connectToNetwork([ node ])
-            this.emit('node', node)
-        })
+        this.node.on('node', node => this.emit('node', node))
         this.node.on('data', data => this.emit('data', data))
         this.node.on('socket', socket => {
             fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
