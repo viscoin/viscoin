@@ -28,14 +28,14 @@ class BaseClient extends events.EventEmitter {
         this.node.on('node', node => this.emit('node', node))
         this.node.on('data', data => this.emit('data', data))
         this.node.on('socket', socket => {
-            fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (config.save_logs) fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('socket', socket)
         })
         this.node.on('connect', socket => this.emit('connect', socket))
         this.node.on('connection', socket => this.emit('connection', socket))
         this.node.server.on('listening', () => this.emit('listening'))
         this.node.on('blacklist', (socket, reason) => {
-            fs.appendFileSync('./log/blacklisted.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (config.save_logs) fs.appendFileSync('./log/blacklisted.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('blacklist', socket, reason)
         })
     }

@@ -22,9 +22,9 @@
         "address": "192.168.0.7",
         "port": 8333
     },
+    "save_logs": true,
     "dataHashesLength": 100,
     "maxConnections": 100,
-    "save_connected_nodes": true,
     "mining": {
         "reward": {
             "amount": 100,
