@@ -4,6 +4,7 @@ import * as config from '../config.json'
 import * as nodes from '../nodes.json'
 import * as events from 'events'
 import protocol from './protocol'
+import * as fs from 'fs'
 interface BaseClient {
     node: TCPNetworkNode
     blockchain: Blockchain
@@ -29,7 +30,10 @@ class BaseClient extends events.EventEmitter {
             if (config.node.connectToNodes) this.node.connectToNetwork([ node ])
         })
         this.node.on('data', data => this.emit('data', data))
-        this.node.on('socket', socket => this.emit('socket', socket))
+        this.node.on('socket', socket => {
+            fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
+            this.emit('socket', socket)
+        })
         this.node.on('connect', socket => this.emit('connect', socket))
         this.node.on('connection', socket => this.emit('connection', socket))
         this.node.server.on('listening', () => this.emit('listening'))

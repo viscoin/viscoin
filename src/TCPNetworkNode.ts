@@ -3,7 +3,6 @@ import * as events from 'events'
 import * as config from '../config.json'
 import customHash from './customHash'
 import protocol from './protocol'
-import schema_node from './mongoose/schema/node'
 import Transaction from './Transaction'
 import Block from './Block'
 interface Socket extends net.Socket {
@@ -24,8 +23,6 @@ class TCPNetworkNode extends events.EventEmitter {
         this.dataHashes = []
         this.sockets = []
         this.blacklisted = []
-        this.on('socket', socket => this.handleSocket(socket))
-        this.on('data', (data, socket) => this.handleData(data, socket))
         this.on('blacklist', (socket: Socket, reason: string) => {
             socket.destroy()
             this.blacklisted.push(socket.remoteAddress)
@@ -60,6 +57,11 @@ class TCPNetworkNode extends events.EventEmitter {
                 this.sockets.push(socket)
                 index = this.sockets.length - 1
             }
+            this.broadcastAndStoreDataHash(protocol.constructDataBuffer('node', {
+                address: socket.remoteAddress,
+                family: socket.remoteFamily,
+                port: socket.remotePort
+            }))
             this.emit('socket', socket)
         }
         if (!socket.connecting) add()
@@ -86,7 +88,9 @@ class TCPNetworkNode extends events.EventEmitter {
                 while (index !== -1 && !socket.destroyed) {
                     index = protocol.getEndIndex(socket.data)
                     if (index !== -1) {
-                        this.emit('data', socket.data.slice(0, index), socket)
+                        const data = socket.data.slice(0, index)
+                        this.handleData(data, socket)
+                        this.emit('data', data, socket)
                         socket.data = socket.data.slice(index + 32)
                     }
                 }
@@ -152,18 +156,6 @@ class TCPNetworkNode extends events.EventEmitter {
             socket.removeAllListeners()
         }
         this.sockets = []
-    }
-    async handleSocket(socket) {
-        this.broadcastAndStoreDataHash(protocol.constructDataBuffer('node', {
-            address: socket.remoteAddress,
-            family: socket.remoteFamily,
-            port: socket.remotePort
-        }))
-        if (config.save_connected_nodes) await new schema_node({
-            address: socket.remoteAddress,
-            family: socket.remoteFamily,
-            port: socket.remotePort
-        }).save()
     }
     async handleData(buf: Buffer, socket: Socket) {
         if (!this.isValidBuffer(buf)) return this.emit('blacklist', socket, 'invalid buffer')
