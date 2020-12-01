@@ -3,17 +3,17 @@ import * as config from '../config.json'
 import base58 from './base58'
 import customHash from './customHash'
 interface Transaction {
-    fromAddress: string
-    toAddress: string
+    from: string
+    to: string
     timestamp: number
     amount: number
     minerFee: number
     signature: Buffer
 }
 class Transaction {
-    constructor({ fromAddress, toAddress, amount, timestamp = Date.now(), minerFee = 0, signature = undefined }) {
-        this.fromAddress = fromAddress
-        this.toAddress = toAddress
+    constructor({ from, to, amount, timestamp = Date.now(), minerFee = 0, signature = undefined }) {
+        this.from = from
+        this.to = to
         this.timestamp = timestamp
         this.amount = amount
         this.minerFee = minerFee
@@ -23,15 +23,15 @@ class Transaction {
     }
     calculateHash() {
         return customHash(
-            this.fromAddress
-            + this.toAddress
+            this.from
+            + this.to
             + this.amount
             + this.minerFee
             + this.timestamp
         )
     }
     sign({ address, secret }) {
-        if (address !== this.fromAddress) {
+        if (address !== this.from) {
             throw new Error('You cannot sign transactions for other wallets!')
         }
         this.signature = crypto.sign(null, this.calculateHash(), crypto.createPrivateKey({
@@ -41,13 +41,13 @@ class Transaction {
         }))
     }
     verify() {
-        if (this.fromAddress === config.mining.reward.fromAddress) return true
+        if (this.from === config.mining.reward.from) return true
         if (!this.signature || !Buffer.byteLength(this.signature)) {
             console.log('!this.signature || !Buffer.byteLength(this.signature)')
             return false
         }
         return crypto.verify(null, this.calculateHash(), crypto.createPublicKey({
-            key: base58.decode(this.fromAddress),
+            key: base58.decode(this.from),
             type: 'spki',
             format: 'der'
         }), this.signature)

@@ -31,8 +31,8 @@ class Blockchain {
     }
     async addTransaction(transaction: Transaction) {
         // sync
-        if (typeof transaction.fromAddress !== 'string') return 1
-        if (typeof transaction.toAddress !== 'string') return 2
+        if (typeof transaction.from !== 'string') return 1
+        if (typeof transaction.to !== 'string') return 2
         if (typeof transaction.timestamp !== 'number') return 3
         if (typeof transaction.amount !== 'number') return 4
         if (typeof transaction.minerFee !== 'number') return 5
@@ -45,7 +45,7 @@ class Blockchain {
         if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 12
         try {
             crypto.createPublicKey({
-                key: base58.decode(transaction.toAddress),
+                key: base58.decode(transaction.to),
                 type: 'spki',
                 format: 'der'
             })
@@ -55,7 +55,7 @@ class Blockchain {
         if (!transaction.verify()) return 14
         // async
         if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 15
-        if (await this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) return 16
+        if (await this.getBalanceOfAddress(transaction.from) < transaction.amount) return 16
         this.pendingTransactions.push(transaction)
         return 0
     }
@@ -98,8 +98,8 @@ class Blockchain {
             block = await Block.load({ hash: block.previousHash })
             if (!block) break
             for (const transaction of block.transactions) {
-                if (transaction.fromAddress === address
-                    || transaction.toAddress === address) transactions.push(transaction)
+                if (transaction.from === address
+                    || transaction.to === address) transactions.push(transaction)
             }
         }
         return transactions
@@ -108,10 +108,10 @@ class Blockchain {
         const transactions = await this.getTransactionsOfAddress(address)
         let balance = 0
         for (const transaction of transactions) {
-            if (transaction.fromAddress === address) {
+            if (transaction.from === address) {
                 balance -= transaction.amount
             }
-            if (transaction.toAddress === address) {
+            if (transaction.to === address) {
                 balance += transaction.amount - transaction.minerFee
             }
         }
@@ -399,8 +399,8 @@ class Blockchain {
         if (previousBlock.height === 0) await previousBlock.save()
         const transactions = [
             new Transaction({
-                fromAddress: config.mining.reward.fromAddress,
-                toAddress: walletAddress,
+                from: config.mining.reward.from,
+                to: walletAddress,
                 amount: config.mining.reward.amount
             }),
             ...this.pendingTransactions

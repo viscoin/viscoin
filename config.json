@@ -1,6 +1,6 @@
 {
     "miner": {
-        "miningRewardAddress": "GfHq2tTVk9z4eXgyFcuzMPKMwQe8Y14n7XajsoE6V4pLjnYSwod6vdCyPnh5",
+        "miningRewardAddress": "GfHq2tTVk9z4eXgyHZv5FhsKYpaM4ZHZ1s1VZutM3ZcBsxcgpojhEQJMejCj",
         "threads": 4,
         "hostNode": true,
         "connectToNodes": true
@@ -28,7 +28,7 @@
     "mining": {
         "reward": {
             "amount": 100,
-            "fromAddress": ""
+            "from": ""
         },
         "blockTime": 60000,
         "trustedAfterBlocks": 10,

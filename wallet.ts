@@ -71,12 +71,12 @@ const commands = {
         const res = await prompts([
             {
                 type: 'text',
-                name: 'toAddress',
+                name: 'to',
                 message: 'Address',
-                validate: toAddress => {
+                validate: to => {
                     try {
                         crypto.createPublicKey({
-                            key: base58.decode(toAddress),
+                            key: base58.decode(to),
                             type: 'spki',
                             format: 'der'
                         })

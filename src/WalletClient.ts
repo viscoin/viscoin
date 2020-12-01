@@ -11,12 +11,12 @@ class WalletClient extends BaseClient {
         this.wallet = null
     }
     static generate = keygen
-    send({ address, secret, toAddress, amount, minerFee }: { address: string, secret: string, toAddress: string, amount: number | string, minerFee: number | string }) {
+    send({ address, secret, to, amount, minerFee }: { address: string, secret: string, to: string, amount: number | string, minerFee: number | string }) {
         if (typeof amount === 'string') amount = parseFloat(amount)
         if (typeof minerFee === 'string') minerFee = parseFloat(minerFee)
         const transaction = new Transaction({
-            fromAddress: address,
-            toAddress,
+            from: address,
+            to,
             amount,
             minerFee
         })
