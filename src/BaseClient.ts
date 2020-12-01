@@ -18,16 +18,16 @@ class BaseClient extends events.EventEmitter {
         if (config.node.connectToNodes) this.node.connectToNetwork(nodes)
         if (config.node.blockchainSynchronization) this.nextSync()
         this.node.on('block', block => {
-            this.emit('block', block)
             this.blockchain.addBlock(block)
+            this.emit('block', block)
         })
         this.node.on('transaction', transaction => {
-            this.emit('transaction', transaction)
             this.blockchain.addTransaction(transaction)
+            this.emit('transaction', transaction)
         })
         this.node.on('node', node => {
-            this.emit('node', node)
             if (config.node.connectToNodes) this.node.connectToNetwork([ node ])
+            this.emit('node', node)
         })
         this.node.on('data', data => this.emit('data', data))
         this.node.on('socket', socket => {

@@ -69,8 +69,8 @@ class TCPNetworkNode extends events.EventEmitter {
         socket.data = Buffer.alloc(0)
         socket
             .on('connect', () => {
-                this.emit('connect', socket)
                 add()
+                this.emit('connect', socket)
             })
             .on('error', () => socket.destroy())
             .on('close', () => {
@@ -183,8 +183,8 @@ class TCPNetworkNode extends events.EventEmitter {
     start(port: number, address: string) {
         this.server
             .on('connection', (socket: Socket) => {
-                this.emit('connection', socket)
                 this.addSocket(socket)
+                this.emit('connection', socket)
             })
             .on('listening', () => {})
             .on('close', () => {})
