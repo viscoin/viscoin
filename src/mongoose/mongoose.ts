@@ -1,8 +1,5 @@
 import * as mongoose from 'mongoose'
-
-export = client
-
-const client = {
+export default {
     init: () => {
         const dbOptions = {
             useNewUrlParser: true,

@@ -1,4 +1,4 @@
-import * as mongoose from './src/mongoose/mongoose'
+import mongoose from './src/mongoose/mongoose'
 import BaseClient from './src/BaseClient'
 mongoose.init()
 const client = new BaseClient()

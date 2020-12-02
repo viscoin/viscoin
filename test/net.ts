@@ -1,8 +1,8 @@
-import * as mongoose from '../src/mongoose/mongoose'
+import mongoose from '../src/mongoose/mongoose'
+mongoose.init()
 import * as config from '../config.json'
 import * as nodes from '../nodes.json'
 import BaseClient from '../src/BaseClient'
-mongoose.init()
 
 for (let i = 0; i < 2; i++) {
     config.network.port++

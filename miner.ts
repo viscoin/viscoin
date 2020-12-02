@@ -1,4 +1,4 @@
-import * as mongoose from './src/mongoose/mongoose'
+import mongoose from './src/mongoose/mongoose'
 import * as config from './config.json'
 import Miner from './src/Miner'
 import { Worker, isMainThread, parentPort, threadId } from 'worker_threads'
