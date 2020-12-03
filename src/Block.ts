@@ -50,15 +50,16 @@ class Block {
     }
     hasValidTransactions() {
         let amount = config.mining.reward.amount
-        for (const transaction of this.transactions) {
+        if (!this.transactions.length) return false
+        for (let i = 0; i < this.transactions.length; i++) {
+            const transaction = this.transactions[i]
+            if (!transaction) return false
+            if (i === 0 && transaction.from !== config.mining.reward.from) return false
+            else if (i !== 0 && transaction.from === config.mining.reward.from) return false
+            if (!transaction.verify()) return false
             amount += transaction.minerFee
-            if (!transaction.verify()) {
-                console.log('!transaction.isValid()')
-                return false
-            }
         }
-        if (this.transactions[0] && this.transactions[0].amount !== amount) return false
-        // if (this.transactions[0].amount !== amount) return false
+        if (this.transactions[0].amount !== amount) return false
         return true
     }
     async save() {
