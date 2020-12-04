@@ -25,6 +25,13 @@ class MinerClient extends BaseClient {
             this.hashrate = 0
         }, 1000)
         this.miningRewardAddress = miningRewardAddress
+        this.on('transaction', (transaction, code) => {
+            if (code === 0) this.emitThreadsMineNewBlock()
+        })
+        // !
+        this.on('block', (block, code) => {
+            if (code === 0) this.emitThreadsMineNewBlock()
+        })
     }
     async emitThreadsMineNewBlock() {
         const block = await this.blockchain.getNewBlock(this.miningRewardAddress)

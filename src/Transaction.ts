@@ -41,7 +41,6 @@ class Transaction {
         }))
     }
     verify() {
-        if (this.from === config.mining.reward.from) return true
         if (!this.signature || !Buffer.byteLength(this.signature)) {
             console.log('!this.signature || !Buffer.byteLength(this.signature)')
             return false

@@ -375,7 +375,7 @@ const commands = {
                 }
             }
         ])
-        console.log(await wallet.transactions(res.address))
+        console.log((await wallet.transactions(res.address)).sort((a, b) => a.timestamp - b.timestamp))
         await commands.pause()
         console.clear()
         commands.commands()

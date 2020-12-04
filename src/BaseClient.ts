@@ -17,17 +17,18 @@ class BaseClient extends events.EventEmitter {
         if (config.node.hostNode) this.node.start(config.network.port, config.network.address)
         if (config.node.connectToNodes) this.node.connectToNetwork(nodes)
         if (config.node.blockchainSynchronization) this.nextSync()
-        this.node.on('block', block => {
-            this.blockchain.addBlock(block)
-            this.emit('block', block)
+        this.node.on('block', async block => {
+            const code = await this.blockchain.addBlock(block)
+            this.emit('block', block, code)
         })
-        this.node.on('transaction', transaction => {
-            this.blockchain.addTransaction(transaction)
-            this.emit('transaction', transaction)
+        this.node.on('transaction', async transaction => {
+            const code = await this.blockchain.addTransaction(transaction)
+            this.emit('transaction', transaction, code)
         })
         this.node.on('node', node => this.emit('node', node))
         this.node.on('data', data => this.emit('data', data))
         this.node.on('socket', socket => {
+            if (!fs.existsSync('./log')) fs.mkdirSync('./log')
             if (config.save_logs) fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('socket', socket)
         })
@@ -35,6 +36,7 @@ class BaseClient extends events.EventEmitter {
         this.node.on('connection', socket => this.emit('connection', socket))
         this.node.server.on('listening', () => this.emit('listening'))
         this.node.on('blacklist', (socket, reason) => {
+            if (!fs.existsSync('./log')) fs.mkdirSync('./log')
             if (config.save_logs) fs.appendFileSync('./log/blacklisted.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('blacklist', socket, reason)
         })

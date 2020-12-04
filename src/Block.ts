@@ -54,9 +54,11 @@ class Block {
         for (let i = 0; i < this.transactions.length; i++) {
             const transaction = this.transactions[i]
             if (!transaction) return false
-            if (i === 0 && transaction.from !== config.mining.reward.from) return false
-            else if (i !== 0 && transaction.from === config.mining.reward.from) return false
+            // !
+            // amount += transaction.minerFee
+            if (i === 0 && transaction.from === config.mining.reward.from) continue
             if (!transaction.verify()) return false
+            // !
             amount += transaction.minerFee
         }
         if (this.transactions[0].amount !== amount) return false

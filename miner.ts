@@ -7,6 +7,8 @@ import MinerClient from './src/MinerClient'
 if (isMainThread) {
     mongoose.init()
     const client = new MinerClient(config.miner.miningRewardAddress)
+    client.on('transaction', (transaction, code) => console.log('transaction', code))
+    client.on('block', (block, code) => console.log('block', code))
     for (let i = 0; i < client.threads; i++) {
         client.addWorker(new Worker(__filename))
     }

@@ -2,11 +2,11 @@ import mongoose from './src/mongoose/mongoose'
 import BaseClient from './src/BaseClient'
 mongoose.init()
 const client = new BaseClient()
-client.on('block', block => {
-    console.log('block')
+client.on('block', (block, code) => {
+    console.log('block', code)
 })
-client.on('transaction', transaction => {
-    console.log('transaction')
+client.on('transaction', (transaction, code) => {
+    console.log('transaction', code)
 })
 client.on('node', node => {
     console.log('node', node)

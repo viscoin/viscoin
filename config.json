@@ -1,7 +1,7 @@
 {
     "miner": {
         "miningRewardAddress": "GfHq2tTVk9z4eXgyHZv5FhsKYpaM4ZHZ1s1VZutM3ZcBsxcgpojhEQJMejCj",
-        "threads": 4,
+        "threads": 1,
         "hostNode": true,
         "connectToNodes": true
     },
@@ -19,8 +19,8 @@
         }
     },
     "network": {
-        "address": "192.168.0.7",
-        "port": 8333
+        "address": "192.168.0.11",
+        "port": 8334
     },
     "save_logs": true,
     "dataHashesLength": 100,
@@ -30,7 +30,7 @@
             "amount": 100,
             "from": ""
         },
-        "blockTime": 60000,
+        "blockTime": 20000,
         "trustedAfterBlocks": 10,
         "blockSize": 1048576
     }

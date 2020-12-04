@@ -52,6 +52,16 @@ class Blockchain {
         } catch {
             return 13
         }
+        // !
+        // try {
+        //     crypto.createPublicKey({
+        //         key: base58.decode(transaction.from),
+        //         type: 'spki',
+        //         format: 'der'
+        //     })
+        // } catch {
+        //     return 14
+        // }
         if (!transaction.verify()) return 14
         // async
         if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 15
@@ -67,6 +77,7 @@ class Blockchain {
         if (typeof block.difficulty !== 'number') return 4
         if (typeof block.hash !== 'object') return 5
         if (typeof block.previousHash !== 'object') return 6
+        // !
         if (typeof block.transactions !== 'object') return 7
         if (block.hash instanceof Buffer === false) return 8
         if (block.previousHash instanceof Buffer === false) return 9

@@ -1,19 +1,24 @@
+const types = [
+    'null',
+    'block',
+    'transaction',
+    'node'
+] as const
+type types_string = typeof types[number]
 export default {
-    types: [
-        'null',
-        'block',
-        'transaction',
-        'node'
-    ],
-    getType(type: string | number): string | number {
+    types,
+    getType(type: types_string | number): types_string | number {
         if (typeof type === 'string') {
+            // !
+            const index = this.types.indexOf(type)
+            if (index === -1) throw new Error('getType index')
             return this.types.indexOf(type)
         }
-        else {
+        else if (typeof type === 'number') {
             return this.types[type]
         }
     },
-    constructDataBuffer(type: string, data: any) {
+    constructDataBuffer(type: types_string | number, data: any) {
         return Buffer.from(Buffer.alloc(1, this.getType(type)) + JSON.stringify(data))
     },
     parseDataBuffer(data: Buffer) {

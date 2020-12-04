@@ -25,7 +25,7 @@ class WalletClient extends BaseClient {
             secret
         })
         this.blockchain.addTransaction(transaction)
-        this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('transction', transaction))
+        this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('transaction', transaction))
         return transaction
     }
     import(wallet: { name: string, address: string, secret: string }) {
