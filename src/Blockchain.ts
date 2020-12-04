@@ -4,7 +4,6 @@ import Transaction from './Transaction'
 import Block from './Block'
 import schema_block from './mongoose/schema/block'
 import base58 from './base58'
-import protocol from './protocol'
 interface Blockchain {
     difficulty: number
     pendingTransactions: Array<Transaction>
@@ -77,27 +76,23 @@ class Blockchain {
         if (typeof block.difficulty !== 'number') return 4
         if (typeof block.hash !== 'object') return 5
         if (typeof block.previousHash !== 'object') return 6
-        // !
-        if (typeof block.transactions !== 'object') return 7
-        if (block.hash instanceof Buffer === false) return 8
-        if (block.previousHash instanceof Buffer === false) return 9
-        if (Array.isArray(block.transactions) === false) return 10
-        if (block.timestamp > Date.now()) return 11
+        if (block.hash instanceof Buffer === false) return 7
+        if (block.previousHash instanceof Buffer === false) return 8
+        if (Array.isArray(block.transactions) === false) return 9
+        if (block.timestamp > Date.now()) return 10
         // async
-        if (block.height < (await this.getLatestBlock()).height - config.mining.trustedAfterBlocks) {
-            const _block = await Block.load({ height: block.height })
-            // !
-            if (_block && _block.difficulty < block.difficulty) return 12
-        }
-        const previousBlock = await Block.load({ hash: block.previousHash, height: block.height - 1 })
+        if (block.height < (await this.getLatestBlock()).height - config.mining.trustedAfterBlocks) return 11
+        // !
+        // const previousBlock = await Block.load({ hash: block.previousHash, height: block.height - 1 })
+        const previousBlock = await Block.load({ hash: block.previousHash })
         if (previousBlock) {
             const valid = Blockchain.isPartOfChainValid([
                 previousBlock,
                 block
             ])
-            if (valid === false) return 13
+            if (valid === false) return 12
         }
-        if (await Block.exists({ hash: block.hash })) return 14
+        if (await Block.exists({ hash: block.hash })) return 13
         await block.save()
         await this.cleanLastTrustedChain()
         return 0
