@@ -9,6 +9,7 @@ import * as fs from 'fs'
 import WalletClient from './src/WalletClient'
 import base58 from './src/base58'
 import customHash from './src/customHash'
+import * as path from 'path'
 
 const wallet = new WalletClient()
 
@@ -31,33 +32,34 @@ const functions = {
 const commands = {
     commands: async () => {
         let choices: Array<{ title: string, description: string, value: Function }> = [
+            { title: 'Wallet', description: 'Select wallet', value: commands.select_wallet },
             { title: 'Network', description: 'View network nodes', value: commands.network },
             { title: 'Generate', description: 'Generates new wallet', value: commands.generate },
             { title: 'Import', description: 'Import a new wallet', value: commands.import_wallet },
             { title: 'Work', description: 'Estimate how much work has been put into the blockchain', value: commands.estimate_work },
             { title: 'Exit', description: 'Exits', value: commands.exit }
         ]
-        if (wallet.wallet) choices = [
-            { title: 'Address', description: 'Get wallet address', value: commands.address },
-            { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
-            { title: 'Send', description: 'Send money to address', value: commands.send },
-            { title: 'Transactions', description: 'Lists all transactions', value: commands.transactions },
-            { title: 'Info', description: 'View details about your current wallet', value: commands.info },
-            { title: 'Load', description: 'Load a stored wallet', value: commands.select_wallet },
-            { title: 'Unload', description: 'Unloads your wallet from memory', value: commands.unload_wallet },
-            ...choices
-        ]
-        else choices = [
-            { title: 'Load', description: 'Load a stored wallet', value: commands.select_wallet },
-            ...choices
-        ]
+        if (wallet.wallet) {
+            choices = [
+                { title: 'Address', description: 'Get wallet address', value: commands.address },
+                { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
+                { title: 'Send', description: 'Send money to address', value: commands.send },
+                { title: 'Transactions', description: 'Lists all transactions', value: commands.transactions },
+                { title: 'Info', description: 'View details about your current wallet', value: commands.info },
+                ...choices
+            ]
+            console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${wallet.wallet.name}.wallet`))))
+        }
         const res = await prompts({
             type: 'autocomplete',
             name: 'value',
             message: 'Command',
             choices
         })
-        if (typeof res.value !== 'function') return commands.commands()
+        if (typeof res.value !== 'function') {
+            console.clear()
+            return commands.commands()
+        }
         res.value()
     },
     info: async () => {
@@ -160,6 +162,7 @@ const commands = {
         commands.commands()
     },
     exit: () => {
+        wallet.wallet = null
         console.clear()
         process.exit(0)
     },
@@ -195,6 +198,10 @@ const commands = {
                 message: 'Enter passphrase'
             }
         ])
+        if (passphrase === undefined || passphrase === undefined) {
+            console.clear()
+            return commands.commands()
+        }
         functions.save_wallet(address, secret, name, passphrase)
         wallet.import({
             name,
@@ -334,17 +341,16 @@ const commands = {
                 message: 'Enter passphrase'
             }
         ])
+        if (address === undefined || secret === undefined || name === undefined || passphrase === undefined) {
+            console.clear()
+            return commands.commands()
+        }
         functions.save_wallet(address, secret, name, passphrase)
         wallet.import({
             name,
             address,
             secret
         })
-        console.clear()
-        commands.commands()
-    },
-    unload_wallet: () => {
-        wallet.wallet = null,
         console.clear()
         commands.commands()
     },
