@@ -43,6 +43,7 @@ const commands = {
             { title: 'Send', description: 'Send money to address', value: commands.send },
             { title: 'Transactions', description: 'Lists all transactions', value: commands.transactions },
             { title: 'Info', description: 'View details about your current wallet', value: commands.info },
+            { title: 'Load', description: 'Load a stored wallet', value: commands.select_wallet },
             { title: 'Unload', description: 'Unloads your wallet from memory', value: commands.unload_wallet },
             ...choices
         ]
@@ -246,6 +247,7 @@ const commands = {
         commands.commands()
     },
     select_wallet: async () => {
+        wallet.wallet = null
         console.clear()
         if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
         let files = fs.readdirSync('./wallets')

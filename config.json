@@ -30,7 +30,7 @@
             "amount": 100,
             "from": ""
         },
-        "blockTime": 20000,
+        "blockTime": 15000,
         "trustedAfterBlocks": 10,
         "blockSize": 1048576
     }
