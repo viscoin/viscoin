@@ -46,6 +46,7 @@ const commands = {
                 { title: 'Send', description: 'Send money to address', value: commands.send },
                 { title: 'Transactions', description: 'Lists all transactions', value: commands.transactions },
                 { title: 'Info', description: 'View details about your current wallet', value: commands.info },
+                { title: 'Secret', description: 'Get wallet secret', value: commands.secret },
                 ...choices
             ]
             console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${wallet.wallet.name}.wallet`))))
@@ -123,6 +124,12 @@ const commands = {
     },
     address: async () => {
         console.log(chalk.blueBright(wallet.wallet.address))
+        await commands.pause()
+        console.clear()
+        commands.commands()
+    },
+    secret: async () => {
+        console.log(chalk.redBright(wallet.wallet.secret))
         await commands.pause()
         console.clear()
         commands.commands()
