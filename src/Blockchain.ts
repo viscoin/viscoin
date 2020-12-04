@@ -102,12 +102,11 @@ class Blockchain {
         let block = await this.getLatestBlock()
         while (true) {
             if (!block) break
-            block = await Block.load({ hash: block.previousHash })
-            if (!block) break
             for (const transaction of block.transactions) {
                 if (transaction.from === address
                     || transaction.to === address) transactions.push(transaction)
             }
+            block = await Block.load({ hash: block.previousHash })
         }
         return transactions
     }
