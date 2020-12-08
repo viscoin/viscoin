@@ -128,37 +128,15 @@ class Blockchain {
         for (let i = 1; i < chain.length; i++) {
             const currentBlock = chain[i]
             const previousBlock = chain[i - 1]
-            if (!currentBlock.meetsDifficulty()) {
-                console.log('!currentBlock.meetsDifficulty()')
-                return false
-            }
-            if (!currentBlock.hasValidTransactions()) {
-                console.log('!currentBlock.hasValidTransactions()')
-                return false
-            }
-            if (!currentBlock.hash.equals(currentBlock.calculateHash())) {
-                console.log('!currentBlock.hash.equals(currentBlock.calculateHash())')
-                console.log(currentBlock.hash.equals(currentBlock.calculateHash()))
-                return false
-            }
-            if (!currentBlock.previousHash.equals(previousBlock.hash)) {
-                console.log('!currentBlock.previousHash.equals(previousBlock.hash)')
-                console.log(currentBlock.previousHash.equals(previousBlock.hash))
-                return false
-            }
+            if (!currentBlock.meetsDifficulty()) return false
+            if (!currentBlock.hasValidTransactions()) return false
+            if (!currentBlock.hash.equals(currentBlock.calculateHash())) return false
+            if (!currentBlock.previousHash.equals(previousBlock.hash)) return false
             for (const transaction of currentBlock.transactions) {
-                if (transaction.timestamp < previousBlock.timestamp) {
-                    console.log('transaction.timestamp < previousBlock.timestamp')
-                    console.log(transaction.timestamp, previousBlock.timestamp)
-                    return false
-                }
+                if (transaction.timestamp < previousBlock.timestamp) return false
             }
             for (const transaction of previousBlock.transactions) {
-                if (transaction.timestamp >= currentBlock.timestamp) {
-                    console.log('transaction.timestamp >= currentBlock.timestamp')
-                    console.log(transaction.timestamp, currentBlock.timestamp)
-                    return false
-                }
+                if (transaction.timestamp >= currentBlock.timestamp) return false
             }
         }
         for (let i = 2; i < chain.length; i++) {
@@ -169,18 +147,9 @@ class Blockchain {
             ]
             let difficulty = blocks[1].difficulty
             const blockTime = blocks[1].timestamp - blocks[0].timestamp
-            if (blockTime < config.mining.blockTime && difficulty < 64) {
-                difficulty++
-            }
-            else if (blockTime >= config.mining.blockTime && difficulty > 0) {
-            // else if (blockTime > config.mining.blockTime && difficulty > 0) {
-                difficulty--
-            }
-            if (blocks[2].difficulty !== difficulty) {
-                console.log('blocks[2].difficulty !== difficulty')
-                console.log(blocks[2].difficulty, difficulty)
-                return false
-            }
+            if (blockTime < config.mining.blockTime && difficulty < 64) difficulty++
+            else if (blockTime >= config.mining.blockTime && difficulty > 0) difficulty--
+            if (blocks[2].difficulty !== difficulty) return false
         }
         return true
     }
