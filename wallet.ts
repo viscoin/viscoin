@@ -67,7 +67,8 @@ const commands = {
         const choices: Array<{ title: string, description: string, value: Function }> = [
             { title: 'Work', description: 'Estimate how much work has been put into the blockchain', value: commands.estimate_work },
             { title: 'Supply', description: 'Total circumlating supply', value: commands.circumlatingSupply },
-            { title: 'Transactions', description: 'Total transactions made on blockchain', value: commands.totalTransactions }
+            { title: 'Transactions', description: 'Total transactions made on blockchain', value: commands.totalTransactions },
+            { title: 'Validate', description: 'Validates integrity of blockchain', value: commands.isValid }
         ]
         const res = await prompts({
             type: 'autocomplete',
@@ -436,6 +437,13 @@ const commands = {
         console.log(chalk.yellowBright(transactions))
         console.log(chalk.cyanBright(`2^${Math.log2(transactions)}`))
         console.log(chalk.blueBright(`10^${Math.log10(transactions)}`))
+        await commands.pause()
+        console.clear()
+        commands.commands()
+    },
+    isValid: async () => {
+        if (await wallet.blockchain.isChainValid()) console.log(chalk.greenBright('Valid'))
+        else console.log(chalk.redBright('Invalid'))
         await commands.pause()
         console.clear()
         commands.commands()
