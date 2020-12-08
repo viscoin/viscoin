@@ -432,5 +432,8 @@ class Blockchain {
         if (this.syncIndex >= (await this.getLatestBlock()).height - config.mining.trustedAfterBlocks) this.syncIndex = 0
         return block
     }
+    async getCircumlatingSupply() {
+        return ((await this.getLatestBlock()).height + 1) * config.mining.reward.amount
+    }
 }
 export default Blockchain

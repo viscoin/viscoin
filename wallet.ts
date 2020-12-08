@@ -36,7 +36,7 @@ const commands = {
             { title: 'Network', description: 'View network nodes', value: commands.network },
             { title: 'Generate', description: 'Generates new wallet', value: commands.generate },
             { title: 'Import', description: 'Import a new wallet', value: commands.import_wallet },
-            { title: 'Work', description: 'Estimate how much work has been put into the blockchain', value: commands.estimate_work },
+            { title: 'Statistics', description: 'View statistics about the blockchain', value: commands.stats },
             { title: 'Exit', description: 'Exits', value: commands.exit }
         ]
         if (wallet.wallet) {
@@ -55,6 +55,23 @@ const commands = {
             type: 'autocomplete',
             name: 'value',
             message: 'Command',
+            choices
+        })
+        if (typeof res.value !== 'function') {
+            console.clear()
+            return commands.commands()
+        }
+        res.value()
+    },
+    stats: async () => {
+        const choices: Array<{ title: string, description: string, value: Function }> = [
+            { title: 'Work', description: 'Estimate how much work has been put into the blockchain', value: commands.estimate_work },
+            { title: 'Supply', description: 'Total circumlating supply', value: commands.circumlatingSupply }
+        ]
+        const res = await prompts({
+            type: 'autocomplete',
+            name: 'value',
+            message: 'Statistics',
             choices
         })
         if (typeof res.value !== 'function') {
@@ -400,6 +417,15 @@ const commands = {
         console.log(chalk.yellowBright(work))
         console.log(chalk.cyanBright(`2^${Math.log2(work)}`))
         console.log(chalk.blueBright(`10^${Math.log10(work)}`))
+        await commands.pause()
+        console.clear()
+        commands.commands()
+    },
+    circumlatingSupply: async () => {
+        const supply = await wallet.blockchain.getCircumlatingSupply()
+        console.log(chalk.yellowBright(supply))
+        console.log(chalk.cyanBright(`2^${Math.log2(supply)}`))
+        console.log(chalk.blueBright(`10^${Math.log10(supply)}`))
         await commands.pause()
         console.clear()
         commands.commands()
