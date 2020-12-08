@@ -66,7 +66,8 @@ const commands = {
     stats: async () => {
         const choices: Array<{ title: string, description: string, value: Function }> = [
             { title: 'Work', description: 'Estimate how much work has been put into the blockchain', value: commands.estimate_work },
-            { title: 'Supply', description: 'Total circumlating supply', value: commands.circumlatingSupply }
+            { title: 'Supply', description: 'Total circumlating supply', value: commands.circumlatingSupply },
+            { title: 'Transactions', description: 'Total transactions made on blockchain', value: commands.totalTransactions }
         ]
         const res = await prompts({
             type: 'autocomplete',
@@ -426,6 +427,15 @@ const commands = {
         console.log(chalk.yellowBright(supply))
         console.log(chalk.cyanBright(`2^${Math.log2(supply)}`))
         console.log(chalk.blueBright(`10^${Math.log10(supply)}`))
+        await commands.pause()
+        console.clear()
+        commands.commands()
+    },
+    totalTransactions: async () => {
+        const transactions = await wallet.blockchain.getTotalTransactions()
+        console.log(chalk.yellowBright(transactions))
+        console.log(chalk.cyanBright(`2^${Math.log2(transactions)}`))
+        console.log(chalk.blueBright(`10^${Math.log10(transactions)}`))
         await commands.pause()
         console.clear()
         commands.commands()

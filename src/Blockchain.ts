@@ -355,8 +355,10 @@ class Blockchain {
             blocks = []
         }
     }
+    // !
     async getBlockByHeight(height: number) {
         let block = await this.getLatestBlock()
+        // !
         while (true) {
             if (!block) break
             block = await Block.load({ hash: block.previousHash })
@@ -434,6 +436,15 @@ class Blockchain {
     }
     async getCircumlatingSupply() {
         return ((await this.getLatestBlock()).height + 1) * config.mining.reward.amount
+    }
+    async getTotalTransactions(timestamp: number | null = null) {
+        let block = await this.getLatestBlock(),
+        transactions = 0
+        while (block && (timestamp === null || timestamp <= block.timestamp)) {
+            transactions += block.transactions.length
+            block = await Block.load({ hash: block.previousHash })
+        }
+        return transactions
     }
 }
 export default Blockchain
