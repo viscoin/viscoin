@@ -10,6 +10,7 @@ import WalletClient from './src/WalletClient'
 import base58 from './src/base58'
 import customHash from './src/customHash'
 import * as path from 'path'
+import * as config from './config.json'
 
 const wallet = new WalletClient()
 
@@ -70,6 +71,7 @@ const commands = {
     },
     stats: async () => {
         const choices: Array<{ title: string, description: string, value: Function }> = [
+            { title: 'Latest Blocks', description: 'Info about the latest blocks', value: commands.latestBlocks },
             { title: 'Work', description: 'Estimate how much work has been put into the blockchain', value: commands.estimate_work },
             { title: 'Supply', description: 'Total circumlating supply', value: commands.circumlatingSupply },
             { title: 'Transactions', description: 'Total transactions made on blockchain', value: commands.totalTransactions },
@@ -416,7 +418,13 @@ const commands = {
                 }
             }
         ])
-        console.log((await wallet.transactions(res.address)).sort((a, b) => a.timestamp - b.timestamp))
+        const transactions = (await wallet.transactions(res.address)).sort((a, b) => a.timestamp - b.timestamp)
+        for (const transaction of transactions) {
+            if (transaction.from === wallet.wallet.address) transaction.from = chalk.blueBright(transaction.from)
+            if (transaction.to === wallet.wallet.address) transaction.to = chalk.blueBright(transaction.to)
+            if (transaction.from === config.mining.reward.from) console.log(`${transaction.to} ${chalk.greenBright.bold(`+${transaction.amount}`)}`)
+            else console.log(`${transaction.from} ${chalk.redBright.bold(`-${transaction.amount}`)} ${chalk.yellowBright('-->')} ${transaction.to} ${chalk.greenBright.bold(`+${transaction.amount - transaction.minerFee}`)}`)
+        }
         await commands.pause()
         console.clear()
         commands.commands()
@@ -459,6 +467,23 @@ const commands = {
     difficulty: async () => {
         const difficulty = await wallet.blockchain.getDifficulty()
         functions.log_numbers(difficulty)
+        await commands.pause()
+        console.clear()
+        commands.commands()
+    },
+    latestBlocks: async () => {
+        let latestBlocks = [
+            await wallet.blockchain.getLatestBlock()
+        ]
+        for (let i = 0; i < 9; i++) {
+            const block = await wallet.blockchain.getBlockByHeight(latestBlocks[0].height - 1 - i)
+            if (!block) break
+            latestBlocks.push(block)
+        }
+        latestBlocks = latestBlocks.sort((a, b) => a.timestamp - b.timestamp)
+        for (const block of latestBlocks) {
+            console.log(chalk.grey(`height: ${chalk.yellowBright(block.height)}, timestamp: ${chalk.magentaBright(new Date(block.timestamp).toLocaleTimeString())}`))
+        }
         await commands.pause()
         console.clear()
         commands.commands()
