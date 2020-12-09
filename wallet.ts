@@ -68,6 +68,7 @@ const commands = {
             { title: 'Work', description: 'Estimate how much work has been put into the blockchain', value: commands.estimate_work },
             { title: 'Supply', description: 'Total circumlating supply', value: commands.circumlatingSupply },
             { title: 'Transactions', description: 'Total transactions made on blockchain', value: commands.totalTransactions },
+            { title: 'Height', description: 'Height of blockchain', value: commands.height },
             { title: 'Validate', description: 'Validates integrity of blockchain', value: commands.isValid }
         ]
         const res = await prompts({
@@ -444,6 +445,15 @@ const commands = {
     isValid: async () => {
         if (await wallet.blockchain.isChainValid()) console.log(chalk.greenBright('Valid'))
         else console.log(chalk.redBright('Invalid'))
+        await commands.pause()
+        console.clear()
+        commands.commands()
+    },
+    height: async () => {
+        const height = await wallet.blockchain.getHeight()
+        console.log(chalk.yellowBright(height))
+        console.log(chalk.cyanBright(`2^${Math.log2(height)}`))
+        console.log(chalk.blueBright(`10^${Math.log10(height)}`))
         await commands.pause()
         console.clear()
         commands.commands()

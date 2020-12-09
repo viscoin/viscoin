@@ -81,7 +81,7 @@ class Blockchain {
         if (Array.isArray(block.transactions) === false) return 9
         if (block.timestamp > Date.now()) return 10
         // async
-        if (block.height < (await this.getLatestBlock()).height - config.mining.trustedAfterBlocks) return 11
+        if (block.height < await this.getHeight() - config.mining.trustedAfterBlocks) return 11
         // !
         // const previousBlock = await Block.load({ hash: block.previousHash, height: block.height - 1 })
         const previousBlock = await Block.load({ hash: block.previousHash })
@@ -400,11 +400,11 @@ class Blockchain {
     }
     async getNextSyncBlock() {
         const block = await this.getBlockByHeight(this.syncIndex++)
-        if (this.syncIndex >= (await this.getLatestBlock()).height - config.mining.trustedAfterBlocks) this.syncIndex = 0
+        if (this.syncIndex >= await this.getHeight() - config.mining.trustedAfterBlocks) this.syncIndex = 0
         return block
     }
     async getCircumlatingSupply() {
-        return (await this.getLatestBlock()).height * config.mining.reward.amount
+        return await this.getHeight() * config.mining.reward.amount
     }
     async getTotalTransactions(timestamp: number | null = null) {
         let block = await this.getLatestBlock(),
@@ -414,6 +414,9 @@ class Blockchain {
             block = await Block.load({ hash: block.previousHash })
         }
         return transactions
+    }
+    async getHeight() {
+        return (await this.getLatestBlock()).height
     }
 }
 export default Blockchain
