@@ -42,7 +42,7 @@ const commands = {
             { title: 'Network', description: 'View network nodes', value: commands.network },
             { title: 'Generate', description: 'Generates new wallet', value: commands.generate },
             { title: 'Import', description: 'Import a new wallet', value: commands.import_wallet },
-            { title: 'Statistics', description: 'View statistics about the blockchain', value: commands.stats },
+            { title: 'Blockchain', description: 'View statistics about the blockchain', value: commands.blockchain },
             { title: 'Exit', description: 'Exits', value: commands.exit }
         ]
         if (wallet.wallet) {
@@ -69,7 +69,7 @@ const commands = {
         }
         res.value()
     },
-    stats: async () => {
+    blockchain: async () => {
         const choices: Array<{ title: string, description: string, value: Function }> = [
             { title: 'Latest Blocks', description: 'Info about the latest blocks', value: commands.latestBlocks },
             { title: 'Work', description: 'Estimate how much work has been put into the blockchain', value: commands.estimate_work },
@@ -82,7 +82,7 @@ const commands = {
         const res = await prompts({
             type: 'autocomplete',
             name: 'value',
-            message: 'Statistics',
+            message: 'Blockchain',
             choices
         })
         if (typeof res.value !== 'function') {
