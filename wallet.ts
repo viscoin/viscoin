@@ -26,6 +26,11 @@ const functions = {
             })),
             cipher.final()
         ]))
+    },
+    log_numbers: (value) => {
+        console.log(chalk.yellowBright(value))
+        console.log(chalk.cyanBright(`2^${Math.log2(value)}`))
+        console.log(chalk.blueBright(`10^${Math.log10(value)}`))
     }
 }
 
@@ -418,27 +423,21 @@ const commands = {
     },
     estimate_work: async () => {
         const work = await wallet.blockchain.getWork()
-        console.log(chalk.yellowBright(work))
-        console.log(chalk.cyanBright(`2^${Math.log2(work)}`))
-        console.log(chalk.blueBright(`10^${Math.log10(work)}`))
+        functions.log_numbers(work)
         await commands.pause()
         console.clear()
         commands.commands()
     },
     circumlatingSupply: async () => {
         const supply = await wallet.blockchain.getCircumlatingSupply()
-        console.log(chalk.yellowBright(supply))
-        console.log(chalk.cyanBright(`2^${Math.log2(supply)}`))
-        console.log(chalk.blueBright(`10^${Math.log10(supply)}`))
+        functions.log_numbers(supply)
         await commands.pause()
         console.clear()
         commands.commands()
     },
     totalTransactions: async () => {
         const transactions = await wallet.blockchain.getTotalTransactions()
-        console.log(chalk.yellowBright(transactions))
-        console.log(chalk.cyanBright(`2^${Math.log2(transactions)}`))
-        console.log(chalk.blueBright(`10^${Math.log10(transactions)}`))
+        functions.log_numbers(transactions)
         await commands.pause()
         console.clear()
         commands.commands()
@@ -452,18 +451,14 @@ const commands = {
     },
     height: async () => {
         const height = await wallet.blockchain.getHeight()
-        console.log(chalk.yellowBright(height))
-        console.log(chalk.cyanBright(`2^${Math.log2(height)}`))
-        console.log(chalk.blueBright(`10^${Math.log10(height)}`))
+        functions.log_numbers(height)
         await commands.pause()
         console.clear()
         commands.commands()
     },
     difficulty: async () => {
         const difficulty = await wallet.blockchain.getDifficulty()
-        console.log(chalk.yellowBright(difficulty))
-        console.log(chalk.cyanBright(`2^${Math.log2(difficulty)}`))
-        console.log(chalk.blueBright(`10^${Math.log10(difficulty)}`))
+        functions.log_numbers(difficulty)
         await commands.pause()
         console.clear()
         commands.commands()
