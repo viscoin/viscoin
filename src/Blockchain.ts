@@ -418,5 +418,8 @@ class Blockchain {
     async getHeight() {
         return (await this.getLatestBlock()).height
     }
+    async getDifficulty() {
+        return Math.pow(2, (await this.getLatestBlock()).difficulty)
+    }
 }
 export default Blockchain

@@ -69,6 +69,7 @@ const commands = {
             { title: 'Supply', description: 'Total circumlating supply', value: commands.circumlatingSupply },
             { title: 'Transactions', description: 'Total transactions made on blockchain', value: commands.totalTransactions },
             { title: 'Height', description: 'Height of blockchain', value: commands.height },
+            { title: 'Difficulty', description: 'Current difficulty', value: commands.difficulty },
             { title: 'Validate', description: 'Validates integrity of blockchain', value: commands.isValid }
         ]
         const res = await prompts({
@@ -454,6 +455,15 @@ const commands = {
         console.log(chalk.yellowBright(height))
         console.log(chalk.cyanBright(`2^${Math.log2(height)}`))
         console.log(chalk.blueBright(`10^${Math.log10(height)}`))
+        await commands.pause()
+        console.clear()
+        commands.commands()
+    },
+    difficulty: async () => {
+        const difficulty = await wallet.blockchain.getDifficulty()
+        console.log(chalk.yellowBright(difficulty))
+        console.log(chalk.cyanBright(`2^${Math.log2(difficulty)}`))
+        console.log(chalk.blueBright(`10^${Math.log10(difficulty)}`))
         await commands.pause()
         console.clear()
         commands.commands()
