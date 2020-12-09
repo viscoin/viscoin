@@ -423,7 +423,7 @@ const commands = {
             if (transaction.from === wallet.wallet.address) transaction.from = chalk.blueBright(transaction.from)
             if (transaction.to === wallet.wallet.address) transaction.to = chalk.blueBright(transaction.to)
             if (transaction.from === config.mining.reward.from) console.log(`${transaction.to} ${chalk.greenBright.bold(`+${transaction.amount}`)}`)
-            else console.log(`${transaction.from} ${chalk.redBright.bold(`-${transaction.amount}`)} ${chalk.yellowBright('-->')} ${transaction.to} ${chalk.greenBright.bold(`+${transaction.amount - transaction.minerFee}`)}`)
+            else console.log(`${transaction.from} ${chalk.redBright.bold(`-${transaction.amount}`)} ${chalk.magentaBright('-->')} ${transaction.to} ${chalk.greenBright.bold(`+${transaction.amount - transaction.minerFee}`)}`)
         }
         await commands.pause()
         console.clear()
