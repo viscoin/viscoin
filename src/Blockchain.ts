@@ -41,6 +41,9 @@ class Blockchain {
         if (transaction.minerFee < 0) return 9
         if (transaction.minerFee > transaction.amount) return 10
         if (transaction.timestamp > Date.now()) return 11
+        // !
+        // if (transaction.amount.toString() !== transaction.amount.toFixed(6)) return 11.5
+        // if (transaction.minerFee.toString() !== transaction.minerFee.toFixed(6)) return 11.5
         if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 12
         try {
             crypto.createPublicKey({
