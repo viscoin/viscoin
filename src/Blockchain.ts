@@ -404,7 +404,7 @@ class Blockchain {
         return block
     }
     async getCircumlatingSupply() {
-        return ((await this.getLatestBlock()).height + 1) * config.mining.reward.amount
+        return (await this.getLatestBlock()).height * config.mining.reward.amount
     }
     async getTotalTransactions(timestamp: number | null = null) {
         let block = await this.getLatestBlock(),
