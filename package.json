@@ -26,6 +26,7 @@
     "base-x": "^3.0.8",
     "chalk": "^4.1.0",
     "dotenv": "^8.2.0",
+    "elliptic": "^6.5.3",
     "mongoose": "^5.10.9",
     "prompts": "^2.4.0"
   }
