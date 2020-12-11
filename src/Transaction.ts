@@ -53,6 +53,8 @@ class Transaction {
         this.recoveryParam = signature.recoveryParam
     }
     verify() {
+        if (!this.signature) return false
+        if (!this.recoveryParam) return false
         const ec = new elliptic.ec('secp256k1')
         const hash = this.calculateHash()
         const pubPoint = ec.recoverPubKey(hash, this.signature, this.recoveryParam)
