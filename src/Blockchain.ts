@@ -37,7 +37,7 @@ class Blockchain {
         if (typeof transaction.minerFee !== 'number') return 5
         if (typeof transaction.signature !== 'object') return 6
         if (typeof transaction.recoveryParam !== 'number') return 7
-        if ((3 & transaction.recoveryParam) === transaction.recoveryParam) return 7.5
+        if (transaction.recoveryParam >> 2) return 7.5
         if (transaction.signature instanceof Buffer === false) return 8
         if (transaction.from instanceof Buffer === false) return 9
         if (transaction.to instanceof Buffer === false) return 10

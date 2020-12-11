@@ -53,16 +53,21 @@ class Transaction {
         this.recoveryParam = signature.recoveryParam
     }
     verify() {
-        if (!this.signature) return false
-        if (!this.recoveryParam || (3 & this.recoveryParam) === this.recoveryParam) return false
-        const ec = new elliptic.ec('secp256k1')
-        const hash = this.calculateHash()
-        const pubPoint = ec.recoverPubKey(hash, this.signature, this.recoveryParam)
-        const publicKey = Buffer.from(pubPoint.encode())
-        const address = addressFromPublicKey(publicKey)
-        if (!address.equals(this.from)) return false
-        const key = ec.keyFromPublic(pubPoint)
-        return key.verify(hash, this.signature)
+        try {
+            if (!this.signature) return false
+            if (typeof this.recoveryParam !== 'number' || this.recoveryParam >> 2) return false
+            const ec = new elliptic.ec('secp256k1')
+            const hash = this.calculateHash()
+            const pubPoint = ec.recoverPubKey(hash, this.signature, this.recoveryParam)
+            const publicKey = Buffer.from(pubPoint.encode())
+            const address = addressFromPublicKey(publicKey)
+            if (!address.equals(this.from)) return false
+            const key = ec.keyFromPublic(pubPoint)
+            return key.verify(hash, this.signature)
+        }
+        catch {
+            return false
+        }
     }
 }
 export default Transaction
