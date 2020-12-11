@@ -30,44 +30,29 @@ class Blockchain {
     }
     async addTransaction(transaction: Transaction) {
         // sync
-        if (typeof transaction.from !== 'string') return 1
-        if (typeof transaction.to !== 'string') return 2
+        if (typeof transaction.from !== 'object') return 1
+        if (typeof transaction.to !== 'object') return 2
         if (typeof transaction.timestamp !== 'number') return 3
         if (typeof transaction.amount !== 'number') return 4
         if (typeof transaction.minerFee !== 'number') return 5
         if (typeof transaction.signature !== 'object') return 6
-        if (transaction.signature instanceof Buffer === false) return 7
-        if (transaction.amount <= 0) return 8
-        if (transaction.minerFee < 0) return 9
-        if (transaction.minerFee > transaction.amount) return 10
-        if (transaction.timestamp > Date.now()) return 11
+        if (typeof transaction.recoveryParam !== 'number') return 7
+        if (transaction.signature instanceof Buffer === false) return 8
+        if (transaction.from instanceof Buffer === false) return 9
+        if (transaction.to instanceof Buffer === false) return 10
+        if (transaction.amount <= 0) return 11
+        if (transaction.minerFee < 0) return 12
+        if (transaction.minerFee > transaction.amount) return 13
+        if (transaction.timestamp > Date.now()) return 14
         // !
         // if (transaction.amount.toString() !== transaction.amount.toFixed(6)) return 11.5
         // if (transaction.minerFee.toString() !== transaction.minerFee.toFixed(6)) return 11.5
-        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 12
-        try {
-            crypto.createPublicKey({
-                key: base58.decode(transaction.to),
-                type: 'spki',
-                format: 'der'
-            })
-        } catch {
-            return 13
-        }
-        // !
-        // try {
-        //     crypto.createPublicKey({
-        //         key: base58.decode(transaction.from),
-        //         type: 'spki',
-        //         format: 'der'
-        //     })
-        // } catch {
-        //     return 14
-        // }
-        if (!transaction.verify()) return 14
+        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 15
+        if (Buffer.byteLength(transaction.to) !== 20) return 16
+        if (!transaction.verify()) return 17
         // async
-        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 15
-        if (await this.getBalanceOfAddress(transaction.from) < transaction.amount) return 16
+        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 18
+        if (await this.getBalanceOfAddress(transaction.from) < transaction.amount) return 19
         this.pendingTransactions.push(transaction)
         return 0
     }
@@ -100,27 +85,27 @@ class Blockchain {
         await this.cleanLastTrustedChain()
         return 0
     }
-    async getTransactionsOfAddress(address: string) {
+    async getTransactionsOfAddress(address: Buffer) {
         const transactions = []
         let block = await this.getLatestBlock()
         while (true) {
             if (!block) break
             for (const transaction of block.transactions) {
-                if (transaction.from === address
-                    || transaction.to === address) transactions.push(transaction)
+                if ((transaction.from && address.equals(transaction.from))
+                    || address.equals(transaction.to)) transactions.push(transaction)
             }
             block = await Block.load({ hash: block.previousHash })
         }
         return transactions
     }
-    async getBalanceOfAddress(address: string) {
+    async getBalanceOfAddress(address: Buffer) {
         const transactions = await this.getTransactionsOfAddress(address)
         let balance = 0
         for (const transaction of transactions) {
-            if (transaction.from === address) {
+            if (transaction.from && address.equals(transaction.from)) {
                 balance -= transaction.amount
             }
-            if (transaction.to === address) {
+            if (address.equals(transaction.to)) {
                 balance += transaction.amount - transaction.minerFee
             }
         }
@@ -374,13 +359,16 @@ class Blockchain {
     //         blocks = []
     //     }
     // }
-    async getNewBlock(walletAddress) {
+
+    // !
+    // calling this function when pendingtransactions is full and the transaction does not get added will result in people being able to abuse the miner by keeping sending transaction with 0 mining reward
+    // resetting the miners nonce resulting in miner being stuck without being able to reach the nonce where it mines block
+    async getNewBlock(address: Buffer) {
         const previousBlock = await this.getLatestBlock()
         if (previousBlock.height === 0) await previousBlock.save()
         const transactions = [
             new Transaction({
-                from: config.mining.reward.from,
-                to: walletAddress,
+                to: address,
                 amount: config.mining.reward.amount
             }),
             ...this.pendingTransactions

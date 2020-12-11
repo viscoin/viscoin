@@ -3,11 +3,12 @@ import * as config from './config.json'
 import Miner from './src/Miner'
 import { Worker, isMainThread, parentPort, threadId } from 'worker_threads'
 import MinerClient from './src/MinerClient'
+import base58 from './src/base58'
 
 if (isMainThread) {
     mongoose.init()
-    const client = new MinerClient(config.miner.miningRewardAddress)
-    // client.on('transaction', (transaction, code) => console.log('transaction', code))
+    const client = new MinerClient(base58.decode(config.miner.miningRewardAddress))
+    client.on('transaction', (transaction, code) => console.log('transaction', code))
     // client.on('block', (block, code) => console.log('block', code))
     for (let i = 0; i < client.threads; i++) {
         client.addWorker(new Worker(__filename))

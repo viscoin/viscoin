@@ -1,55 +1,66 @@
-import * as crypto from 'crypto'
-import * as config from '../config.json'
-import base58 from './base58'
+import * as elliptic from 'elliptic'
 import customHash from './customHash'
+import addressFromPublicKey from './addressFromPublicKey'
 interface Transaction {
-    from: string
-    to: string
+    from: Buffer
+    to: Buffer
     timestamp: number
     amount: number
     minerFee: number
-    signature: Buffer
+    signature: Buffer,
+    recoveryParam: number
 }
 class Transaction {
-    constructor({ from, to, amount, timestamp = Date.now(), minerFee = 0, signature = undefined }) {
-        this.from = from
-        this.to = to
+    constructor({ from = undefined, to, amount, timestamp = Date.now(), minerFee = 0, signature = undefined, recoveryParam = undefined }) {
         this.timestamp = timestamp
         this.amount = amount
         this.minerFee = minerFee
-        if (signature instanceof Buffer) this.signature = signature
-        else if (signature && signature._bsontype === 'Binary') this.signature = Buffer.from(signature.buffer)
-        else if (signature) this.signature = Buffer.from(signature)
+
+        if (from instanceof Buffer) this.from = from
+        else if (from && from._bsontype === 'Binary') this.from = Buffer.from(from.buffer)
+        else if (from) this.from = Buffer.from(from)
+
+        if (to instanceof Buffer) this.to = to
+        else if (to && to._bsontype === 'Binary') this.to = Buffer.from(to.buffer)
+        else if (to) this.to = Buffer.from(to)
+
+        if (typeof recoveryParam === 'number') {
+            if (signature instanceof Buffer) this.signature = signature
+            else if (signature && signature._bsontype === 'Binary') this.signature = Buffer.from(signature.buffer)
+            else if (signature) this.signature = Buffer.from(signature)
+
+            this.recoveryParam = recoveryParam
+        }
     }
     calculateHash() {
         return customHash(
-            this.from
-            + this.to
+            String(this.from)
+            + String(this.to)
             + this.amount
             + this.minerFee
             + this.timestamp
         )
     }
-    sign({ address, secret }) {
-        if (address !== this.from) {
-            throw new Error('You cannot sign transactions for other wallets!')
-        }
-        this.signature = crypto.sign(null, this.calculateHash(), crypto.createPrivateKey({
-            key: base58.decode(secret),
-            type: 'pkcs8',
-            format: 'der'
-        }))
+    sign(privateKey: Buffer) {
+        const ec = new elliptic.ec('secp256k1')
+        const key = ec.keyFromPrivate(privateKey)
+        const pubPoint = key.getPublic()
+        const publicKey = Buffer.from(pubPoint.encode())
+        this.from = addressFromPublicKey(publicKey)
+        const hash = this.calculateHash()
+        const signature = key.sign(hash)
+        this.signature = Buffer.from(signature.toDER())
+        this.recoveryParam = signature.recoveryParam
     }
     verify() {
-        if (!this.signature || !Buffer.byteLength(this.signature)) {
-            console.log('!this.signature || !Buffer.byteLength(this.signature)')
-            return false
-        }
-        return crypto.verify(null, this.calculateHash(), crypto.createPublicKey({
-            key: base58.decode(this.from),
-            type: 'spki',
-            format: 'der'
-        }), this.signature)
+        const ec = new elliptic.ec('secp256k1')
+        const hash = this.calculateHash()
+        const pubPoint = ec.recoverPubKey(hash, this.signature, this.recoveryParam)
+        const publicKey = Buffer.from(pubPoint.encode())
+        const address = addressFromPublicKey(publicKey)
+        if (!address.equals(this.from)) return false
+        const key = ec.keyFromPublic(pubPoint)
+        return key.verify(hash, this.signature)
     }
 }
 export default Transaction

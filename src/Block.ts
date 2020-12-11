@@ -59,7 +59,7 @@ class Block {
             // if (transaction.minerFee.toString() !== transaction.minerFee.toFixed(6)) return false
             // !
             // amount += transaction.minerFee
-            if (i === 0 && transaction.from === config.mining.reward.from) continue
+            if (i === 0 && !transaction.from) continue
             if (!transaction.verify()) return false
             // !
             amount += transaction.minerFee

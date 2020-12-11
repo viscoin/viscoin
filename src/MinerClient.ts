@@ -10,10 +10,10 @@ interface MinerClient {
     threads: number
     threadsReady: number
     hashrate: number
-    miningRewardAddress: string
+    miningRewardAddress: Buffer
 }
 class MinerClient extends BaseClient {
-    constructor(miningRewardAddress: string) {
+    constructor(miningRewardAddress: Buffer) {
         super()
         this.workers = []
         this.threads = cpus().length
@@ -26,6 +26,10 @@ class MinerClient extends BaseClient {
         }, 1000)
         this.miningRewardAddress = miningRewardAddress
         this.on('transaction', (transaction, code) => {
+                // !
+    // calling this function when pendingtransactions is full and the transaction does not get added will result in people being able to abuse the miner by keeping sending transaction with 0 mining reward
+    // resetting the miners nonce resulting in miner being stuck without being able to reach the nonce where it mines block
+
             if (code === 0) this.emitThreadsMineNewBlock()
         })
         // !

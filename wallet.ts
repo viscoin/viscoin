@@ -15,16 +15,13 @@ import * as config from './config.json'
 const wallet = new WalletClient()
 
 const functions = {
-    save_wallet: (address: string, secret: string, name: string, passphrase: string) => {
+    save_wallet: (privateKey: Buffer, name: string, passphrase: string) => {
         const iv = crypto.randomBytes(16)
         const cipher = crypto.createCipheriv('aes-256-cbc', customHash(passphrase), iv)
         if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
         fs.writeFileSync(`./wallets/${name}.wallet`, Buffer.concat([
             iv,
-            cipher.update(JSON.stringify({
-                address,
-                secret
-            })),
+            cipher.update(privateKey),
             cipher.final()
         ]))
     },
@@ -93,8 +90,8 @@ const commands = {
     },
     info: async () => {
         console.log(`${chalk.whiteBright.bold('Name')}                 ${chalk.blueBright(wallet.wallet.name)}`)
-        console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(wallet.wallet.address)}`)
-        console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(wallet.wallet.secret)}`)
+        console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(base58.encode(wallet.wallet.address))}`)
+        console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(base58.encode(wallet.wallet.privateKey))}`)
         await commands.pause()
         console.clear()
         commands.commands()
@@ -106,16 +103,8 @@ const commands = {
                 name: 'to',
                 message: 'Address',
                 validate: to => {
-                    try {
-                        crypto.createPublicKey({
-                            key: base58.decode(to),
-                            type: 'spki',
-                            format: 'der'
-                        })
-                        return true
-                    } catch {
-                        return 'Invalid address'
-                    }
+                    if (Buffer.byteLength(base58.decode(to)) === 20) return true
+                    else return 'Invalid address'
                 }
             },
             {
@@ -141,8 +130,10 @@ const commands = {
         ])
         if (res.confirm) {
             const transaction = await wallet.send({
-                ...res,
-                ...wallet.wallet
+                privateKey: wallet.wallet.privateKey,
+                to: base58.decode(res.to),
+                amount: res.amount,
+                minerFee: res.minerFee
             })
             console.log(transaction)
             await commands.pause()
@@ -151,13 +142,13 @@ const commands = {
         commands.commands()
     },
     address: async () => {
-        console.log(chalk.blueBright(wallet.wallet.address))
+        console.log(chalk.blueBright(base58.encode(wallet.wallet.address)))
         await commands.pause()
         console.clear()
         commands.commands()
     },
     secret: async () => {
-        console.log(chalk.redBright(wallet.wallet.secret))
+        console.log(chalk.redBright(base58.encode(wallet.wallet.privateKey)))
         await commands.pause()
         console.clear()
         commands.commands()
@@ -178,16 +169,7 @@ const commands = {
                 message: 'Address',
                 validate: address => {
                     if (!address) return true
-                    try {
-                        crypto.createPublicKey({
-                            key: base58.decode(address),
-                            type: 'spki',
-                            format: 'der'
-                        })
-                        return true
-                    } catch {
-                        return 'Invalid address'
-                    }
+                    if (Buffer.byteLength(base58.decode(address)) !== 20) return 'Invalid address'
                 }
             }
         ])
@@ -202,9 +184,9 @@ const commands = {
         process.exit(0)
     },
     generate: async () => {
-        const { address, secret } = WalletClient.generate()
-        console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(address)}`)
-        console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(secret)}`)
+        const { privateKey, address } = WalletClient.generate()
+        console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(base58.encode(address))}`)
+        console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(base58.encode(privateKey))}`)
         const { save } = await prompts({
             type: 'toggle',
             name: 'save',
@@ -237,11 +219,10 @@ const commands = {
             console.clear()
             return commands.commands()
         }
-        functions.save_wallet(address, secret, name, passphrase)
+        functions.save_wallet(privateKey, name, passphrase)
         wallet.import({
             name,
-            address,
-            secret
+            privateKey
         })
         console.clear()
         commands.commands()
@@ -276,13 +257,16 @@ const commands = {
                     const decipher = crypto.createDecipheriv('aes-256-cbc', customHash(passphrase), data.slice(0, 16))
                     wallet.import({
                         name,
-                        ...JSON.parse(String(Buffer.concat([
+                        privateKey: Buffer.concat([
                             decipher.update(data.slice(16)),
                             decipher.final()
-                        ])))
+                        ])
                     })
                     return true
-                } catch { return 'Failed to decrypt' }
+                }
+                catch {
+                    return 'Failed to decrypt'
+                }
             }
         })
         console.clear()
@@ -326,39 +310,16 @@ const commands = {
         })
     },
     import_wallet: async () => {
-        const { address, secret, name, passphrase } = await prompts([
+        const { privateKey, name, passphrase } = await prompts([
             {
                 type: 'text',
-                name: 'address',
-                message: 'Address',
-                validate: address => {
-                    try {
-                        crypto.createPublicKey({
-                            key: base58.decode(address),
-                            type: 'spki',
-                            format: 'der'
-                        })
-                        return true
-                    } catch {
-                        return 'Invalid address'
-                    }
-                }
-            },
-            {
-                type: 'text',
-                name: 'secret',
-                message: 'Secret',
-                validate: secret => {
-                    try {
-                        crypto.createPrivateKey({
-                            key: base58.decode(secret),
-                            type: 'pkcs8',
-                            format: 'der'
-                        })
-                        return true
-                    } catch {
-                        return 'Invalid secret'
-                    }
+                name: 'privateKey',
+                message: 'Private Key',
+                validate: privateKey => {
+                    return true
+                    // !
+                    if (Buffer.byteLength(base58.decode(privateKey)) === 32) return true
+                    else return 'Invalid private key'
                 }
             },
             {
@@ -376,15 +337,14 @@ const commands = {
                 message: 'Enter passphrase'
             }
         ])
-        if (address === undefined || secret === undefined || name === undefined || passphrase === undefined) {
+        if (privateKey === undefined || name === undefined || passphrase === undefined) {
             console.clear()
             return commands.commands()
         }
-        functions.save_wallet(address, secret, name, passphrase)
+        functions.save_wallet(base58.decode(privateKey), name, passphrase)
         wallet.import({
             name,
-            address,
-            secret
+            privateKey: base58.decode(privateKey)
         })
         console.clear()
         commands.commands()
@@ -405,16 +365,8 @@ const commands = {
                 message: 'Address',
                 validate: address => {
                     if (!address) return true
-                    try {
-                        crypto.createPublicKey({
-                            key: base58.decode(address),
-                            type: 'spki',
-                            format: 'der'
-                        })
-                        return true
-                    } catch {
-                        return 'Invalid address'
-                    }
+                    if (Buffer.byteLength(base58.encode(address)) === 20) return true
+                    else return 'Invalid address'
                 }
             }
         ])
@@ -423,9 +375,11 @@ const commands = {
             for (const transaction of transactions) {
                 const date = chalk.magentaBright(new Date(transaction.timestamp).toLocaleTimeString()),
                 arrow = chalk.magentaBright('→')
-                if (transaction.from === wallet.wallet.address) transaction.from = chalk.blueBright(transaction.from)
-                if (transaction.to === wallet.wallet.address) transaction.to = chalk.blueBright(transaction.to)
-                if (transaction.from === config.mining.reward.from) console.log(`${date} ${transaction.to} ${chalk.greenBright.bold(`+${transaction.amount}`)}`)
+                if (transaction.from && transaction.from.equals(wallet.wallet.address)) transaction.from = chalk.blueBright(base58.encode(transaction.from))
+                else if (transaction.from) transaction.from = base58.encode(transaction.from)
+                if (transaction.to.equals(wallet.wallet.address)) transaction.to = chalk.blueBright(base58.encode(transaction.to))
+                else transaction.to = base58.encode(transaction.to)
+                if (!transaction.from) console.log(`${date} ${transaction.to} ${chalk.greenBright.bold(`+${transaction.amount}`)}`)
                 else console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${transaction.amount}`)} ${arrow} ${transaction.to} ${chalk.greenBright.bold(`+${transaction.amount - transaction.minerFee}`)}`)
             }
         }

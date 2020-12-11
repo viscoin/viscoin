@@ -1,6 +1,6 @@
 {
     "miner": {
-        "miningRewardAddress": "GfHq2tTVk9z4eXgyHZv5FhsKYpaM4ZHZ1s1VZutM3ZcBsxcgpojhEQJMejCj",
+        "miningRewardAddress": "4QtScRTqZat2WAZJDZih1CEEU4yi",
         "threads": 1,
         "hostNode": true,
         "connectToNodes": true
