@@ -117,7 +117,8 @@ const commands = {
             {
                 type: 'text',
                 name: 'data',
-                message: 'Hex data (optional)'
+                message: 'Hex data (optional)',
+                validate: data => Buffer.from(data, 'hex').toString('hex') === data ? true : 'Invalid hex'
             },
             {
                 type: 'text',
@@ -388,12 +389,15 @@ const commands = {
             for (const transaction of transactions) {
                 const date = chalk.magentaBright(new Date(transaction.timestamp).toLocaleTimeString()),
                 arrow = chalk.magentaBright('→')
+                let data = ''
+                if (transaction.data) data = `\n ${chalk.magentaBright('⤷')} ${chalk.grey(transaction.data.toString('hex'))}`
                 if (transaction.from && transaction.from.equals(wallet.wallet.address)) transaction.from = chalk.blueBright(base58.encode(transaction.from))
                 else if (transaction.from) transaction.from = base58.encode(transaction.from)
-                if (transaction.to.equals(wallet.wallet.address)) transaction.to = chalk.blueBright(base58.encode(transaction.to))
-                else transaction.to = base58.encode(transaction.to)
+                if (transaction.to && transaction.to.equals(wallet.wallet.address)) transaction.to = chalk.blueBright(base58.encode(transaction.to))
+                else if (transaction.to) transaction.to = base58.encode(transaction.to)
                 if (!transaction.from) console.log(`${date} ${transaction.to} ${chalk.greenBright.bold(`+${transaction.amount}`)}`)
-                else console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${transaction.amount}`)} ${arrow} ${transaction.to} ${chalk.greenBright.bold(`+${transaction.amount - transaction.minerFee}`)}`)
+                else if (!transaction.to) console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${transaction.minerFee}`)}${data}`)
+                else console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${transaction.amount}`)} ${arrow} ${transaction.to} ${chalk.greenBright.bold(`+${transaction.amount - transaction.minerFee}`)}${data}`)
             }
         }
         else {
