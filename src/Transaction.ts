@@ -12,9 +12,10 @@ interface Transaction {
     data: Buffer
 }
 class Transaction {
-    constructor({ from = undefined, to = undefined, amount = undefined, timestamp = Date.now(), minerFee = 0, signature = undefined, recoveryParam = undefined, data = undefined }) {
+    constructor({ from = undefined, to = undefined, amount = undefined, timestamp = Date.now(), minerFee = undefined, signature = undefined, recoveryParam = undefined, data = undefined }) {
         this.timestamp = timestamp
-        this.minerFee = minerFee
+
+        if (typeof minerFee === 'number') this.minerFee = minerFee
 
         if (from instanceof Buffer) this.from = from
         else if (from && from._bsontype === 'Binary') this.from = Buffer.from(from.buffer)

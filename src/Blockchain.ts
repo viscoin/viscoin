@@ -400,7 +400,10 @@ class Blockchain {
             height: previousBlock.height + 1,
             difficulty: this.difficulty
         })
-        block.transactions.map(e => block.transactions[0].amount += e.minerFee)
+        for (let i = 0; i < block.transactions.length; i++) {
+            if (i === 0) continue
+            block.transactions[0].amount += block.transactions[i].minerFee
+        }
         while (Buffer.byteLength(JSON.stringify(block)) > config.mining.blockSize) {
             const transaction = block.transactions.pop()
             block.transactions[0].amount -= transaction.minerFee
