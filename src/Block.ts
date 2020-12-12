@@ -57,22 +57,21 @@ class Block {
             if (!transaction) return false
             // if (transaction.amount.toString() !== transaction.amount.toFixed(6)) return false
             // if (transaction.minerFee.toString() !== transaction.minerFee.toFixed(6)) return false
-            if (i === 0
-                && !transaction.from
-                && !transaction.data
-                && !transaction.signature
-                && !transaction.recoveryParam
-                // !
-                // timestamp
-                && transaction.amount === amount
-                && transaction.minerFee === 0
-                && transaction.to
-                && Buffer.byteLength(transaction.to) === 20) continue
+            if (i === 0) continue
             if (!transaction.verify()) return false
             amount += transaction.minerFee
             hashes.push(transaction.calculateHash())
         }
         if (this.transactions[0].amount !== amount) return false
+        if (!this.transactions[0].to) return false
+        if (Buffer.byteLength(this.transactions[0].to) !== 20) return false
+        if (!this.transactions[0].timestamp) return false
+        if (this.transactions[0].minerFee !== 0) return false
+
+        if (this.transactions[0].from) return false
+        if (this.transactions[0].data) return false
+        if (this.transactions[0].signature) return false
+        if (this.transactions[0].recoveryParam) return false
         if (hashes.some((e, i) => hashes.indexOf(e) !== i)) return false
         return true
     }
