@@ -103,15 +103,21 @@ const commands = {
                 name: 'to',
                 message: 'Address',
                 validate: to => {
+                    if (!to) return true
                     if (Buffer.byteLength(base58.decode(to)) === 20) return true
                     else return 'Invalid address'
                 }
             },
             {
-                type: 'text',
+                type: previous => previous ? 'text' : null,
                 name: 'amount',
                 message: 'Amount',
-                validate: amount => isNaN(parseFloat(amount)) ? 'Invalid amount' : true
+                validate: amount => isNaN(parseFloat(amount)) || parseFloat(amount) <= 0 ? 'Invalid amount' : true
+            },
+            {
+                type: 'text',
+                name: 'data',
+                message: 'Hex data (optional)'
             },
             {
                 type: 'text',
@@ -122,18 +128,25 @@ const commands = {
             {
                 type: 'toggle',
                 name: 'confirm',
-                message: (prev, values) => `Sum: ${values.amount} + ${values.minerFee} = ${parseFloat(values.amount) + parseFloat(values.minerFee)}\nSign and broadcast?`,
+                message: (prev, values) => {
+                    if (values.amount) return `Sum: ${values.amount} + ${values.minerFee} = ${parseFloat(values.amount) + parseFloat(values.minerFee)}\nSign and broadcast?`
+                    else return `Sum: ${values.minerFee}\nSign and broadcast?`
+                },
                 initial: false,
                 active: 'yes',
                 inactive: 'no'
             }
         ])
+        let data = res.data
+        if (data) data = Buffer.from(data, 'hex')
+        else data = undefined
         if (res.confirm) {
             const transaction = await wallet.send({
                 privateKey: wallet.wallet.privateKey,
                 to: base58.decode(res.to),
                 amount: res.amount,
-                minerFee: res.minerFee
+                minerFee: res.minerFee,
+                data
             })
             console.log(transaction)
             await commands.pause()

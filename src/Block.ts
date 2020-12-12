@@ -51,20 +51,29 @@ class Block {
     hasValidTransactions() {
         let amount = config.mining.reward.amount
         if (!this.transactions.length) return false
+        const hashes = []
         for (let i = 0; i < this.transactions.length; i++) {
             const transaction = this.transactions[i]
             if (!transaction) return false
-            // !
             // if (transaction.amount.toString() !== transaction.amount.toFixed(6)) return false
             // if (transaction.minerFee.toString() !== transaction.minerFee.toFixed(6)) return false
-            // !
-            // amount += transaction.minerFee
-            if (i === 0 && !transaction.from) continue
+            if (i === 0
+                && !transaction.from
+                && !transaction.data
+                && !transaction.signature
+                && !transaction.recoveryParam
+                // !
+                // timestamp
+                && transaction.amount === amount
+                && transaction.minerFee === 0
+                && transaction.to
+                && Buffer.byteLength(transaction.to) === 20) continue
             if (!transaction.verify()) return false
-            // !
             amount += transaction.minerFee
+            hashes.push(transaction.calculateHash())
         }
         if (this.transactions[0].amount !== amount) return false
+        if (hashes.some((e, i) => hashes.indexOf(e) !== i)) return false
         return true
     }
     async save() {

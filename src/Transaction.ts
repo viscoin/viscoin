@@ -9,20 +9,28 @@ interface Transaction {
     minerFee: number
     signature: Buffer,
     recoveryParam: number
+    data: Buffer
 }
 class Transaction {
-    constructor({ from = undefined, to, amount, timestamp = Date.now(), minerFee = 0, signature = undefined, recoveryParam = undefined }) {
+    constructor({ from = undefined, to = undefined, amount = undefined, timestamp = Date.now(), minerFee = 0, signature = undefined, recoveryParam = undefined, data = undefined }) {
         this.timestamp = timestamp
-        this.amount = amount
         this.minerFee = minerFee
 
         if (from instanceof Buffer) this.from = from
         else if (from && from._bsontype === 'Binary') this.from = Buffer.from(from.buffer)
         else if (from) this.from = Buffer.from(from)
 
-        if (to instanceof Buffer) this.to = to
-        else if (to && to._bsontype === 'Binary') this.to = Buffer.from(to.buffer)
-        else if (to) this.to = Buffer.from(to)
+        if (data instanceof Buffer) this.data = data
+        else if (data && data._bsontype === 'Binary') this.data = Buffer.from(data.buffer)
+        else if (data) this.data = Buffer.from(data)
+
+        if (typeof amount === 'number') {
+            if (to instanceof Buffer) this.to = to
+            else if (to && to._bsontype === 'Binary') this.to = Buffer.from(to.buffer)
+            else if (to) this.to = Buffer.from(to)
+
+            this.amount = amount
+        }
 
         if (typeof recoveryParam === 'number') {
             if (signature instanceof Buffer) this.signature = signature
@@ -39,6 +47,7 @@ class Transaction {
             + this.amount
             + this.minerFee
             + this.timestamp
+            + String(this.data)
         )
     }
     sign(privateKey: Buffer) {

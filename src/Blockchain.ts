@@ -30,30 +30,46 @@ class Blockchain {
     }
     async addTransaction(transaction: Transaction) {
         // sync
+        // from
         if (typeof transaction.from !== 'object') return 1
-        if (typeof transaction.to !== 'object') return 2
-        if (typeof transaction.timestamp !== 'number') return 3
-        if (typeof transaction.amount !== 'number') return 4
-        if (typeof transaction.minerFee !== 'number') return 5
-        if (typeof transaction.signature !== 'object') return 6
-        if (typeof transaction.recoveryParam !== 'number') return 7
-        if (transaction.recoveryParam >> 2) return 7.5
-        if (transaction.signature instanceof Buffer === false) return 8
-        if (transaction.from instanceof Buffer === false) return 9
-        if (transaction.to instanceof Buffer === false) return 10
-        if (transaction.amount <= 0) return 11
-        if (transaction.minerFee < 0) return 12
-        if (transaction.minerFee > transaction.amount) return 13
+        if (transaction.from instanceof Buffer === false) return 2
+        // to
+        if (typeof transaction.to === 'object') {
+            if (transaction.to instanceof Buffer === false) return 3
+            if (Buffer.byteLength(transaction.to) !== 20) return 4
+            // amount
+            if (typeof transaction.amount !== 'number') return 5
+            if (transaction.amount <= 0) return 6
+            // if (transaction.amount.toString() !== transaction.amount.toFixed(6)) return 6.5
+        }
+        else if (typeof transaction.to !== 'undefined') return 7
+        // signature
+        if (typeof transaction.signature !== 'object') return 8
+        if (transaction.signature instanceof Buffer === false) return 9
+        // data
+        if (typeof transaction.data === 'object') {
+            if (transaction.data instanceof Buffer === false) return 10
+            if (Buffer.byteLength(transaction.data) === 0) return 11
+        }
+        else if (typeof transaction.data !== 'undefined') return 12
+        // timestamp
+        if (typeof transaction.timestamp !== 'number') return 13
         if (transaction.timestamp > Date.now()) return 14
-        // !
-        // if (transaction.amount.toString() !== transaction.amount.toFixed(6)) return 11.5
-        // if (transaction.minerFee.toString() !== transaction.minerFee.toFixed(6)) return 11.5
-        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 15
-        if (Buffer.byteLength(transaction.to) !== 20) return 16
-        if (!transaction.verify()) return 17
+        // minerFee
+        if (typeof transaction.minerFee !== 'number') return 15
+        if (transaction.minerFee < 0) return 16
+        // if (transaction.minerFee.toString() !== transaction.minerFee.toFixed(6)) return 16.5
+        // recoveryParam
+        if (typeof transaction.recoveryParam !== 'number') return 17
+        if (transaction.recoveryParam >> 2) return 18
+        // verify
+        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 19
+        if (!transaction.verify()) return 20
         // async
-        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 18
-        if (await this.getBalanceOfAddress(transaction.from) < transaction.amount) return 19
+        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 21
+        let sum = transaction.minerFee
+        if (transaction.amount) sum += transaction.amount
+        if (await this.getBalanceOfAddress(transaction.from) < sum) return 22
         this.pendingTransactions.push(transaction)
         return 0
     }
@@ -93,7 +109,7 @@ class Blockchain {
             if (!block) break
             for (const transaction of block.transactions) {
                 if ((transaction.from && address.equals(transaction.from))
-                    || address.equals(transaction.to)) transactions.push(transaction)
+                    || (transaction.to && address.equals(transaction.to))) transactions.push(transaction)
             }
             block = await Block.load({ hash: block.previousHash })
         }
@@ -104,10 +120,11 @@ class Blockchain {
         let balance = 0
         for (const transaction of transactions) {
             if (transaction.from && address.equals(transaction.from)) {
-                balance -= transaction.amount
+                if (transaction.amount) balance -= transaction.amount + transaction.minerFee
+                else balance -= transaction.minerFee
             }
-            if (address.equals(transaction.to)) {
-                balance += transaction.amount - transaction.minerFee
+            if (transaction.to && address.equals(transaction.to)) {
+                balance += transaction.amount
             }
         }
         return balance
