@@ -53,9 +53,9 @@ class MinerClient extends BaseClient {
                     if (++this.threadsReady === this.threads) await this.emitThreadsMineNewBlock()
                     break
                 case 'mined':
-                    console.log('mined', e.block.height)
-                    console.log('block', await this.blockchain.addBlock(new Block(e.block)))
-                    // process.exit(0)
+                    const block = new Block(e.block)
+                    const code = await this.blockchain.addBlock(block)
+                    this.emit('mined', block, code)
                     this.blockchain.pendingTransactions = []
                     this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('block', e.block))
                     await this.emitThreadsMineNewBlock()
