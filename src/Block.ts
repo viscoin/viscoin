@@ -49,7 +49,7 @@ class Block {
         )
     }
     hasValidTransactions() {
-        let amount = config.mining.reward.amount
+        let amount = config.mining.reward
         if (!this.transactions.length) return false
         const hashes = []
         for (let i = 0; i < this.transactions.length; i++) {

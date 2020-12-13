@@ -26,10 +26,7 @@
     "dataHashesLength": 100,
     "maxConnections": 100,
     "mining": {
-        "reward": {
-            "amount": 100,
-            "from": ""
-        },
+        "reward": 100,
         "blockTime": 15000,
         "trustedAfterBlocks": 10,
         "blockSize": 1048576

@@ -387,7 +387,7 @@ class Blockchain {
         const transactions = [
             new Transaction({
                 to: address,
-                amount: config.mining.reward.amount
+                amount: config.mining.reward
             }),
             ...this.pendingTransactions
                 .filter(e => e.timestamp >= previousBlock.timestamp)
@@ -416,7 +416,7 @@ class Blockchain {
         return block
     }
     async getCircumlatingSupply() {
-        return await this.getHeight() * config.mining.reward.amount
+        return await this.getHeight() * config.mining.reward
     }
     async getTotalTransactions(timestamp: number | null = null) {
         let block = await this.getLatestBlock(),
