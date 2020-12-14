@@ -468,7 +468,7 @@ const commands = {
     },
     circumlatingSupply: async () => {
         const supply = await wallet.blockchain.getCircumlatingSupply()
-        functions.log_numbers(supply)
+        console.log(chalk.greenBright(functions.beautifyBigInt(supply)))
         await commands.pause()
         console.clear()
         commands.commands()
