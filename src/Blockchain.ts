@@ -117,14 +117,14 @@ class Blockchain {
     }
     async getBalanceOfAddress(address: Buffer) {
         const transactions = await this.getTransactionsOfAddress(address)
-        let balance = 0
+        let balance = 0n
         for (const transaction of transactions) {
             if (transaction.from && address.equals(transaction.from)) {
-                if (transaction.amount) balance -= transaction.amount + transaction.minerFee
-                else balance -= transaction.minerFee
+                if (transaction.amount) balance -= BigInt(transaction.amount) + BigInt(transaction.minerFee)
+                else balance -= BigInt(transaction.minerFee)
             }
             if (transaction.to && address.equals(transaction.to)) {
-                balance += transaction.amount
+                balance += BigInt(transaction.amount)
             }
         }
         return balance

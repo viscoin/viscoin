@@ -212,7 +212,7 @@ const commands = {
                 }
             }
         ])
-        if (res.address === undefined) {
+        if (!res.this && res.address === undefined) {
             console.clear()
             return commands.commands()
         }
@@ -418,7 +418,7 @@ const commands = {
                 }
             }
         ])
-        if (res.address === undefined) {
+        if (!res.this && res.address === undefined) {
             console.clear()
             return commands.commands()
         }
