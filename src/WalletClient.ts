@@ -14,9 +14,7 @@ class WalletClient extends BaseClient {
         this.wallet = null
     }
     static generate = keygen
-    send({ privateKey, to, amount, minerFee, data }: { privateKey: Buffer, to: Buffer | undefined, amount: number | string | undefined, minerFee: number | string, data: Buffer | undefined }) {
-        if (typeof amount === 'string') amount = parseFloat(amount)
-        if (typeof minerFee === 'string') minerFee = parseFloat(minerFee)
+    send({ privateKey, to, amount, minerFee, data }: { privateKey: Buffer, to: Buffer | undefined, amount: string | undefined, minerFee: string, data: Buffer | undefined }) {
         const transaction = new Transaction({
             to,
             amount,

@@ -49,7 +49,7 @@ class Block {
         )
     }
     hasValidTransactions() {
-        let amount = config.mining.reward
+        let amount = BigInt(config.mining.reward)
         if (!this.transactions.length) return false
         const hashes = []
         for (let i = 0; i < this.transactions.length; i++) {
@@ -59,10 +59,10 @@ class Block {
             // if (transaction.minerFee.toString() !== transaction.minerFee.toFixed(6)) return false
             if (i === 0) continue
             if (!transaction.verify()) return false
-            amount += transaction.minerFee
+            amount += BigInt(transaction.minerFee)
             hashes.push(transaction.calculateHash())
         }
-        if (this.transactions[0].amount !== amount) return false
+        if (BigInt(this.transactions[0].amount) !== amount) return false
         if (!this.transactions[0].to) return false
         if (Buffer.byteLength(this.transactions[0].to) !== 20) return false
         if (!this.transactions[0].timestamp) return false

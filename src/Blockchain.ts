@@ -38,8 +38,8 @@ class Blockchain {
             if (transaction.to instanceof Buffer === false) return 3
             if (Buffer.byteLength(transaction.to) !== 20) return 4
             // amount
-            if (typeof transaction.amount !== 'number') return 5
-            if (transaction.amount <= 0) return 6
+            if (typeof transaction.amount !== 'string') return 5
+            if (BigInt(transaction.amount) <= 0) return 6
             // if (transaction.amount.toString() !== transaction.amount.toFixed(6)) return 6.5
         }
         else if (typeof transaction.to !== 'undefined') return 7
@@ -56,8 +56,8 @@ class Blockchain {
         if (typeof transaction.timestamp !== 'number') return 13
         if (transaction.timestamp > Date.now()) return 14
         // minerFee
-        if (typeof transaction.minerFee !== 'number') return 15
-        if (transaction.minerFee < 0) return 16
+        if (typeof transaction.minerFee !== 'string') return 15
+        if (BigInt(transaction.minerFee) < 0) return 16
         // if (transaction.minerFee.toString() !== transaction.minerFee.toFixed(6)) return 16.5
         // recoveryParam
         if (typeof transaction.recoveryParam !== 'number') return 17
@@ -67,8 +67,8 @@ class Blockchain {
         if (!transaction.verify()) return 20
         // async
         if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 21
-        let sum = transaction.minerFee
-        if (transaction.amount) sum += transaction.amount
+        let sum = BigInt(transaction.minerFee)
+        if (transaction.amount) sum += BigInt(transaction.amount)
         if (await this.getBalanceOfAddress(transaction.from) < sum) return 22
         this.pendingTransactions.push(transaction)
         return 0
@@ -391,7 +391,29 @@ class Blockchain {
             }),
             ...this.pendingTransactions
                 .filter(e => e.timestamp >= previousBlock.timestamp)
-                .sort((a, b) => (b.minerFee / Buffer.byteLength(JSON.stringify(b))) - (a.minerFee / Buffer.byteLength(JSON.stringify(a))))
+                .sort((a, b) => {
+                    const byteLength = {
+                        a: BigInt(Buffer.byteLength(JSON.stringify(a))),
+                        b: BigInt(Buffer.byteLength(JSON.stringify(b)))
+                    }
+                    const minerFee = {
+                        a: BigInt(a.minerFee),
+                        b: BigInt(b.minerFee)
+                    }
+                    const div = {
+                        a: minerFee.a / byteLength.a,
+                        b: minerFee.b / byteLength.b
+                    }
+                    if (div.b - div.a < 0) return -1
+                    else if (div.b - div.a > 0) return 1
+                    const remainder = {
+                        a: minerFee.a % byteLength.a,
+                        b: minerFee.b % byteLength.b
+                    }
+                    if (remainder.b < remainder.a) return -1
+                    else if (remainder.b > remainder.a) return 1
+                    else return 0
+                })
         ]
         await this.updateDifficulty()
         const block = new Block({
@@ -402,11 +424,11 @@ class Blockchain {
         })
         for (let i = 0; i < block.transactions.length; i++) {
             if (i === 0) continue
-            block.transactions[0].amount += block.transactions[i].minerFee
+            block.transactions[0].amount = String(BigInt(block.transactions[0].amount) + BigInt(block.transactions[i].minerFee))
         }
         while (Buffer.byteLength(JSON.stringify(block)) > config.mining.blockSize) {
             const transaction = block.transactions.pop()
-            block.transactions[0].amount -= transaction.minerFee
+            block.transactions[0].amount = String(BigInt(block.transactions[0].amount) - BigInt(transaction.minerFee))
         }
         return block
     }
@@ -416,7 +438,7 @@ class Blockchain {
         return block
     }
     async getCircumlatingSupply() {
-        return await this.getHeight() * config.mining.reward
+        return BigInt(await this.getHeight()) * BigInt(config.mining.reward)
     }
     async getTotalTransactions(timestamp: number | null = null) {
         let block = await this.getLatestBlock(),

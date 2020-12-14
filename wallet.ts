@@ -104,15 +104,27 @@ const commands = {
                 message: 'Address',
                 validate: to => {
                     if (!to) return true
-                    if (Buffer.byteLength(base58.decode(to)) === 20) return true
-                    else return 'Invalid address'
+                    try {
+                        if (Buffer.byteLength(base58.decode(to)) === 20) return true
+                        else return 'Invalid address'
+                    }
+                    catch {
+                        return 'Invalid base58'
+                    }
                 }
             },
             {
                 type: previous => previous ? 'text' : null,
                 name: 'amount',
                 message: 'Amount',
-                validate: amount => isNaN(parseFloat(amount)) || parseFloat(amount) <= 0 ? 'Invalid amount' : true
+                validate: amount => {
+                    try {
+                        return BigInt(amount) <= 0 ? 'Invalid amount' : true
+                    }
+                    catch {
+                        return 'Invalid number'
+                    }
+                }
             },
             {
                 type: 'text',
@@ -124,13 +136,20 @@ const commands = {
                 type: 'text',
                 name: 'minerFee',
                 message: 'Miners fee',
-                validate: minerFee => isNaN(parseFloat(minerFee)) ? 'Invalid amount' : true
+                validate: minerFee => {
+                    try {
+                        return BigInt(minerFee) <= 0 ? 'Invalid amount' : true
+                    }
+                    catch {
+                        return 'Invalid number'
+                    }
+                }
             },
             {
                 type: 'toggle',
                 name: 'confirm',
                 message: (prev, values) => {
-                    if (values.amount) return `Sum: ${values.amount} + ${values.minerFee} = ${parseFloat(values.amount) + parseFloat(values.minerFee)}\nSign and broadcast?`
+                    if (values.amount) return `Sum: ${values.amount} + ${values.minerFee} = ${BigInt(values.amount) + BigInt(values.minerFee)}\nSign and broadcast?`
                     else return `Sum: ${values.minerFee}\nSign and broadcast?`
                 },
                 initial: false,
@@ -183,11 +202,20 @@ const commands = {
                 message: 'Address',
                 validate: address => {
                     // if (!address) return true
-                    if (Buffer.byteLength(base58.decode(address)) === 20) return true
-                    else return 'Invalid address'
+                    try {
+                        if (Buffer.byteLength(base58.decode(address)) === 20) return true
+                        else return 'Invalid address'
+                    }
+                    catch {
+                        return 'Invalid base58'
+                    }
                 }
             }
         ])
+        if (res.address === undefined) {
+            console.clear()
+            return commands.commands()
+        }
         console.log(chalk.yellowBright(await wallet.balance(res.address)))
         await commands.pause()
         console.clear()
@@ -380,11 +408,20 @@ const commands = {
                 message: 'Address',
                 validate: address => {
                     // if (!address) return true
-                    if (Buffer.byteLength(base58.decode(address)) === 20) return true
-                    else return 'Invalid address'
+                    try {
+                        if (Buffer.byteLength(base58.decode(address)) === 20) return true
+                        else return 'Invalid address'
+                    }
+                    catch {
+                        return 'Invalid base58'
+                    }
                 }
             }
         ])
+        if (res.address === undefined) {
+            console.clear()
+            return commands.commands()
+        }
         const transactions = (await wallet.transactions(res.address)).sort((a, b) => a.timestamp - b.timestamp)
         if (transactions.length) {
             for (const transaction of transactions) {
