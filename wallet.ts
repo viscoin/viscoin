@@ -29,6 +29,20 @@ const functions = {
         console.log(chalk.yellowBright(value))
         console.log(chalk.cyanBright(`2^${Math.log2(value)}`))
         console.log(chalk.blueBright(`10^${Math.log10(value)}`))
+    },
+    beautifyBigInt: (bigint: string | bigint) => {
+        bigint = BigInt(bigint)
+        if (bigint === 0n) return '0'
+        bigint = String(bigint)
+        const arr = bigint.split('')
+        while (arr.length <= 15) {
+            arr.unshift('0')
+        }
+        arr.splice(arr.length - 15, 0, '.').join('').toString()
+        while (arr.length && [ '0', '.' ].includes(arr[arr.length - 1])) {
+            arr.pop()
+        }
+        return arr.join('')
     }
 }
 
@@ -216,7 +230,7 @@ const commands = {
             console.clear()
             return commands.commands()
         }
-        console.log(chalk.yellowBright(await wallet.balance(res.address)))
+        console.log(chalk.yellowBright(functions.beautifyBigInt(await wallet.balance(res.address))))
         await commands.pause()
         console.clear()
         commands.commands()
@@ -433,9 +447,9 @@ const commands = {
                 else if (transaction.from) transaction.from = base58.encode(transaction.from)
                 if (transaction.to && transaction.to.equals(wallet.wallet.address)) transaction.to = chalk.blueBright(base58.encode(transaction.to))
                 else if (transaction.to) transaction.to = base58.encode(transaction.to)
-                if (!transaction.from) console.log(`${date} ${transaction.to} ${chalk.greenBright.bold(`+${transaction.amount}`)}`)
-                else if (!transaction.to) console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${transaction.minerFee}`)}${data}`)
-                else console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${transaction.amount}`)} ${arrow} ${transaction.to} ${chalk.greenBright.bold(`+${transaction.amount - transaction.minerFee}`)}${data}`)
+                if (!transaction.from) console.log(`${date} ${transaction.to} ${chalk.greenBright.bold(`+${functions.beautifyBigInt(transaction.amount)}`)}`)
+                else if (!transaction.to) console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${functions.beautifyBigInt(transaction.minerFee)}`)}${data}`)
+                else console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${functions.beautifyBigInt(transaction.amount)}`)} ${arrow} ${transaction.to} ${chalk.greenBright.bold(`+${functions.beautifyBigInt(BigInt(transaction.amount) - BigInt(transaction.minerFee))}`)}${data}`)
             }
         }
         else {
