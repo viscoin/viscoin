@@ -54,7 +54,7 @@ const commands = {
         let choices: Array<{ title: string, description: string, value: Function }> = [
             { title: 'Wallet', description: 'Select wallet', value: commands.select_wallet },
             { title: 'Network', description: 'View network nodes', value: commands.network },
-            { title: 'Generate', description: 'Generates new wallet', value: commands.generate },
+            { title: 'Generate', description: 'Generate a new wallet', value: commands.generate },
             { title: 'Import', description: 'Import a new wallet', value: commands.import_wallet },
             { title: 'Blockchain', description: 'View statistics about the blockchain', value: commands.blockchain },
             { title: 'Exit', description: 'Exits', value: commands.exit }
@@ -244,68 +244,10 @@ const commands = {
         process.exit(0)
     },
     generate: async () => {
-        const { type } = await prompts({
-            type: 'autocomplete',
-            name: 'type',
-            message: 'Select wallet type',
-            choices: [
-                { title: 'Word Wallet', description: 'Recovery', value: commands.generate_word_wallet },
-                { title: 'Wallet', value: commands.generate_normal }
-            ]
-        })
-        if (typeof type !== 'function') {
-            console.clear()
-            return commands.commands()
-        }
-        type()
-    },
-    generate_normal: async () => {
-        const { privateKey, address } = keygen()
-        console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(base58.encode(address))}`)
-        console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(base58.encode(privateKey))}`)
-        const { save } = await prompts({
-            type: 'toggle',
-            name: 'save',
-            message: 'Save key?',
-            initial: false,
-            active: 'yes',
-            inactive: 'no'
-        })
-        if (!save) {
-            console.clear()
-            return commands.commands()
-        }
-        const { name, passphrase } = await prompts([
-            {
-                type: 'text',
-                name: 'name',
-                message: 'Name wallet',
-                validate: name => {
-                    const exists = fs.existsSync(`./wallets/${name}.wallet`)
-                    return exists ? 'Wallet already exists' : true
-                }
-            },
-            {
-                type: 'password',
-                name: 'passphrase',
-                message: 'Enter passphrase'
-            }
-        ])
-        if (passphrase === undefined || passphrase === undefined) {
-            console.clear()
-            return commands.commands()
-        }
-        functions.save_wallet(privateKey, name, passphrase)
-        wallet.import({
-            name,
-            privateKey
-        })
-        console.clear()
-        commands.commands()
-    },
-    generate_word_wallet: async () => {
         const words = wordgen()
-        console.log(chalk.yellowBright.bold('Write down these words!'))
+        console.log(chalk.yellowBright('Write down the following words and store them somewhere safe.'))
+        console.log(chalk.yellowBright('The words can be used to recover / regenerate your private key.'))
+        console.log(chalk.redBright(`Do ${chalk.bold('not')} share this with anyone as they can get access to your wallet!`))
         for (let i = 0; i < words.length; i++) {
             console.log(`${chalk.whiteBright(i + 1)}${chalk.white('.')} ${chalk.greenBright.bold(words[i])}`)
         }
