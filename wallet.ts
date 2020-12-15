@@ -76,7 +76,13 @@ const commands = {
                 ...choices
             ]
             if (wallet.wallet.name) console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${wallet.wallet.name}.wallet`))))
-            else if (wallet.wallet.address && wallet.wallet.privateKey) console.log(chalk.grey(`${chalk.redBright('Temporarily')} loaded wallet ${chalk.white('(not saved)')}`))
+            else if (wallet.wallet.address && wallet.wallet.privateKey) {
+                console.log(chalk.grey(`${chalk.redBright('Temporarily')} loaded wallet ${chalk.white('(not saved)')}`))
+                choices = [
+                    { title: 'Save', description: 'Save wallet', value: commands.save },
+                    ...choices
+                ]
+            }
         }
         const res = await prompts({
             type: 'autocomplete',
@@ -312,6 +318,36 @@ const commands = {
         wallet.import({
             name,
             privateKey
+        })
+        console.clear()
+        commands.commands()
+    },
+    save: async () => {
+        functions.log_wallet_info(wallet.wallet.address, wallet.wallet.privateKey)
+        const { name, passphrase } = await prompts([
+            {
+                type: 'text',
+                name: 'name',
+                message: 'Name wallet',
+                validate: name => {
+                    const exists = fs.existsSync(`./wallets/${name}.wallet`)
+                    return exists ? 'Wallet already exists' : true
+                }
+            },
+            {
+                type: 'password',
+                name: 'passphrase',
+                message: 'Enter passphrase'
+            }
+        ])
+        if (passphrase === undefined || passphrase === undefined) {
+            console.clear()
+            return commands.commands()
+        }
+        functions.save_wallet(wallet.wallet.privateKey, name, passphrase)
+        wallet.import({
+            name,
+            privateKey: wallet.wallet.privateKey
         })
         console.clear()
         commands.commands()
