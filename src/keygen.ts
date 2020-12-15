@@ -1,5 +1,5 @@
 import * as crypto from 'crypto'
-import * as elliptic from 'elliptic'
+import publicKeyFromPrivateKey from './publicKeyFromPrivateKey'
 import addressFromPublicKey from './addressFromPublicKey'
 import { setPriority } from 'os'
 export default (seed: Buffer | undefined = undefined) => {
@@ -12,10 +12,7 @@ export default (seed: Buffer | undefined = undefined) => {
     }
     else seed = crypto.randomBytes(32)
     const privateKey = seed
-    const ec = new elliptic.ec('secp256k1')
-    const key = ec.keyFromPrivate(privateKey)
-    const pubPoint = key.getPublic()
-    const publicKey = Buffer.from(pubPoint.encode())
+    const publicKey = publicKeyFromPrivateKey(privateKey)
     const address = addressFromPublicKey(publicKey)
     return {
         privateKey,

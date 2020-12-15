@@ -14,6 +14,8 @@ import * as config from './config.json'
 import keygen from './src/keygen'
 import wordgen from './src/wordgen'
 import wordsToKey from './src/wordsToKey'
+import addressFromPublicKey from './src/addressFromPublicKey'
+import publicKeyFromPrivateKey from './src/publicKeyFromPrivateKey'
 
 const wallet = new WalletClient()
 
@@ -46,6 +48,10 @@ const functions = {
             arr.pop()
         }
         return arr.join('')
+    },
+    log_wallet_info: (address: Buffer, privateKey: Buffer) => {
+        console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(base58.encode(address))}`)
+        console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(base58.encode(privateKey))}`)
     }
 }
 
@@ -264,8 +270,11 @@ const commands = {
             return commands.commands()
         }
         const { privateKey, address } = wordsToKey(words)
-        console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(base58.encode(address))}`)
-        console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(base58.encode(privateKey))}`)
+        functions.log_wallet_info(address, privateKey)
+        wallet.import({
+            name: '',
+            privateKey
+        })
         const { save } = await prompts({
             type: 'toggle',
             name: 'save',
@@ -389,7 +398,7 @@ const commands = {
         })
     },
     import_wallet: async () => {
-        let { word_wallet, words, privateKey, name, passphrase } = await prompts([
+        let { word_wallet, words, privateKey } = await prompts([
             {
                 type: 'toggle',
                 name: 'word_wallet',
@@ -408,7 +417,40 @@ const commands = {
                 type: prev => prev ? null : 'text',
                 name: 'privateKey',
                 message: 'Private Key'
-            },
+            }
+        ])
+        if (word_wallet === undefined || (words === undefined && privateKey === undefined)) {
+            console.clear()
+            return commands.commands()
+        }
+        let address = null
+        if (word_wallet) {
+            const key = wordsToKey(words.split(' '))
+            privateKey = key.privateKey
+            address = key.address
+        }
+        else {
+            privateKey = base58.decode(privateKey)
+            address = addressFromPublicKey(publicKeyFromPrivateKey(privateKey))
+        }
+        functions.log_wallet_info(address, privateKey)
+        wallet.import({
+            name: '',
+            privateKey
+        })
+        const { save } = await prompts({
+            type: 'toggle',
+            name: 'save',
+            message: 'Save key?',
+            initial: false,
+            active: 'yes',
+            inactive: 'no'
+        })
+        if (!save) {
+            console.clear()
+            return commands.commands()
+        }
+        const { name, passphrase } = await prompts([
             {
                 type: 'text',
                 name: 'name',
@@ -424,12 +466,10 @@ const commands = {
                 message: 'Enter passphrase'
             }
         ])
-        if (word_wallet === undefined || (words === undefined && privateKey === undefined) || name === undefined || passphrase === undefined) {
+        if (passphrase === undefined || passphrase === undefined) {
             console.clear()
             return commands.commands()
         }
-        if (word_wallet) privateKey = wordsToKey(words.split(' ')).privateKey
-        else privateKey = base58.decode(privateKey)
         functions.save_wallet(privateKey, name, passphrase)
         wallet.import({
             name,
