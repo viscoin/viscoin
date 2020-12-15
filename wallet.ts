@@ -314,7 +314,7 @@ const commands = {
         const { words_confirm } = await prompts({
             type: 'text',
             name: 'words_confirm',
-            message: 'Confirm words',
+            message: 'Confirm words 1 - 12 (space separated)',
             validate: words_confirm => words_confirm.split(' ').join('') === words.join('') ? true : "Words don't match"
         })
         if (words_confirm === undefined) {
@@ -459,7 +459,7 @@ const commands = {
             {
                 type: prev => prev ? 'text' : null,
                 name: 'words',
-                message: 'Enter the 12 word recovery passphrase',
+                message: 'Enter the 12 word recovery passphrase 1 - 12 (space separated)',
                 validate: words => words.split(' ').length === 12 ? true : 'Invalid length'
             },
             {
