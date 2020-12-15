@@ -1,4 +1,5 @@
 {
+    "wordlist": "english.txt",
     "miner": {
         "miningRewardAddress": "4QtScRTqZat2WAZJDZih1CEEU4yi",
         "threads": 1,

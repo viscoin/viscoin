@@ -2,7 +2,6 @@ import * as elliptic from 'elliptic'
 import Transaction from './Transaction'
 import protocol from './protocol'
 import BaseClient from "./BaseClient"
-import keygen from './keygen'
 import addressFromPublicKey from './addressFromPublicKey'
 import base58 from './base58'
 interface WalletClient {
@@ -13,7 +12,6 @@ class WalletClient extends BaseClient {
         super()
         this.wallet = null
     }
-    static generate = keygen
     send({ privateKey, to, amount, minerFee, data }: { privateKey: Buffer, to: Buffer | undefined, amount: string | undefined, minerFee: string, data: Buffer | undefined }) {
         const transaction = new Transaction({
             to,

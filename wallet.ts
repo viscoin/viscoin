@@ -11,6 +11,9 @@ import base58 from './src/base58'
 import customHash from './src/customHash'
 import * as path from 'path'
 import * as config from './config.json'
+import keygen from './src/keygen'
+import wordgen from './src/wordgen'
+import wordsToKey from './src/wordsToKey'
 
 const wallet = new WalletClient()
 
@@ -66,7 +69,7 @@ const commands = {
                 { title: 'Secret', description: 'Get wallet secret', value: commands.secret },
                 ...choices
             ]
-            console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${wallet.wallet.name}.wallet`))))
+            if (wallet.wallet.name) console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${wallet.wallet.name}.wallet`))))
         }
         const res = await prompts({
             type: 'autocomplete',
@@ -241,7 +244,84 @@ const commands = {
         process.exit(0)
     },
     generate: async () => {
-        const { privateKey, address } = WalletClient.generate()
+        const { type } = await prompts({
+            type: 'autocomplete',
+            name: 'type',
+            message: 'Select wallet type',
+            choices: [
+                { title: 'Word wallet', description: 'Like a normal wallet but with the additional ability to recover using a 12 word seed', value: commands.generate_word_wallet },
+                { title: 'Normal wallet', value: commands.generate_normal }
+            ]
+        })
+        if (typeof type !== 'function') {
+            console.clear()
+            return commands.commands()
+        }
+        type()
+    },
+    generate_normal: async () => {
+        const { privateKey, address } = keygen()
+        console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(base58.encode(address))}`)
+        console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(base58.encode(privateKey))}`)
+        const { save } = await prompts({
+            type: 'toggle',
+            name: 'save',
+            message: 'Save key?',
+            initial: false,
+            active: 'yes',
+            inactive: 'no'
+        })
+        if (!save) {
+            console.clear()
+            return commands.commands()
+        }
+        const { name, passphrase } = await prompts([
+            {
+                type: 'text',
+                name: 'name',
+                message: 'Name wallet',
+                validate: name => {
+                    const exists = fs.existsSync(`./wallets/${name}.wallet`)
+                    return exists ? 'Wallet already exists' : true
+                }
+            },
+            {
+                type: 'password',
+                name: 'passphrase',
+                message: 'Enter passphrase'
+            }
+        ])
+        if (passphrase === undefined || passphrase === undefined) {
+            console.clear()
+            return commands.commands()
+        }
+        functions.save_wallet(privateKey, name, passphrase)
+        wallet.import({
+            name,
+            privateKey
+        })
+        console.clear()
+        commands.commands()
+    },
+    generate_word_wallet: async () => {
+        const words = wordgen()
+        console.log(chalk.yellowBright.bold('Write down these words!'))
+        for (let i = 0; i < words.length; i++) {
+            console.log(`${chalk.whiteBright(i + 1)}${chalk.white('.')} ${chalk.greenBright.bold(words[i])}`)
+        }
+        await commands.pause()
+        console.clear()
+        const { words_confirm } = await prompts({
+            type: 'text',
+            name: 'words_confirm',
+            message: 'Confirm words',
+            validate: words_confirm => words_confirm.split(' ').join('') === words.join('') ? true : "Words don't match"
+        })
+        if (words_confirm === undefined) {
+            console.clear()
+            return commands.commands()
+        }
+        const { privateKey, address } = wordsToKey(words)
         console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.blueBright(base58.encode(address))}`)
         console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(base58.encode(privateKey))}`)
         const { save } = await prompts({
@@ -367,17 +447,25 @@ const commands = {
         })
     },
     import_wallet: async () => {
-        const { privateKey, name, passphrase } = await prompts([
+        let { word_wallet, words, privateKey, name, passphrase } = await prompts([
             {
-                type: 'text',
+                type: 'toggle',
+                name: 'word_wallet',
+                message: 'Word wallet?',
+                initial: false,
+                active: 'yes',
+                inactive: 'no'
+            },
+            {
+                type: prev => prev ? 'text' : null,
+                name: 'words',
+                message: 'Enter the 12 word recovery passphrase',
+                validate: words => words.split(' ').length === 12 ? true : 'Invalid length'
+            },
+            {
+                type: prev => prev ? null : 'text',
                 name: 'privateKey',
-                message: 'Private Key',
-                validate: privateKey => {
-                    return true
-                    // !
-                    if (Buffer.byteLength(base58.decode(privateKey)) === 32) return true
-                    else return 'Invalid private key'
-                }
+                message: 'Private Key'
             },
             {
                 type: 'text',
@@ -394,14 +482,16 @@ const commands = {
                 message: 'Enter passphrase'
             }
         ])
-        if (privateKey === undefined || name === undefined || passphrase === undefined) {
+        if (word_wallet === undefined || (words === undefined && privateKey === undefined) || name === undefined || passphrase === undefined) {
             console.clear()
             return commands.commands()
         }
-        functions.save_wallet(base58.decode(privateKey), name, passphrase)
+        if (word_wallet) privateKey = wordsToKey(words.split(' ')).privateKey
+        else privateKey = base58.decode(privateKey)
+        functions.save_wallet(privateKey, name, passphrase)
         wallet.import({
             name,
-            privateKey: base58.decode(privateKey)
+            privateKey
         })
         console.clear()
         commands.commands()
