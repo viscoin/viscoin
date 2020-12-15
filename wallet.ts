@@ -76,6 +76,7 @@ const commands = {
                 ...choices
             ]
             if (wallet.wallet.name) console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${wallet.wallet.name}.wallet`))))
+            else if (wallet.wallet.address && wallet.wallet.privateKey) console.log(chalk.grey(`${chalk.redBright('Temporarily')} loaded wallet ${chalk.white('(not saved)')}`))
         }
         const res = await prompts({
             type: 'autocomplete',
