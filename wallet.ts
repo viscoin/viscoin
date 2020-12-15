@@ -249,8 +249,8 @@ const commands = {
             name: 'type',
             message: 'Select wallet type',
             choices: [
-                { title: 'Word wallet', description: 'Like a normal wallet but with the additional ability to recover using a 12 word seed', value: commands.generate_word_wallet },
-                { title: 'Normal wallet', value: commands.generate_normal }
+                { title: 'Word Wallet', description: 'Recovery', value: commands.generate_word_wallet },
+                { title: 'Wallet', value: commands.generate_normal }
             ]
         })
         if (typeof type !== 'function') {
@@ -451,7 +451,7 @@ const commands = {
             {
                 type: 'toggle',
                 name: 'word_wallet',
-                message: 'Word wallet?',
+                message: 'Recovery?',
                 initial: false,
                 active: 'yes',
                 inactive: 'no'
