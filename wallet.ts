@@ -48,6 +48,30 @@ const functions = {
         }
         return arr.join('')
     },
+    convertToBigInt: (str: string) => {
+        const signs = []
+        for (const sign of [ '.', ',' ]) {
+            if (str.includes(sign)) signs.push(sign)
+            else continue
+        }
+        if (signs.length > 1) return null
+        const sign = signs[0]
+        if (sign) {
+            if (str.replace(sign, '').includes(sign)) return null
+            const index = str.indexOf(sign)
+            while (str.slice(index).length <= 15) {
+                str += '0'
+            }
+            str = str.replace(sign, '')
+        }
+        else str += '000000000000000'
+        try {
+            return BigInt(str)
+        }
+        catch {
+            return null
+        }
+    },
     log_wallet_info: (address: Buffer, privateKey: Buffer, words: Array<string>) => {
         console.log(`${chalk.whiteBright.bold('Address')}        (${chalk.greenBright('SHARE')})  ${chalk.blueBright(base58.encode(address))}`)
         console.log(`${chalk.whiteBright.bold('Private key')}    (${chalk.redBright('SECRET')}) ${chalk.blueBright(base58.encode(privateKey))}`)
@@ -147,12 +171,9 @@ const commands = {
                 name: 'amount',
                 message: 'Amount',
                 validate: amount => {
-                    try {
-                        return BigInt(amount) <= 0 ? 'Invalid amount' : true
-                    }
-                    catch {
-                        return 'Invalid number'
-                    }
+                    const _amount = functions.convertToBigInt(amount)
+                    if (!_amount || _amount <= 0) return 'Invalid amount'
+                    else return true
                 }
             },
             {
@@ -166,19 +187,16 @@ const commands = {
                 name: 'minerFee',
                 message: 'Miners fee',
                 validate: minerFee => {
-                    try {
-                        return BigInt(minerFee) <= 0 ? 'Invalid amount' : true
-                    }
-                    catch {
-                        return 'Invalid number'
-                    }
+                    const _minerFee = functions.convertToBigInt(minerFee)
+                    if (!_minerFee || _minerFee <= 0) return 'Invalid amount'
+                    else return true
                 }
             },
             {
                 type: 'toggle',
                 name: 'confirm',
                 message: (prev, values) => {
-                    if (values.amount) return `Sum: ${values.amount} + ${values.minerFee} = ${BigInt(values.amount) + BigInt(values.minerFee)}\nSign and broadcast?`
+                    if (values.amount) return `Sum: ${functions.beautifyBigInt(functions.convertToBigInt(values.amount))} + ${functions.beautifyBigInt(functions.convertToBigInt(values.minerFee))} = ${functions.beautifyBigInt(functions.convertToBigInt(values.amount) + functions.convertToBigInt(values.minerFee))}\nSign and broadcast?`
                     else return `Sum: ${values.minerFee}\nSign and broadcast?`
                 },
                 initial: false,
@@ -193,8 +211,8 @@ const commands = {
             const transaction = await wallet.send({
                 privateKey: wallet.wallet.privateKey,
                 to: base58.decode(res.to),
-                amount: res.amount,
-                minerFee: res.minerFee,
+                amount: String(functions.convertToBigInt(res.amount)),
+                minerFee: String(functions.convertToBigInt(res.minerFee)),
                 data
             })
             console.log(transaction)
@@ -400,7 +418,6 @@ const commands = {
                     ])))
                     const privateKey = Buffer.from(decrypted.privateKey)
                     const words = decrypted.words
-                    console.log(privateKey, words)
                     wallet.import({
                         name,
                         privateKey,
