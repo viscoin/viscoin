@@ -136,7 +136,7 @@ const commands = {
                 message: 'Amount',
                 validate: amount => {
                     const _amount = parseBigInt(amount)
-                    if (!_amount || _amount <= 0) return 'Invalid amount'
+                    if (_amount === null || _amount <= 0) return 'Invalid amount'
                     else return true
                 }
             },
@@ -152,7 +152,7 @@ const commands = {
                 message: 'Miners fee',
                 validate: minerFee => {
                     const _minerFee = parseBigInt(minerFee)
-                    if (!_minerFee || _minerFee <= 0) return 'Invalid amount'
+                    if (_minerFee === null || _minerFee < 0) return 'Invalid amount'
                     else return true
                 }
             },
@@ -172,11 +172,13 @@ const commands = {
         if (data) data = Buffer.from(data, 'hex')
         else data = undefined
         if (res.confirm) {
+            let amount = undefined
+            if (res.amount !== undefined) amount = beautifyBigInt(parseBigInt(res.amount))
             const transaction = await wallet.send({
                 privateKey: wallet.wallet.privateKey,
                 to: base58.decode(res.to),
-                amount: String(parseBigInt(res.amount)),
-                minerFee: String(parseBigInt(res.minerFee)),
+                amount,
+                minerFee: beautifyBigInt(parseBigInt(res.minerFee)),
                 data
             })
             console.log(transaction)
@@ -541,9 +543,9 @@ const commands = {
                 else if (transaction.from) transaction.from = base58.encode(transaction.from)
                 if (transaction.to && transaction.to.equals(wallet.wallet.address)) transaction.to = chalk.blueBright(base58.encode(transaction.to))
                 else if (transaction.to) transaction.to = base58.encode(transaction.to)
-                if (!transaction.from) console.log(`${date} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(transaction.amount)}`)}`)
-                else if (!transaction.to) console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(transaction.minerFee)}`)}${data}`)
-                else console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(transaction.amount)}`)} ${arrow} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(BigInt(transaction.amount) - BigInt(transaction.minerFee))}`)}${data}`)
+                if (!transaction.from) console.log(`${date} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}`)
+                else if (!transaction.to) console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.minerFee))}`)}${data}`)
+                else console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.amount))}`)} ${arrow} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount) - parseBigInt(transaction.minerFee))}`)}${data}`)
             }
         }
         else {

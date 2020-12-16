@@ -1,7 +1,7 @@
 {
     "wordlist": "english.txt",
     "miner": {
-        "miningRewardAddress": "4QtScRTqZat2WAZJDZih1CEEU4yi",
+        "miningRewardAddress": "2yUSy828g4hnpPF6KhWQ47835EQd",
         "threads": 1,
         "hostNode": true,
         "connectToNodes": true
@@ -21,13 +21,13 @@
     },
     "network": {
         "address": "192.168.0.11",
-        "port": 8334
+        "port": 8333
     },
     "save_logs": true,
     "dataHashesLength": 100,
     "maxConnections": 100,
     "mining": {
-        "reward": "1000000000000000",
+        "reward": "1000",
         "blockTime": 15000,
         "trustedAfterBlocks": 10,
         "blockSize": 1048576

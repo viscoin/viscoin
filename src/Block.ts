@@ -3,6 +3,8 @@ import Transaction from './Transaction'
 import schema_block from './mongoose/schema/block'
 import * as config from '../config.json'
 import customHash from './customHash'
+import parseBigInt from './parseBigInt'
+import beautifyBigInt from './beautifyBigInt'
 interface Block {
     nonce: number
     height: number
@@ -49,31 +51,29 @@ class Block {
         )
     }
     hasValidTransactions() {
-        let amount = BigInt(config.mining.reward)
+        let amount = parseBigInt(config.mining.reward)
         if (!this.transactions.length) return false
         const hashes = []
         for (let i = 0; i < this.transactions.length; i++) {
             const transaction = this.transactions[i]
             if (!transaction) return false
-            // if (transaction.amount.toString() !== transaction.amount.toFixed(6)) return false
-            // if (transaction.minerFee.toString() !== transaction.minerFee.toFixed(6)) return false
             if (i === 0) continue
             if (!transaction.verify()) return false
-            try {
-                amount += BigInt(transaction.minerFee)
-                if (transaction.amount !== undefined) BigInt(transaction.amount)
-            }
-            catch {
-                return false
+            const minerFee = parseBigInt(transaction.minerFee)
+            if (minerFee === null
+                || beautifyBigInt(minerFee) !== transaction.minerFee) return false
+            amount += minerFee
+            if (transaction.amount !== undefined) {
+                const _amount = parseBigInt(transaction.amount)
+                if (_amount === null
+                    || beautifyBigInt(_amount) !== transaction.amount) return false
             }
             hashes.push(transaction.calculateHash())
         }
-        try {
-            if (BigInt(this.transactions[0].amount) !== amount) return false
-        }
-        catch {
-            return false
-        }
+        const _amount = parseBigInt(this.transactions[0].amount)
+        if (_amount === null
+            || _amount !== amount
+            || beautifyBigInt(_amount) !== this.transactions[0].amount) return false
         if (!this.transactions[0].to) return false
         if (Buffer.byteLength(this.transactions[0].to) !== 20) return false
         if (!this.transactions[0].timestamp) return false

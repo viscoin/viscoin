@@ -1,9 +1,9 @@
-import * as crypto from 'crypto'
 import * as config from '../config.json'
 import Transaction from './Transaction'
 import Block from './Block'
 import schema_block from './mongoose/schema/block'
-import base58 from './base58'
+import parseBigInt from './parseBigInt'
+import beautifyBigInt from './beautifyBigInt'
 interface Blockchain {
     difficulty: number
     pendingTransactions: Array<Transaction>
@@ -39,42 +39,41 @@ class Blockchain {
             if (Buffer.byteLength(transaction.to) !== 20) return 4
             // amount
             if (typeof transaction.amount !== 'string') return 5
-            try {
-                if (BigInt(transaction.amount) <= 0) return 6
-            }
-            catch {
-                return 7
-            }
-            // if (transaction.amount.toString() !== transaction.amount.toFixed(6)) return 6.5
+            const amount = parseBigInt(transaction.amount)
+            if (amount === null
+                || amount <= 0
+                || beautifyBigInt(amount) !== transaction.amount) return 6
         }
-        else if (typeof transaction.to !== 'undefined') return 8
+        else if (typeof transaction.to !== 'undefined') return 7
         // signature
-        if (typeof transaction.signature !== 'object') return 9
-        if (transaction.signature instanceof Buffer === false) return 10
+        if (typeof transaction.signature !== 'object') return 8
+        if (transaction.signature instanceof Buffer === false) return 9
         // data
         if (typeof transaction.data === 'object') {
-            if (transaction.data instanceof Buffer === false) return 11
-            if (Buffer.byteLength(transaction.data) === 0) return 12
+            if (transaction.data instanceof Buffer === false) return 10
+            if (Buffer.byteLength(transaction.data) === 0) return 11
         }
-        else if (typeof transaction.data !== 'undefined') return 13
+        else if (typeof transaction.data !== 'undefined') return 12
         // timestamp
-        if (typeof transaction.timestamp !== 'number') return 14
-        if (transaction.timestamp > Date.now()) return 15
+        if (typeof transaction.timestamp !== 'number') return 13
+        if (transaction.timestamp > Date.now()) return 14
         // minerFee
-        if (typeof transaction.minerFee !== 'string') return 16
-        if (BigInt(transaction.minerFee) < 0) return 17
-        // if (transaction.minerFee.toString() !== transaction.minerFee.toFixed(6)) return 16.5
+        if (typeof transaction.minerFee !== 'string') return 15
+        const minerFee = parseBigInt(transaction.minerFee)
+            if (minerFee === null
+                || minerFee < 0
+                || beautifyBigInt(minerFee) !== transaction.minerFee) return 16
         // recoveryParam
-        if (typeof transaction.recoveryParam !== 'number') return 18
-        if (transaction.recoveryParam >> 2) return 19
+        if (typeof transaction.recoveryParam !== 'number') return 17
+        if (transaction.recoveryParam >> 2) return 18
         // verify
-        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 20
-        if (!transaction.verify()) return 21
+        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 19
+        if (!transaction.verify()) return 20
         // async
-        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 22
-        let sum = BigInt(transaction.minerFee)
-        if (transaction.amount) sum += BigInt(transaction.amount)
-        if (await this.getBalanceOfAddress(transaction.from) < sum) return 23
+        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 21
+        let sum = parseBigInt(transaction.minerFee)
+        if (transaction.amount) sum += parseBigInt(transaction.amount)
+        if (await this.getBalanceOfAddress(transaction.from) < sum) return 22
         this.pendingTransactions.push(transaction)
         return 0
     }
@@ -125,11 +124,11 @@ class Blockchain {
         let balance = 0n
         for (const transaction of transactions) {
             if (transaction.from && address.equals(transaction.from)) {
-                if (transaction.amount) balance -= BigInt(transaction.amount) + BigInt(transaction.minerFee)
-                else balance -= BigInt(transaction.minerFee)
+                if (transaction.amount) balance -= parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee)
+                else balance -= parseBigInt(transaction.minerFee)
             }
             if (transaction.to && address.equals(transaction.to)) {
-                balance += BigInt(transaction.amount)
+                balance += parseBigInt(transaction.amount)
             }
         }
         return balance
@@ -392,7 +391,7 @@ class Blockchain {
         const transactions = [
             new Transaction({
                 to: address,
-                amount: config.mining.reward
+                amount: beautifyBigInt(parseBigInt(config.mining.reward))
             }),
             ...this.pendingTransactions
                 .filter(e => e.timestamp >= previousBlock.timestamp)
@@ -402,8 +401,8 @@ class Blockchain {
                         b: BigInt(Buffer.byteLength(JSON.stringify(b)))
                     }
                     const minerFee = {
-                        a: BigInt(a.minerFee),
-                        b: BigInt(b.minerFee)
+                        a: parseBigInt(a.minerFee),
+                        b: parseBigInt(b.minerFee)
                     }
                     const div = {
                         a: minerFee.a / byteLength.a,
@@ -429,11 +428,11 @@ class Blockchain {
         })
         for (let i = 0; i < block.transactions.length; i++) {
             if (i === 0) continue
-            block.transactions[0].amount = String(BigInt(block.transactions[0].amount) + BigInt(block.transactions[i].minerFee))
+            block.transactions[0].amount = beautifyBigInt(parseBigInt(block.transactions[0].amount) + parseBigInt(block.transactions[i].minerFee))
         }
         while (Buffer.byteLength(JSON.stringify(block)) > config.mining.blockSize) {
             const transaction = block.transactions.pop()
-            block.transactions[0].amount = String(BigInt(block.transactions[0].amount) - BigInt(transaction.minerFee))
+            block.transactions[0].amount = beautifyBigInt(parseBigInt(block.transactions[0].amount) - parseBigInt(transaction.minerFee))
         }
         return block
     }
