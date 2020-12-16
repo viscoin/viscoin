@@ -71,9 +71,9 @@ const commands = {
                 { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
                 { title: 'Send', description: 'Send money to address', value: commands.send },
                 { title: 'Transactions', description: 'Lists all transactions', value: commands.transactions },
-                { title: 'Info', description: 'View details about your current wallet', value: commands.info },
-                { title: 'Secret', description: 'Show wallet secret', value: commands.secret },
-                { title: 'Recovery Words', description: 'Show recovery words for wallet', value: commands.recovery_words },
+                { title: 'Info', description: `View details about your current wallet (${chalk.redBright('Make sure no one is looking')})`, value: commands.info },
+                { title: 'Private key', description: `Shows private key (${chalk.redBright('Make sure no one is looking')})`, value: commands.secret },
+                { title: 'Recovery Words', description: `Shows recovery words (${chalk.redBright('Make sure no one is looking')})`, value: commands.recovery_words },
                 ...choices
             ]
             if (wallet.wallet.name) console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${wallet.wallet.name}.wallet`))))
