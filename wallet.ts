@@ -545,7 +545,7 @@ const commands = {
                 else if (transaction.to) transaction.to = base58.encode(transaction.to)
                 if (!transaction.from) console.log(`${date} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}`)
                 else if (!transaction.to) console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.minerFee))}`)}${data}`)
-                else console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.amount))}`)} ${arrow} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount) - parseBigInt(transaction.minerFee))}`)}${data}`)
+                else console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee))}`)} ${arrow} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}${data}`)
             }
         }
         else {
