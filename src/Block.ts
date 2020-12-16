@@ -59,10 +59,21 @@ class Block {
             // if (transaction.minerFee.toString() !== transaction.minerFee.toFixed(6)) return false
             if (i === 0) continue
             if (!transaction.verify()) return false
-            amount += BigInt(transaction.minerFee)
+            try {
+                amount += BigInt(transaction.minerFee)
+                if (transaction.amount !== undefined) BigInt(transaction.amount)
+            }
+            catch {
+                return false
+            }
             hashes.push(transaction.calculateHash())
         }
-        if (BigInt(this.transactions[0].amount) !== amount) return false
+        try {
+            if (BigInt(this.transactions[0].amount) !== amount) return false
+        }
+        catch {
+            return false
+        }
         if (!this.transactions[0].to) return false
         if (Buffer.byteLength(this.transactions[0].to) !== 20) return false
         if (!this.transactions[0].timestamp) return false
