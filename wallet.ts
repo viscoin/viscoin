@@ -12,6 +12,8 @@ import customHash from './src/customHash'
 import * as path from 'path'
 import wordgen from './src/wordgen'
 import wordsToKey from './src/wordsToKey'
+import beautifyBigInt from './src/beautifyBigInt'
+import parseBigInt from './src/parseBigInt'
 
 const wallet = new WalletClient()
 
@@ -33,44 +35,6 @@ const functions = {
         console.log(chalk.yellowBright(value))
         console.log(chalk.cyanBright(`2^${Math.log2(value)}`))
         console.log(chalk.blueBright(`10^${Math.log10(value)}`))
-    },
-    beautifyBigInt: (bigint: string | bigint) => {
-        bigint = BigInt(bigint)
-        if (bigint === 0n) return '0'
-        bigint = String(bigint)
-        const arr = bigint.split('')
-        while (arr.length <= 15) {
-            arr.unshift('0')
-        }
-        arr.splice(arr.length - 15, 0, '.').join('').toString()
-        while (arr.length && [ '0', '.' ].includes(arr[arr.length - 1])) {
-            arr.pop()
-        }
-        return arr.join('')
-    },
-    convertToBigInt: (str: string) => {
-        const signs = []
-        for (const sign of [ '.', ',' ]) {
-            if (str.includes(sign)) signs.push(sign)
-            else continue
-        }
-        if (signs.length > 1) return null
-        const sign = signs[0]
-        if (sign) {
-            if (str.replace(sign, '').includes(sign)) return null
-            const index = str.indexOf(sign)
-            while (str.slice(index).length <= 15) {
-                str += '0'
-            }
-            str = str.replace(sign, '')
-        }
-        else str += '000000000000000'
-        try {
-            return BigInt(str)
-        }
-        catch {
-            return null
-        }
     },
     log_wallet_info: (address: Buffer, privateKey: Buffer, words: Array<string>) => {
         console.log(`${chalk.whiteBright.bold('Address')}        (${chalk.greenBright('SHARE')})  ${chalk.blueBright(base58.encode(address))}`)
@@ -171,7 +135,7 @@ const commands = {
                 name: 'amount',
                 message: 'Amount',
                 validate: amount => {
-                    const _amount = functions.convertToBigInt(amount)
+                    const _amount = parseBigInt(amount)
                     if (!_amount || _amount <= 0) return 'Invalid amount'
                     else return true
                 }
@@ -187,7 +151,7 @@ const commands = {
                 name: 'minerFee',
                 message: 'Miners fee',
                 validate: minerFee => {
-                    const _minerFee = functions.convertToBigInt(minerFee)
+                    const _minerFee = parseBigInt(minerFee)
                     if (!_minerFee || _minerFee <= 0) return 'Invalid amount'
                     else return true
                 }
@@ -196,7 +160,7 @@ const commands = {
                 type: 'toggle',
                 name: 'confirm',
                 message: (prev, values) => {
-                    if (values.amount) return `Sum: ${functions.beautifyBigInt(functions.convertToBigInt(values.amount))} + ${functions.beautifyBigInt(functions.convertToBigInt(values.minerFee))} = ${functions.beautifyBigInt(functions.convertToBigInt(values.amount) + functions.convertToBigInt(values.minerFee))}\nSign and broadcast?`
+                    if (values.amount) return `Sum: ${beautifyBigInt(parseBigInt(values.amount))} + ${beautifyBigInt(parseBigInt(values.minerFee))} = ${beautifyBigInt(parseBigInt(values.amount) + parseBigInt(values.minerFee))}\nSign and broadcast?`
                     else return `Sum: ${values.minerFee}\nSign and broadcast?`
                 },
                 initial: false,
@@ -211,8 +175,8 @@ const commands = {
             const transaction = await wallet.send({
                 privateKey: wallet.wallet.privateKey,
                 to: base58.decode(res.to),
-                amount: String(functions.convertToBigInt(res.amount)),
-                minerFee: String(functions.convertToBigInt(res.minerFee)),
+                amount: String(parseBigInt(res.amount)),
+                minerFee: String(parseBigInt(res.minerFee)),
                 data
             })
             console.log(transaction)
@@ -263,7 +227,7 @@ const commands = {
             console.clear()
             return commands.commands()
         }
-        console.log(chalk.yellowBright(functions.beautifyBigInt(await wallet.balance(res.address))))
+        console.log(chalk.yellowBright(beautifyBigInt(await wallet.balance(res.address))))
         await commands.pause()
         console.clear()
         commands.commands()
@@ -577,9 +541,9 @@ const commands = {
                 else if (transaction.from) transaction.from = base58.encode(transaction.from)
                 if (transaction.to && transaction.to.equals(wallet.wallet.address)) transaction.to = chalk.blueBright(base58.encode(transaction.to))
                 else if (transaction.to) transaction.to = base58.encode(transaction.to)
-                if (!transaction.from) console.log(`${date} ${transaction.to} ${chalk.greenBright.bold(`+${functions.beautifyBigInt(transaction.amount)}`)}`)
-                else if (!transaction.to) console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${functions.beautifyBigInt(transaction.minerFee)}`)}${data}`)
-                else console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${functions.beautifyBigInt(transaction.amount)}`)} ${arrow} ${transaction.to} ${chalk.greenBright.bold(`+${functions.beautifyBigInt(BigInt(transaction.amount) - BigInt(transaction.minerFee))}`)}${data}`)
+                if (!transaction.from) console.log(`${date} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(transaction.amount)}`)}`)
+                else if (!transaction.to) console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(transaction.minerFee)}`)}${data}`)
+                else console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(transaction.amount)}`)} ${arrow} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(BigInt(transaction.amount) - BigInt(transaction.minerFee))}`)}${data}`)
             }
         }
         else {
@@ -598,7 +562,7 @@ const commands = {
     },
     circumlatingSupply: async () => {
         const supply = await wallet.blockchain.getCircumlatingSupply()
-        console.log(chalk.greenBright(functions.beautifyBigInt(supply)))
+        console.log(chalk.greenBright(beautifyBigInt(supply)))
         await commands.pause()
         console.clear()
         commands.commands()
