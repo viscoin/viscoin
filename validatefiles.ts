@@ -5,6 +5,7 @@ const files = [
     ...fs.readdirSync('./').map(e => e = `./${e}`),
     ...fs.readdirSync('./src').map(e => e = `./src/${e}`)
 ].filter(e => e.endsWith('.js'))
+files.push('./package.json', './package-lock.json')
 console.log(files)
 let data = Buffer.alloc(0)
 for (const file of files) {
