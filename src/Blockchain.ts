@@ -39,37 +39,42 @@ class Blockchain {
             if (Buffer.byteLength(transaction.to) !== 20) return 4
             // amount
             if (typeof transaction.amount !== 'string') return 5
-            if (BigInt(transaction.amount) <= 0) return 6
+            try {
+                if (BigInt(transaction.amount) <= 0) return 6
+            }
+            catch {
+                return 7
+            }
             // if (transaction.amount.toString() !== transaction.amount.toFixed(6)) return 6.5
         }
-        else if (typeof transaction.to !== 'undefined') return 7
+        else if (typeof transaction.to !== 'undefined') return 8
         // signature
-        if (typeof transaction.signature !== 'object') return 8
-        if (transaction.signature instanceof Buffer === false) return 9
+        if (typeof transaction.signature !== 'object') return 9
+        if (transaction.signature instanceof Buffer === false) return 10
         // data
         if (typeof transaction.data === 'object') {
-            if (transaction.data instanceof Buffer === false) return 10
-            if (Buffer.byteLength(transaction.data) === 0) return 11
+            if (transaction.data instanceof Buffer === false) return 11
+            if (Buffer.byteLength(transaction.data) === 0) return 12
         }
-        else if (typeof transaction.data !== 'undefined') return 12
+        else if (typeof transaction.data !== 'undefined') return 13
         // timestamp
-        if (typeof transaction.timestamp !== 'number') return 13
-        if (transaction.timestamp > Date.now()) return 14
+        if (typeof transaction.timestamp !== 'number') return 14
+        if (transaction.timestamp > Date.now()) return 15
         // minerFee
-        if (typeof transaction.minerFee !== 'string') return 15
-        if (BigInt(transaction.minerFee) < 0) return 16
+        if (typeof transaction.minerFee !== 'string') return 16
+        if (BigInt(transaction.minerFee) < 0) return 17
         // if (transaction.minerFee.toString() !== transaction.minerFee.toFixed(6)) return 16.5
         // recoveryParam
-        if (typeof transaction.recoveryParam !== 'number') return 17
-        if (transaction.recoveryParam >> 2) return 18
+        if (typeof transaction.recoveryParam !== 'number') return 18
+        if (transaction.recoveryParam >> 2) return 19
         // verify
-        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 19
-        if (!transaction.verify()) return 20
+        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 20
+        if (!transaction.verify()) return 21
         // async
-        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 21
+        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 22
         let sum = BigInt(transaction.minerFee)
         if (transaction.amount) sum += BigInt(transaction.amount)
-        if (await this.getBalanceOfAddress(transaction.from) < sum) return 22
+        if (await this.getBalanceOfAddress(transaction.from) < sum) return 23
         this.pendingTransactions.push(transaction)
         return 0
     }
