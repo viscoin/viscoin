@@ -5,7 +5,7 @@ import BaseClient from "./BaseClient"
 import addressFromPublicKey from './addressFromPublicKey'
 import base58 from './base58'
 interface WalletClient {
-    wallet: { name: string, privateKey: Buffer, publicKey: Buffer, address: Buffer }
+    wallet: { name: string, privateKey: Buffer, publicKey: Buffer, address: Buffer, words: Array<string> }
 }
 class WalletClient extends BaseClient {
     constructor() {
@@ -24,7 +24,7 @@ class WalletClient extends BaseClient {
         this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('transaction', transaction))
         return transaction
     }
-    import(wallet: { name: string, privateKey: Buffer }) {
+    import(wallet: { name: string, privateKey: Buffer, words: Array<string> }) {
         const ec = new elliptic.ec('secp256k1')
         const key = ec.keyFromPrivate(wallet.privateKey)
         const pubPoint = key.getPublic()
