@@ -466,11 +466,11 @@ const commands = {
             message: 'Enter the 12 word recovery passphrase 1 - 12 (space separated)',
             validate: words => words.split(' ').length === 12 ? true : 'Invalid length'
         })
-        const words = res.words.split(' ')
-        if (words === undefined) {
+        if (res.words === undefined) {
             console.clear()
             return commands.commands()
         }
+        const words = res.words.split(' ')
         const { address, privateKey } = wordsToKey(words)
         functions.log_wallet_info(address, privateKey, words)
         wallet.import({
