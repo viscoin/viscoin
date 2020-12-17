@@ -43,8 +43,10 @@ class BaseClient extends events.EventEmitter {
     }
     async nextSync() {
         const block = await this.blockchain.getNextSyncBlock()
-        const buffer = protocol.constructDataBuffer('block', block)
-        this.node.broadcastAndStoreDataHash(buffer)
+        if (block) {
+            const buffer = protocol.constructDataBuffer('block', block)
+            this.node.broadcast(buffer)
+        }
         setTimeout(this.nextSync.bind(this), config.node.blockchainSynchronization.timeout)
     }
 }
