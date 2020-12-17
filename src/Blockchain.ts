@@ -104,7 +104,6 @@ class Blockchain {
         }
         if (await Block.exists({ hash: block.hash })) return 14
         await block.save()
-        await this.cleanLastTrustedChain()
         return 0
     }
     async getTransactionsOfAddress(address: Buffer) {
@@ -252,15 +251,12 @@ class Blockchain {
             this.difficulty--
         }
     }
-    async cleanChain() {
-        if (!await this.isChainValid()) await this.repairChain()
+    async deleteAllBlocksNotIncludedInChain() {
+        const hashes = []
         let block = await this.getLatestBlock()
-        if (!block) return
-        const height = block.height, hashes = []
-        while (true) {
+        while (block) {
+            hashes.push(block.hash)
             block = await Block.load({ hash: block.previousHash })
-            if (!block) break
-            if (block.height <= height) hashes.push(block.hash)
         }
         if (!hashes.length) return
         const info = await schema_block
@@ -269,74 +265,10 @@ class Blockchain {
                     $not: {
                         $in: hashes
                     }
-                },
-                height: {
-                    $lte: height - config.mining.trustedAfterBlocks
                 }
             })
             .exec()
-        // console.log(info)
         return info
-    }
-    async cleanLastTrustedChain() {
-        if (!await this.isLastTrustedChainValid()) await this.repairChain()
-        let block = await this.getLatestBlock()
-        if (!block) return
-        let i = 0
-        while (true) {
-            block = await Block.load({ hash: block.previousHash })
-            if (!block) break
-            if (i++ === config.mining.trustedAfterBlocks) break
-            // if (i++ <= config.mining.trustedAfterBlocks) break
-        }
-        if (!block) return
-        const info = await schema_block
-            .deleteMany({
-                hash: {
-                    $ne: block.hash
-                },
-                height: block.height
-            })
-            .exec()
-        // console.log(info)
-        return info
-    }
-    async repairChain() {
-        // delete whole invalid chain
-        let block = await this.getLatestBlock()
-        let previousBlocks = []
-        let blocks = []
-        const hashes = []
-        while (true) {
-            for (let i = 0; i < 2; i++) {
-                if (!block) break
-                block = await Block.load({ hash: block.previousHash })
-                if (!block) break
-                blocks.unshift(block)
-                hashes.push(block.hash)
-            }
-            if (!blocks.length) break
-            blocks = [
-                ...blocks,
-                ...previousBlocks
-            ]
-            if (!Blockchain.isPartOfChainValid(blocks)) {
-                const info = await schema_block
-                    .deleteMany({
-                        hash: {
-                            $in: hashes
-                        }
-                    })
-                    .exec()
-                // console.log('repairChain', info)
-                return info
-            }
-            previousBlocks = [
-                blocks[0],
-                blocks[1]
-            ]
-            blocks = []
-        }
     }
     // !
     async getBlockByHeight(height: number) {
@@ -350,42 +282,6 @@ class Blockchain {
         if (!block || block.height !== height) return null
         return block
     }
-    // async repairChain() {
-    //     // delete one block from invalid chain at a time
-    //     if (await this.isChainValid()) return
-    //     let block = await this.getLatestBlock()
-    //     const latestBlock = block
-    //     let previousBlocks = []
-    //     let blocks = []
-    //     while (true) {
-    //         for (let i = 0; i < 2; i++) {
-    //             if (!block) break
-    //             block = await Block.load({ hash: block.previousHash })
-    //             if (!block) break
-    //             blocks.unshift(block)
-    //         }
-    //         if (!blocks.length) break
-    //         blocks = [
-    //             ...blocks,
-    //             ...previousBlocks
-    //         ]
-    //         if (!Blockchain.isPartOfChainValid(blocks)) {
-    //             const info = await schema_block
-    //                 .deleteOne({
-    //                     hash: latestBlock.hash
-    //                 })
-    //                 .exec()
-    //             console.log('repairChain', info)
-    //             return await this.repairChain()
-    //         }
-    //         previousBlocks = [
-    //             blocks[0],
-    //             blocks[1]
-    //         ]
-    //         blocks = []
-    //     }
-    // }
-
     // !
     // calling this function when pendingtransactions is full and the transaction does not get added will result in people being able to abuse the miner by keeping sending transaction with 0 mining reward
     // resetting the miners nonce resulting in miner being stuck without being able to reach the nonce where it mines block
