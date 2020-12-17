@@ -17,7 +17,8 @@ class WalletClient extends BaseClient {
             to,
             amount,
             minerFee,
-            data
+            data,
+            timestamp: Date.now()
         })
         transaction.sign(privateKey)
         this.blockchain.addTransaction(transaction)

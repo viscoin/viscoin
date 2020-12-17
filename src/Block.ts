@@ -76,7 +76,7 @@ class Block {
             || beautifyBigInt(_amount) !== this.transactions[0].amount) return false
         if (!this.transactions[0].to) return false
         if (Buffer.byteLength(this.transactions[0].to) !== 20) return false
-        if (!this.transactions[0].timestamp) return false
+        if (this.transactions[0].timestamp) return false
         if (this.transactions[0].minerFee) return false
         if (this.transactions[0].from) return false
         if (this.transactions[0].data) return false

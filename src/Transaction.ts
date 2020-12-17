@@ -1,6 +1,7 @@
 import * as elliptic from 'elliptic'
 import customHash from './customHash'
 import addressFromPublicKey from './addressFromPublicKey'
+import { time } from 'console'
 interface Transaction {
     from: Buffer
     to: Buffer
@@ -12,8 +13,8 @@ interface Transaction {
     data: Buffer
 }
 class Transaction {
-    constructor({ from = undefined, to = undefined, amount = undefined, timestamp = Date.now(), minerFee = undefined, signature = undefined, recoveryParam = undefined, data = undefined }) {
-        this.timestamp = timestamp
+    constructor({ from = undefined, to = undefined, amount = undefined, timestamp = undefined, minerFee = undefined, signature = undefined, recoveryParam = undefined, data = undefined }) {
+        if (timestamp) this.timestamp = timestamp
 
         if (typeof minerFee === 'string') this.minerFee = minerFee
 
