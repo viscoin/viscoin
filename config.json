@@ -1,5 +1,8 @@
 {
     "wordlist": "english.txt",
+    "wallet": {
+        "timesToRepeatBroadcastTransaction": 5
+    },
     "miner": {
         "miningRewardAddress": "2yUSy828g4hnpPF6KhWQ47835EQd",
         "threads": 1,

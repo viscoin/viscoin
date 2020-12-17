@@ -4,6 +4,7 @@ import protocol from './protocol'
 import BaseClient from "./BaseClient"
 import addressFromPublicKey from './addressFromPublicKey'
 import base58 from './base58'
+import * as config from '../config.json'
 interface WalletClient {
     wallet: { name: string, privateKey: Buffer, publicKey: Buffer, address: Buffer, words: Array<string> }
 }
@@ -22,7 +23,11 @@ class WalletClient extends BaseClient {
         })
         transaction.sign(privateKey)
         this.blockchain.addTransaction(transaction)
-        this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('transaction', transaction))
+        for (let i = 0; i < config.wallet.timesToRepeatBroadcastTransaction; i++) {
+            setTimeout(() => {
+                this.node.broadcast(protocol.constructDataBuffer('transaction', transaction))
+            }, Math.pow(i, 2) * 1000)
+        }
         return transaction
     }
     import(wallet: { name: string, privateKey: Buffer, words: Array<string> }) {

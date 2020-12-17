@@ -114,7 +114,10 @@ class Blockchain {
             if (!block) break
             for (const transaction of block.transactions) {
                 if ((transaction.from && address.equals(transaction.from))
-                    || (transaction.to && address.equals(transaction.to))) transactions.push(transaction)
+                    || (transaction.to && address.equals(transaction.to))) {
+                    if (!transaction.timestamp) transaction.timestamp = block.timestamp
+                    transactions.push(transaction)
+                }
             }
             block = await Block.load({ hash: block.previousHash })
         }
