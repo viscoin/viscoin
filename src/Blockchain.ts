@@ -439,7 +439,7 @@ class Blockchain {
     }
     async getNextSyncBlock() {
         const block = await this.getBlockByHeight(this.syncIndex++)
-        if (this.syncIndex >= await this.getHeight() - config.mining.trustedAfterBlocks) this.syncIndex = 0
+        if (this.syncIndex >= await this.getHeight()) this.syncIndex = 0
         return block
     }
     async getCircumlatingSupply() {
