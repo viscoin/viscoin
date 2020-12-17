@@ -89,8 +89,9 @@ class Blockchain {
         if (block.previousHash instanceof Buffer === false) return 8
         if (Array.isArray(block.transactions) === false) return 9
         if (block.timestamp > Date.now()) return 10
+        if (Buffer.byteLength(JSON.stringify(block)) > config.mining.blockSize) return 11
         // async
-        if (block.height < await this.getHeight() - config.mining.trustedAfterBlocks) return 11
+        if (block.height < await this.getHeight() - config.mining.trustedAfterBlocks) return 12
         // !
         // const previousBlock = await Block.load({ hash: block.previousHash, height: block.height - 1 })
         const previousBlock = await Block.load({ hash: block.previousHash })
@@ -99,9 +100,9 @@ class Blockchain {
                 previousBlock,
                 block
             ])
-            if (valid === false) return 12
+            if (valid === false) return 13
         }
-        if (await Block.exists({ hash: block.hash })) return 13
+        if (await Block.exists({ hash: block.hash })) return 14
         await block.save()
         await this.cleanLastTrustedChain()
         return 0

@@ -1,5 +1,4 @@
 import * as config from '../config.json'
-import * as chalk from 'chalk'
 import BaseClient from "./BaseClient"
 import protocol from './protocol'
 import Block from './Block'
@@ -21,7 +20,7 @@ class MinerClient extends BaseClient {
         this.threadsReady = 0
         this.hashrate = 0
         setInterval(() => {
-            console.log(`${chalk.magentaBright('Hashrate')}: ${chalk.yellowBright(this.hashrate)} ${chalk.redBright('H/s')}`)
+            this.emit('hashrate', this.hashrate)
             this.hashrate = 0
         }, 1000)
         this.miningRewardAddress = miningRewardAddress

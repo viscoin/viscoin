@@ -21,15 +21,15 @@
     },
     "network": {
         "address": "192.168.0.11",
-        "port": 8333
+        "port": 8334
     },
     "save_logs": true,
-    "dataHashesLength": 100,
-    "maxConnections": 100,
+    "dataHashesLength": 10000,
+    "maxConnections": 500,
     "mining": {
         "reward": "1000",
-        "blockTime": 15000,
-        "trustedAfterBlocks": 10,
+        "blockTime": 60000,
+        "trustedAfterBlocks": 60,
         "blockSize": 1048576
     }
 }
