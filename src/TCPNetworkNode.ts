@@ -30,7 +30,7 @@ class TCPNetworkNode extends events.EventEmitter {
         setInterval(this.interval[0].bind(this), 1000)
         // server
         this.server = new net.Server()
-        this.server.maxConnections = config.maxConnections
+        this.server.maxConnections = config.network.maxConnections
         // client
     }
     interval: Array<Function> = [
@@ -114,7 +114,7 @@ class TCPNetworkNode extends events.EventEmitter {
     addHash(data: Buffer) {
         const hash = customHash(data)
         this.dataHashes.push(hash)
-        if (this.dataHashes.length > config.dataHashesLength) this.dataHashes.shift()
+        if (this.dataHashes.length > config.node.dataHashesLength) this.dataHashes.shift()
     }
     broadcast(data: Buffer) {
         for (const socket of this.sockets) {

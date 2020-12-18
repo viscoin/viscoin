@@ -29,7 +29,7 @@ class BaseClient extends events.EventEmitter {
         this.node.on('data', data => this.emit('data', data))
         this.node.on('socket', socket => {
             if (!fs.existsSync('./log')) fs.mkdirSync('./log')
-            if (config.save_logs) fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (config.node.save_logs) fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('socket', socket)
         })
         this.node.on('connect', socket => this.emit('connect', socket))
@@ -37,7 +37,7 @@ class BaseClient extends events.EventEmitter {
         this.node.server.on('listening', () => this.emit('listening'))
         this.node.on('blacklist', (socket, reason) => {
             if (!fs.existsSync('./log')) fs.mkdirSync('./log')
-            if (config.save_logs) fs.appendFileSync('./log/blacklisted.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (config.node.save_logs) fs.appendFileSync('./log/blacklisted.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('blacklist', socket, reason)
         })
     }
