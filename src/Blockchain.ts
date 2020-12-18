@@ -102,7 +102,8 @@ class Blockchain {
             ])
             if (valid === false) return 13
         }
-        if (await Block.exists({ hash: block.hash })) return 14
+        else if (block.height !== 0) return 14
+        if (await Block.exists({ hash: block.hash })) return 15
         await block.save()
         return 0
     }
@@ -141,6 +142,7 @@ class Blockchain {
         for (let i = 1; i < chain.length; i++) {
             const currentBlock = chain[i]
             const previousBlock = chain[i - 1]
+            if (previousBlock.height !== currentBlock.height - 1) return false
             if (!currentBlock.meetsDifficulty()) return false
             if (!currentBlock.hasValidTransactions()) return false
             if (!currentBlock.hash.equals(currentBlock.calculateHash())) return false
@@ -158,10 +160,7 @@ class Blockchain {
                 chain[i - 1],
                 chain[i]
             ]
-            let difficulty = blocks[1].difficulty
-            const blockTime = blocks[1].timestamp - blocks[0].timestamp
-            if (blockTime < config.mining.blockTime && difficulty < 64) difficulty++
-            else if (blockTime >= config.mining.blockTime && difficulty > 0) difficulty--
+            const difficulty = this.getNextDifficulty(blocks)
             if (blocks[2].difficulty !== difficulty) return false
         }
         return true
@@ -196,35 +195,6 @@ class Blockchain {
         }
         return true
     }
-    async isLastTrustedChainValid() {
-        let block = await this.getLatestBlock()
-        let previousBlocks = []
-        let blocks = []
-        let counter = 0
-        while (true) {
-            for (let i = 0; i < 2; i++) {
-                if (!block) break
-                block = await Block.load({ hash: block.previousHash })
-                if (!block) break
-                blocks.unshift(block)
-                counter++
-            }
-            if (!blocks.length) break
-            blocks = [
-                ...blocks,
-                ...previousBlocks
-            ]
-            // return object with info about invalidity
-            if (!Blockchain.isPartOfChainValid(blocks)) return false
-            if (counter >= config.mining.trustedAfterBlocks) break
-            previousBlocks = [
-                blocks[0],
-                blocks[1]
-            ]
-            blocks = []
-        }
-        return true
-    }
     async getWork() {
         let block = await Block.load(null, null, { sort: { height: -1, difficulty: -1 } }),
         work = 0
@@ -237,19 +207,17 @@ class Blockchain {
         return work
     }
     async updateDifficulty() {
-        const block_0 = await this.getLatestBlock()
-        if (!block_0) return console.log('!block_0')
-        const block_1 = await Block.load({ hash: block_0.previousHash })
-        if (!block_1) return console.log('!block_1')
-        this.difficulty = block_0.difficulty
-        const blockTime = block_0.timestamp - block_1.timestamp
-        if (blockTime < config.mining.blockTime && this.difficulty < 64) {
-            this.difficulty++
-        }
-        else if (blockTime >= config.mining.blockTime && this.difficulty > 0) {
-        // else if (blockTime > config.mining.blockTime && this.difficulty > 0) {
-            this.difficulty--
-        }
+        const blocks = [ await this.getLatestBlock() ]
+        blocks.unshift(await Block.load({ hash: blocks[0].previousHash }))
+        if (!blocks[0]) return
+        this.difficulty = Blockchain.getNextDifficulty(blocks)
+    }
+    static getNextDifficulty(blocks: Array<Block>) {
+        let difficulty = blocks[1].difficulty
+        const blockTime = blocks[1].timestamp - blocks[0].timestamp
+        if (blockTime < config.mining.blockTime && difficulty < 64) difficulty++
+        else if (blockTime >= config.mining.blockTime && difficulty > 0) difficulty--
+        return difficulty
     }
     async deleteAllBlocksNotIncludedInChain() {
         const hashes = []
