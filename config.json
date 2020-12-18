@@ -27,7 +27,11 @@
             "setTimeout": 60000,
             "maxBytesInMemory": 2097152
         },
-        "dataHashesLength": 10000
+        "hashes": {
+            "length": 10000,
+            "timeToLive": 60000,
+            "interval": 100
+        }
     },
     "mining": {
         "reward": "1000",

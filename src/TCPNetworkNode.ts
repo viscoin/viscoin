@@ -10,7 +10,7 @@ interface Socket extends net.Socket {
     data: Buffer
 }
 interface TCPNetworkNode {
-    dataHashes: Array<Buffer>
+    hashes: Array<{ hash: Buffer, timestamp: number }>
     sockets: Array<Socket>
     blacklisted: Array<String>
     // server
@@ -20,7 +20,7 @@ interface TCPNetworkNode {
 class TCPNetworkNode extends events.EventEmitter {
     constructor() {
         super()
-        this.dataHashes = []
+        this.hashes = []
         this.sockets = []
         this.blacklisted = []
         this.on('blacklist', (socket: Socket, reason: string) => {
@@ -28,6 +28,7 @@ class TCPNetworkNode extends events.EventEmitter {
             this.blacklisted.push(socket.remoteAddress)
         })
         setInterval(this.interval[0].bind(this), 1000)
+        setInterval(this.interval[1].bind(this), config.node.hashes.interval)
         // server
         this.server = new net.Server()
         this.server.maxConnections = config.network.maxConnections
@@ -40,6 +41,9 @@ class TCPNetworkNode extends events.EventEmitter {
                 // console.info('bytesReadLastSecond', socket.bytesReadLastSecond)
                 socket.bytesReadLastSecond = 0
             }
+        },
+        () => {
+            this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - config.node.hashes.timeToLive)
         }
     ]
     addSocket(socket: Socket) {
@@ -99,22 +103,23 @@ class TCPNetworkNode extends events.EventEmitter {
             .on('drain', () => {})
             .on('lookup', () => {})
     }
-    isValidBuffer(buf: Buffer) {
-        // + 1 for the protocol byte in the beginning of the buffer
-        if (Buffer.byteLength(buf) > 1 + config.mining.blockSize) return false
-        if (protocol.parseDataBuffer(buf) === null) return false
-        return true
-    }
+    // !
+    // isValidBuffer(buf: Buffer) {
+    //     // + 1 for the protocol byte in the beginning of the buffer
+    //     if (Buffer.byteLength(buf) > 1 + config.mining.blockSize) return false
+    //     if (protocol.parseDataBuffer(buf) === null) return false
+    //     return true
+    // }
     compareAndStoreHash(data: Buffer) {
         const hash = customHash(data)
         this.addHash(hash)
-        if (this.dataHashes.find(e => e.compare(hash) === 0)) return true
+        if (this.hashes.find(e => e.hash.compare(hash) === 0)) return true
         return false
     }
     addHash(data: Buffer) {
         const hash = customHash(data)
-        this.dataHashes.push(hash)
-        if (this.dataHashes.length > config.node.dataHashesLength) this.dataHashes.shift()
+        this.hashes.push({ hash, timestamp: Date.now() })
+        if (this.hashes.length > config.node.hashes.length) this.hashes.shift()
     }
     broadcast(data: Buffer) {
         for (const socket of this.sockets) {
@@ -159,9 +164,9 @@ class TCPNetworkNode extends events.EventEmitter {
         this.sockets = []
     }
     async handleData(buf: Buffer, socket: Socket) {
-        if (!this.isValidBuffer(buf)) return this.emit('blacklist', socket, 'invalid buffer')
         if (this.compareAndStoreHash(buf)) return
         const parsed = protocol.parseDataBuffer(buf)
+        if (!parsed) return this.emit('blacklist', socket, 'invalid buffer')
         switch (parsed.type) {
             case 'block':
                 if (!parsed.data) return this.emit('blacklist', socket, 'invalid parsed data block')
