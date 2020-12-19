@@ -96,14 +96,15 @@ class Blockchain {
         // const previousBlock = await Block.load({ hash: block.previousHash, height: block.height - 1 })
         const previousBlock = await Block.load({ hash: block.previousHash })
         if (previousBlock) {
+            if (block.timestamp <= previousBlock.timestamp) return 13
             const valid = Blockchain.isPartOfChainValid([
                 previousBlock,
                 block
             ])
-            if (valid === false) return 13
+            if (valid === false) return 14
         }
-        else if (block.height !== 0) return 14
-        if (await Block.exists({ hash: block.hash })) return 15
+        else if (block.height !== 0) return 15
+        if (await Block.exists({ hash: block.hash })) return 16
         await block.save()
         return 0
     }
@@ -123,6 +124,8 @@ class Blockchain {
         }
         return transactions
     }
+    // !
+    // optimization needs to be done e.g only get transaction from or to and amount + minerfee
     async getBalanceOfAddress(address: Buffer) {
         const transactions = await this.getTransactionsOfAddress(address)
         let balance = 0n
