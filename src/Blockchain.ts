@@ -122,9 +122,7 @@ class Blockchain {
             for (const transaction of block.transactions) {
                 if ((transaction.from && address.equals(transaction.from))
                     || (transaction.to && address.equals(transaction.to))) {
-                    if (!transaction.timestamp
-                        && projection
-                        && projection.indexOf('timestamp') !== -1) transaction.timestamp = block.timestamp
+                    if (!transaction.timestamp && !projection || projection && projection.indexOf('timestamp') !== -1) transaction.timestamp = block.timestamp
                     transactions.push(transaction)
                 }
             }
