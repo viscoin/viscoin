@@ -108,13 +108,13 @@ class Blockchain {
         await block.save()
         return 0
     }
-    async getTransactionsOfAddress(address: Buffer) {
+    async getTransactionsOfAddress(address: Buffer, projection: string | null = null) {
         const blocks = (await Block.loadMany({
             $or: [
                 { 'transactions.to': address },
                 { 'transactions.from': address }
             ]
-        })).sort((a, b) => b.height - a.height),
+        }, projection)).sort((a, b) => b.height - a.height),
         transactions = []
         const _blocks = blocks.filter(e => e.height === blocks[0].height)
         let block = _blocks.sort((a, b) => b.difficulty - a.difficulty)[0]
@@ -122,7 +122,9 @@ class Blockchain {
             for (const transaction of block.transactions) {
                 if ((transaction.from && address.equals(transaction.from))
                     || (transaction.to && address.equals(transaction.to))) {
-                    if (!transaction.timestamp) transaction.timestamp = block.timestamp
+                    if (!transaction.timestamp
+                        && projection
+                        && projection.indexOf('timestamp') !== -1) transaction.timestamp = block.timestamp
                     transactions.push(transaction)
                 }
             }
@@ -130,10 +132,8 @@ class Blockchain {
         }
         return transactions
     }
-    // !
-    // optimization needs to be done e.g only get transaction from or to and amount + minerfee
     async getBalanceOfAddress(address: Buffer) {
-        const transactions = await this.getTransactionsOfAddress(address)
+        const transactions = await this.getTransactionsOfAddress(address, 'height difficulty hash previousHash transactions.to transactions.from transactions.amount transactions.minerFee')
         let balance = 0n
         for (const transaction of transactions) {
             if (transaction.from && address.equals(transaction.from)) {
