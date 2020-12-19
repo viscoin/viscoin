@@ -109,10 +109,16 @@ class Blockchain {
         return 0
     }
     async getTransactionsOfAddress(address: Buffer) {
-        const transactions = []
-        let block = await this.getLatestBlock()
-        while (true) {
-            if (!block) break
+        const blocks = (await Block.loadMany({
+            $or: [
+                { 'transactions.to': address },
+                { 'transactions.from': address }
+            ]
+        })).sort((a, b) => b.height - a.height),
+        transactions = []
+        const _blocks = blocks.filter(e => e.height === blocks[0].height)
+        let block = _blocks.sort((a, b) => b.difficulty - a.difficulty)[0]
+        while (block) {
             for (const transaction of block.transactions) {
                 if ((transaction.from && address.equals(transaction.from))
                     || (transaction.to && address.equals(transaction.to))) {
@@ -120,7 +126,7 @@ class Blockchain {
                     transactions.push(transaction)
                 }
             }
-            block = await Block.load({ hash: block.previousHash })
+            block = blocks.find(e => e.hash.equals(block.previousHash))
         }
         return transactions
     }

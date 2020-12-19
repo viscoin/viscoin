@@ -1,4 +1,3 @@
-import * as crypto from 'crypto'
 import Transaction from './Transaction'
 import schema_block from './mongoose/schema/block'
 import * as config from '../config.json'
@@ -30,11 +29,8 @@ class Block {
         this.transactions = _transactions
         this.nonce = nonce
         this.difficulty = difficulty
-        if (hash) {
-            if (hash instanceof Buffer) this.hash = hash
-            else this.hash = Buffer.from(hash)
-        }
-        // if (hash) this.hash = Buffer.from(hash)
+        if (hash instanceof Buffer) this.hash = hash
+        else if (hash) this.hash = Buffer.from(hash)
         else this.hash = this.calculateHash()
         const index = Math.floor(this.difficulty / 8),
         remainder = this.difficulty % 8
@@ -111,6 +107,17 @@ class Block {
             .exec()
         if (!block) return null
         return new Block(block)
+    }
+    static async loadMany(query: object | null, projection: string | null = null, options: object | null = null) {
+        const blocks = await schema_block
+            .find(query, projection, options)
+            .exec()
+        if (!blocks) return null
+        const _blocks = []
+        for (const block of blocks) {
+            _blocks.push(new Block(block))
+        }
+        return _blocks
     }
     static async exists(query: object) {
         return await schema_block.exists(query)
