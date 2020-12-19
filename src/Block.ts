@@ -32,7 +32,7 @@ class Block {
         if (hash instanceof Buffer) this.hash = hash
         else if (hash) this.hash = Buffer.from(hash)
         else this.hash = this.calculateHash()
-        if (this.difficulty) {
+        if (this.difficulty !== undefined) {
             const index = Math.floor(this.difficulty / 8),
             remainder = this.difficulty % 8
             this.preAllocatedBuffer = Buffer.alloc(32).fill(Math.pow(2, 7 - remainder), index, index + 1)
