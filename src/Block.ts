@@ -86,9 +86,9 @@ class Block {
         const output = {}
         for (const property in input) {
             if (config.block[property]) {
-                if (input[property] instanceof Buffer) input[property] = input[property].toString('binary')
-                if (property === 'transactions') input[property] = <Array<Transaction>> input[property].map(e => Transaction.minify(e))
-                output[config.block[property].name] = input[property]
+                if (input[property] instanceof Buffer) output[config.block[property].name] = input[property].toString('binary')
+                else if (property === 'transactions') output[config.block[property].name] = <Array<Transaction>> input[property].map(e => Transaction.minify(e))
+                else output[config.block[property].name] = input[property]
             }
         }
         return output
@@ -98,8 +98,8 @@ class Block {
         for (const property in input) {
             for (const _property in config.block) {
                 if (property === String(config.block[_property].name)) {
-                    if (_property === 'transactions') input[property] = input[property].map(e => Transaction.beautify(e))
-                    output[_property] = input[property]
+                    if (_property === 'transactions') output[_property] = input[property].map(e => Transaction.beautify(e))
+                    else output[_property] = input[property]
                 }
             }
         }
