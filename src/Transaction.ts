@@ -52,7 +52,7 @@ class Transaction {
         }
         return output
     }
-    static beautify(input) {
+    static beautify(input: object) {
         const output = {}
         for (const property in input) {
             for (const _property in config.transaction) {

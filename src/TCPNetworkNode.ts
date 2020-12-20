@@ -170,17 +170,17 @@ class TCPNetworkNode extends events.EventEmitter {
         switch (parsed.type) {
             case 'block':
                 if (!parsed.data) return this.emit('blacklist', socket, 'invalid parsed data block')
-                const block = new Block(parsed.data)
+                const block = new Block(Block.beautify(parsed.data))
                 this.emit('block', block)
                 break
             case 'transaction':
                 if (!parsed.data) return this.emit('blacklist', socket, 'invalid parsed data transaction')
-                const transaction = new Transaction(parsed.data)
+                const transaction = new Transaction(Transaction.beautify(parsed.data))
                 this.emit('transaction', transaction)
                 break
             case 'node':
                 if (!parsed.data) return this.emit('blacklist', socket, 'invalid parsed data node')
-                if (config.node.connectToNodes) this.connectToNetwork([ parsed.data ])
+                if (config.node.connectToNodes) this.connectToNetwork([ <{ port: number, address: string }> parsed.data ])
                 this.emit('node', parsed.data)
                 break
         }

@@ -4,6 +4,7 @@ import * as config from '../config.json'
 import * as nodes from '../nodes.json'
 import * as events from 'events'
 import protocol from './protocol'
+import Block from './Block'
 import * as fs from 'fs'
 interface BaseClient {
     node: TCPNetworkNode
@@ -44,7 +45,7 @@ class BaseClient extends events.EventEmitter {
     async nextSync() {
         const block = await this.blockchain.getNextSyncBlock()
         if (block) {
-            const buffer = protocol.constructDataBuffer('block', block)
+            const buffer = protocol.constructDataBuffer('block', Block.minify(block))
             this.node.broadcast(buffer)
         }
         setTimeout(this.nextSync.bind(this), config.node.blockchainSynchronization.timeout)

@@ -25,7 +25,7 @@ class WalletClient extends BaseClient {
         this.blockchain.addTransaction(transaction)
         for (let i = 0; i < config.wallet.timesToRepeatBroadcastTransaction; i++) {
             setTimeout(() => {
-                this.node.broadcast(protocol.constructDataBuffer('transaction', transaction))
+                this.node.broadcast(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
             }, Math.pow(i, 2) * 1000)
         }
         return transaction

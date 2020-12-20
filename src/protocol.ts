@@ -18,19 +18,16 @@ export default {
             return this.types[type]
         }
     },
-    constructDataBuffer(type: types_string | number, data: any) {
-        return Buffer.from(Buffer.alloc(1, this.getType(type)) + JSON.stringify(data))
+    constructDataBuffer(type: types_string | number, data: object) {
+        return Buffer.concat([ Buffer.alloc(1, this.getType(type)), Buffer.from(JSON.stringify(data), 'binary') ])
     },
     parseDataBuffer(data: Buffer) {
         try {
             return {
                 type: <string> this.getType(data[0]),
-                data: JSON.parse(String(data.slice(1)))
+                data: <object> JSON.parse(data.slice(1).toString('binary'))
             }
-        } catch (err) {
-            console.error(err)
-            console.error(this.getType(data[0]))
-            console.error(String(data.slice(1)))
+        } catch {
             return null
         }
     },
