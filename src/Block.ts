@@ -1,5 +1,5 @@
 import Transaction from './Transaction'
-import schema_block from './mongoose/schema/block'
+import model_block from './mongoose/model/block'
 import * as config from '../config.json'
 import customHash from './customHash'
 import parseBigInt from './parseBigInt'
@@ -18,8 +18,7 @@ class Block {
     constructor({ timestamp = Date.now(), transactions, previousHash, height, nonce = 0, hash = null, difficulty }) {
         this.timestamp = timestamp
         if (previousHash instanceof Buffer) this.previousHash = previousHash
-        else if (previousHash) this.previousHash = Buffer.from(previousHash)
-        // this.previousHash = Buffer.from(previousHash)
+        else if (previousHash) this.previousHash = Buffer.from(previousHash, 'binary')
         this.height = height
         const _transactions = []
         for (const transaction of transactions) {
@@ -30,7 +29,7 @@ class Block {
         this.nonce = nonce
         this.difficulty = difficulty
         if (hash instanceof Buffer) this.hash = hash
-        else if (hash) this.hash = Buffer.from(hash)
+        else if (hash) this.hash = Buffer.from(hash, 'binary')
         else this.hash = this.calculateHash()
         if (this.difficulty !== undefined) {
             const index = Math.floor(this.difficulty / 8),
@@ -40,7 +39,7 @@ class Block {
     }
     calculateHash() {
         return customHash(
-            String(this.previousHash)
+            this.previousHash.toString('binary')
             + this.timestamp
             + JSON.stringify(this.transactions)
             + this.nonce
@@ -83,16 +82,31 @@ class Block {
         if (hashes.some((e, i) => hashes.indexOf(e) !== i)) return false
         return true
     }
+    static minify(input: Block) {
+        const output = {}
+        for (const property in input) {
+            if (config.block[property]) {
+                if (input[property] instanceof Buffer) input[property] = input[property].toString('binary')
+                if (property === 'transactions') input[property] = <Array<Transaction>> input[property].map(e => Transaction.minify(e))
+                output[config.block[property].name] = input[property]
+            }
+        }
+        return output
+    }
+    static beautify(input) {
+        const output = {}
+        for (const property in input) {
+            for (const _property in config.block) {
+                if (property === String(config.block[_property].name)) {
+                    if (_property === 'transactions') input[property] = input[property].map(e => Transaction.beautify(e))
+                    output[_property] = input[property]
+                }
+            }
+        }
+        return <Block> output
+    }
     async save() {
-        await new schema_block({
-            hash: this.hash,
-            timestamp: this.timestamp,
-            transactions: this.transactions,
-            previousHash: this.previousHash,
-            nonce: this.nonce,
-            height: this.height,
-            difficulty: this.difficulty
-        }).save()
+        await new model_block(Block.minify(this)).save()
     }
     recalculateHash(add: number) {
         this.nonce += add
@@ -104,25 +118,26 @@ class Block {
         else return true
     }
     static async load(query: object | null, projection: string | null = null, options: object | null = null) {
-        let block = await schema_block
+        let block = await model_block
             .findOne(query, projection, options)
             .exec()
         if (!block) return null
+        block = Block.beautify(block)
         return new Block(block)
     }
     static async loadMany(query: object | null, projection: string | null = null, options: object | null = null) {
-        const blocks = await schema_block
+        const blocks = await model_block
             .find(query, projection, options)
             .exec()
         if (!blocks) return null
         const _blocks = []
         for (const block of blocks) {
-            _blocks.push(new Block(block))
+            _blocks.push(new Block(Block.beautify(block)))
         }
         return _blocks
     }
     static async exists(query: object) {
-        return await schema_block.exists(query)
+        return await model_block.exists(query)
     }
 }
 export default Block

@@ -1,7 +1,7 @@
 import * as elliptic from 'elliptic'
 import customHash from './customHash'
 import addressFromPublicKey from './addressFromPublicKey'
-import { time } from 'console'
+import * as config from '../config.json'
 interface Transaction {
     from: Buffer
     to: Buffer
@@ -20,16 +20,16 @@ class Transaction {
 
         if (from instanceof Buffer) this.from = from
         else if (from && from._bsontype === 'Binary') this.from = Buffer.from(from.buffer)
-        else if (from) this.from = Buffer.from(from)
+        else if (from) this.from = Buffer.from(from, 'binary')
 
         if (data instanceof Buffer) this.data = data
         else if (data && data._bsontype === 'Binary') this.data = Buffer.from(data.buffer)
-        else if (data) this.data = Buffer.from(data)
+        else if (data) this.data = Buffer.from(data, 'binary')
 
         if (typeof amount === 'string') {
             if (to instanceof Buffer) this.to = to
             else if (to && to._bsontype === 'Binary') this.to = Buffer.from(to.buffer)
-            else if (to) this.to = Buffer.from(to)
+            else if (to) this.to = Buffer.from(to, 'binary')
 
             this.amount = amount
         }
@@ -37,10 +37,42 @@ class Transaction {
         if (typeof recoveryParam === 'number') {
             if (signature instanceof Buffer) this.signature = signature
             else if (signature && signature._bsontype === 'Binary') this.signature = Buffer.from(signature.buffer)
-            else if (signature) this.signature = Buffer.from(signature)
+            else if (signature) this.signature = Buffer.from(signature, 'binary')
 
             this.recoveryParam = recoveryParam
         }
+    }
+    static minify(input: Transaction) {
+        const output = {}
+        for (const property in input) {
+            if (config.transaction[property]) {
+                if (input[property] instanceof Buffer) input[property] = input[property].toString('binary')
+                output[config.transaction[property].name] = input[property]
+            }
+        }
+        return output
+    }
+    static beautify(input) {
+        const output = {}
+        for (const property in input) {
+            for (const _property in config.transaction) {
+                if (property === String(config.transaction[_property].name)) {
+                    switch (_property) {
+                        case 'to':
+                            input[property] = Buffer.from(input[property], 'binary')
+                            break
+                        case 'from':
+                            input[property] = Buffer.from(input[property], 'binary')
+                            break
+                        case 'data':
+                            input[property] = Buffer.from(input[property], 'binary')
+                            break
+                    }
+                    output[_property] = input[property]
+                }
+            }
+        }
+        return <Transaction> output
     }
     calculateHash() {
         return customHash(

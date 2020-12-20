@@ -1,7 +1,7 @@
 import * as config from '../config.json'
 import Transaction from './Transaction'
 import Block from './Block'
-import schema_block from './mongoose/schema/block'
+import model_block from './mongoose/model/block'
 import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
 interface Blockchain {
@@ -24,7 +24,7 @@ class Blockchain {
         })
     }
     async getLatestBlock() {
-        const block = await Block.load(null, null, { sort: { height: -1, difficulty: -1 } })
+        const block = await Block.load(null, null, { sort: { [config.block.height.name]: -1, [config.block.difficulty.name]: -1 }, lean: true })
         if (!block) return this.createGenesisBlock()
         return block
     }
@@ -74,6 +74,9 @@ class Blockchain {
         let sum = parseBigInt(transaction.minerFee)
         if (transaction.amount) sum += parseBigInt(transaction.amount)
         if (await this.getBalanceOfAddress(transaction.from) < sum) return 22
+        // !
+        // limit amount of transactions from address to not slow down database when calculating balance
+        // if ((await this.getTransactionsOfAddress(transaction.from)).length >= config.maxTransactions) return 23
         this.pendingTransactions.push(transaction)
         return 0
     }
@@ -92,9 +95,7 @@ class Blockchain {
         if (Buffer.byteLength(JSON.stringify(block)) > config.mining.blockSize) return 11
         // async
         if (block.height < await this.getHeight() - config.mining.trustedAfterBlocks) return 12
-        // !
-        // const previousBlock = await Block.load({ hash: block.previousHash, height: block.height - 1 })
-        const previousBlock = await Block.load({ hash: block.previousHash })
+        const previousBlock = await Block.load({ [config.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         if (previousBlock) {
             if (block.timestamp <= previousBlock.timestamp) return 13
             const valid = Blockchain.isPartOfChainValid([
@@ -104,17 +105,18 @@ class Blockchain {
             if (valid === false) return 14
         }
         else if (block.height !== 0) return 15
-        if (await Block.exists({ hash: block.hash })) return 16
+        if (await Block.exists({ [config.block.hash.name]: block.hash.toString('binary') })) return 16
         await block.save()
         return 0
     }
     async getTransactionsOfAddress(address: Buffer, projection: string | null = null) {
-        const blocks = (await Block.loadMany({
+        const query = {
             $or: [
-                { 'transactions.to': address },
-                { 'transactions.from': address }
+                { [`${config.block.transactions.name}.${config.transaction.to.name}`]: address.toString('binary') },
+                { [`${config.block.transactions.name}.${config.transaction.from.name}`]: address.toString('binary') }
             ]
-        }, projection)).sort((a, b) => b.height - a.height),
+        }
+        const blocks = (await Block.loadMany(query, projection, { lean: true })).sort((a, b) => b.height - a.height),
         transactions = []
         const _blocks = blocks.filter(e => e.height === blocks[0].height)
         let block = _blocks.sort((a, b) => b.difficulty - a.difficulty)[0]
@@ -131,7 +133,16 @@ class Blockchain {
         return transactions
     }
     async getBalanceOfAddress(address: Buffer) {
-        const transactions = await this.getTransactionsOfAddress(address, 'height difficulty hash previousHash transactions.to transactions.from transactions.amount transactions.minerFee')
+        const transactions = await this.getTransactionsOfAddress(address, `
+            ${config.block.height.name}
+            ${config.block.difficulty.name}
+            ${config.block.hash.name}
+            ${config.block.previousHash.name}
+            ${config.block.transactions.name}.${config.transaction.to.name}
+            ${config.block.transactions.name}.${config.transaction.from.name}
+            ${config.block.transactions.name}.${config.transaction.amount.name}
+            ${config.block.transactions.name}.${config.transaction.minerFee.name}
+        `)
         let balance = 0n
         for (const transaction of transactions) {
             if (transaction.from && address.equals(transaction.from)) {
@@ -181,7 +192,7 @@ class Blockchain {
         while (true) {
             for (let i = 0; i < 2; i++) {
                 if (!block) break
-                block = await Block.load({ hash: block.previousHash })
+                block = await Block.load({ [config.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
                 if (!block) break
                 blocks.unshift(block)
                 // counter++
@@ -203,11 +214,11 @@ class Blockchain {
         return true
     }
     async getWork() {
-        let block = await Block.load(null, null, { sort: { height: -1, difficulty: -1 } }),
+        let block = await Block.load(null, null, { sort: { height: -1, difficulty: -1 }, lean: true }),
         work = 0
         while (true) {
             if (!block) break
-            block = await Block.load({ hash: block.previousHash })
+            block = await Block.load({ [config.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
             if (!block) break
             work += Math.pow(2, block.difficulty)
         }
@@ -215,7 +226,7 @@ class Blockchain {
     }
     async updateDifficulty() {
         const blocks = [ await this.getLatestBlock() ]
-        blocks.unshift(await Block.load({ hash: blocks[0].previousHash }))
+        blocks.unshift(await Block.load({ [config.block.hash.name]: blocks[0].previousHash.toString('binary') }, null, { lean: true }))
         if (!blocks[0]) return
         this.difficulty = Blockchain.getNextDifficulty(blocks)
     }
@@ -230,13 +241,13 @@ class Blockchain {
         const hashes = []
         let block = await this.getLatestBlock()
         while (block) {
-            hashes.push(block.hash)
-            block = await Block.load({ hash: block.previousHash })
+            hashes.push(block.hash.toString('binary'))
+            block = await Block.load({ [config.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         }
         if (!hashes.length) return
-        const info = await schema_block
+        const info = await model_block
             .deleteMany({
-                hash: {
+                [config.block.hash.name]: {
                     $not: {
                         $in: hashes
                     }
@@ -251,7 +262,7 @@ class Blockchain {
         // !
         while (true) {
             if (!block) break
-            block = await Block.load({ hash: block.previousHash })
+            block = await Block.load({ [config.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
             if (!block || block.height === height) break
         }
         if (!block || block.height !== height) return null
@@ -325,7 +336,7 @@ class Blockchain {
         transactions = 0
         while (block && (timestamp === null || timestamp <= block.timestamp)) {
             transactions += block.transactions.length
-            block = await Block.load({ hash: block.previousHash })
+            block = await Block.load({ [config.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         }
         return transactions
     }

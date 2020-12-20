@@ -182,6 +182,7 @@ const commands = {
                 data
             })
             console.log(transaction)
+            console.log(Buffer.byteLength(JSON.stringify(transaction)))
             await commands.pause()
         }
         console.clear()
