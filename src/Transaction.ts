@@ -75,13 +75,15 @@ class Transaction {
         return <Transaction> output
     }
     calculateHash() {
+        let buf = Buffer.alloc(0)
+        if (this.from) buf = Buffer.concat([ buf, this.from ])
+        if (this.to) buf = Buffer.concat([ buf, this.to ])
+        if (this.data) buf = Buffer.concat([ buf, this.data ])
         return customHash(
-            String(this.from)
-            + String(this.to)
+            buf.toString('binary')
             + this.amount
             + this.minerFee
             + this.timestamp
-            + String(this.data)
         )
     }
     sign(privateKey: Buffer) {
