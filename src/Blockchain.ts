@@ -10,12 +10,37 @@ interface Blockchain {
     pendingTransactions: Array<Transaction>
     syncIndex: number
     // popularAddresses: Array<{ address: Buffer, balance: BigInt }>
+    blockHashes: Array<Buffer>
 }
 class Blockchain {
     constructor() {
         this.difficulty = 0
         this.pendingTransactions = []
         this.syncIndex = 0
+        this.setBlockHashes()
+    }
+    async setBlockHashes() {
+        this.blockHashes = []
+        let block = await this.getLatestBlock()
+        while (block) {
+            this.blockHashes.push(block.hash)
+            block = await Block.load({ [config.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
+        }
+    }
+    async updateBlockHashes() {
+        let block = await this.getLatestBlock(),
+        index = null
+        const newHashes = []
+        while (block) {
+            if (this.blockHashes.find((e, i) => {
+                index = i
+                e.equals(block.hash)
+            })) break
+            newHashes.push(block.hash)
+            block = await Block.load({ [config.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
+        }
+        this.blockHashes = this.blockHashes.slice(0, index)
+        this.blockHashes.push(...newHashes)
     }
     createGenesisBlock() {
         return new Block({
@@ -112,6 +137,7 @@ class Blockchain {
         return 0
     }
     async getTransactionsOfAddress(address: Buffer, projection: string | null = null) {
+        await this.updateBlockHashes()
         const query = {
             $or: [
                 { [`${config.block.transactions.name}.${config.transaction.to.name}`]: address.toString('binary') },
@@ -120,9 +146,8 @@ class Blockchain {
         }
         const blocks = (await Block.loadMany(query, projection, { lean: true })).sort((a, b) => b.height - a.height),
         transactions = []
-        const _blocks = blocks.filter(e => e.height === blocks[0].height)
-        let block = _blocks.sort((a, b) => b.difficulty - a.difficulty)[0]
-        while (block) {
+        for (const block of blocks) {
+            if (!this.blockHashes.find(e => e.equals(block.hash))) continue
             for (const transaction of block.transactions) {
                 if ((transaction.from && address.equals(transaction.from))
                     || (transaction.to && address.equals(transaction.to))) {
@@ -130,10 +155,6 @@ class Blockchain {
                     transactions.push(transaction)
                 }
             }
-            // !
-            // if transactions arent in neighbour blocks they will not appear
-            // need to manually load in inbetween blocks
-            block = blocks.find(e => e.hash.equals(block.previousHash))
         }
         return transactions
     }

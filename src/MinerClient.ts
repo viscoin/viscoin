@@ -56,7 +56,7 @@ class MinerClient extends BaseClient {
                     const code = await this.blockchain.addBlock(block)
                     this.emit('mined', block, code)
                     this.blockchain.pendingTransactions = []
-                    this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('block', Block.minify(e.block)))
+                    this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('block', Block.minify(block)))
                     await this.emitThreadsMineNewBlock()
                     break
                 case 'hashrate':
