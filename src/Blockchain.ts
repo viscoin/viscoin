@@ -4,10 +4,12 @@ import Block from './Block'
 import model_block from './mongoose/model/block'
 import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
+import model_address from './mongoose/model/address'
 interface Blockchain {
     difficulty: number
     pendingTransactions: Array<Transaction>
     syncIndex: number
+    // popularAddresses: Array<{ address: Buffer, balance: BigInt }>
 }
 class Blockchain {
     constructor() {
@@ -128,11 +130,22 @@ class Blockchain {
                     transactions.push(transaction)
                 }
             }
+            // !
+            // if transactions arent in neighbour blocks they will not appear
+            // need to manually load in inbetween blocks
             block = blocks.find(e => e.hash.equals(block.previousHash))
         }
         return transactions
     }
     async getBalanceOfAddress(address: Buffer) {
+        const document = await model_address.findOne({ [config.address.address.name]: address.toString('binary') })
+        const latestBlock = await this.getLatestBlock()
+        if (document
+        && document[config.address.balance.name]
+        && document[config.address.hash.name]
+        && Buffer.from(document[config.address.hash.name], 'binary').equals(latestBlock.hash)) {
+            return parseBigInt(document[config.address.balance.name])
+        }
         const transactions = await this.getTransactionsOfAddress(address, `
             ${config.block.height.name}
             ${config.block.difficulty.name}
@@ -152,6 +165,18 @@ class Blockchain {
             if (transaction.to && address.equals(transaction.to)) {
                 balance += parseBigInt(transaction.amount)
             }
+        }
+        if (document) {
+            document[config.address.hash.name] = latestBlock.hash.toString('binary')
+            document[config.address.balance.name] = beautifyBigInt(balance)
+            await document.save()
+        }
+        else {
+            await new model_address({
+                [config.address.hash.name]: latestBlock.hash.toString('binary'),
+                [config.address.balance.name]: beautifyBigInt(balance),
+                [config.address.address.name]: address.toString('binary')
+            }).save()
         }
         return balance
     }

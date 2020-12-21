@@ -106,7 +106,7 @@ class Block {
         return <Block> output
     }
     async save() {
-        await new model_block(Block.minify(this)).save()
+        return await new model_block(Block.minify(this)).save()
     }
     recalculateHash(add: number) {
         this.nonce += add
