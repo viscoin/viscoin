@@ -37,7 +37,10 @@
         "reward": "1000",
         "blockTime": 60000,
         "trustedAfterBlocks": 60,
-        "blockSize": 8388608
+        "blockSize": 8388608,
+        "popularAddresses": {
+            "maxInMemory": 100000000
+        }
     },
     "block": {
         "previousHash": {
@@ -101,6 +104,20 @@
         "data": {
             "type": "String",
             "name": "h"
+        }
+    },
+    "address": {
+        "address": {
+            "type": "String",
+            "name": "_id"
+        },
+        "balance": {
+            "type": "String",
+            "name": 0
+        },
+        "hash": {
+            "type": "String",
+            "name": 1
         }
     }
 }
