@@ -144,7 +144,7 @@ class Blockchain {
                 { [`${config.block.transactions.name}.${config.transaction.from.name}`]: address.toString('binary') }
             ]
         }
-        const blocks = (await Block.loadMany(query, projection, { lean: true })).sort((a, b) => b.height - a.height),
+        const blocks = (await Block.loadMany(query, projection, { lean: true })),
         transactions = []
         for (const block of blocks) {
             if (!this.blockHashes.find(e => e.equals(block.hash))) continue
@@ -168,10 +168,6 @@ class Blockchain {
             return parseBigInt(document[config.address.balance.name])
         }
         const transactions = await this.getTransactionsOfAddress(address, `
-            ${config.block.height.name}
-            ${config.block.difficulty.name}
-            ${config.block.hash.name}
-            ${config.block.previousHash.name}
             ${config.block.transactions.name}.${config.transaction.to.name}
             ${config.block.transactions.name}.${config.transaction.from.name}
             ${config.block.transactions.name}.${config.transaction.amount.name}
