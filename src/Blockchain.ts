@@ -160,6 +160,11 @@ class Blockchain {
         return 0
     }
     async getTransactionsOfAddress(address: Buffer, projection: string | null = null, optimization: boolean = false) {
+        // !
+        if (!this.oldHashes
+        || !this.newHashes) await this.updateBlockHashes()
+        // !
+        // await this.updateBlockHashes()
         let blocks = [],
         old_blocks = []
         const baseQuery = {
