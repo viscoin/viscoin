@@ -39,8 +39,8 @@ class Blockchain {
                     break
                 }
             }
-            newHashes.unshift(block.hash)
             if (done) break
+            newHashes.unshift(block.hash)
             block = await Block.load({ [config.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         }
         // !
