@@ -209,8 +209,8 @@ class Blockchain {
         const latestBlock = await this.getLatestBlock()
         let optimization = false
         if (document
-        && document[config.address.balance.name]
-        && document[config.address.hash.name]
+        && document[config.address.balance.name] !== undefined
+        && document[config.address.hash.name] !== undefined
         && !disableOptimization) {
             if (Buffer.from(document[config.address.hash.name], 'binary').equals(latestBlock.hash)) {
                 return parseBigInt(document[config.address.balance.name])
