@@ -23,24 +23,37 @@ class Blockchain {
         this.blockHashes = []
         let block = await this.getLatestBlock()
         while (block) {
-            this.blockHashes.push(block.hash)
+            this.blockHashes.unshift(block.hash)
             block = await Block.load({ [config.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         }
     }
     async updateBlockHashes() {
         let block = await this.getLatestBlock(),
-        index = null
-        const newHashes = []
-        while (block) {
-            if (this.blockHashes.find((e, i) => {
+        index: number = null,
+        done: boolean = false
+        const newHashes: Array<Buffer> = []
+        while (block && !done) {
+            for (let i = this.blockHashes.length - 1; i >= 0; i--) {
                 index = i
-                e.equals(block.hash)
-            })) break
-            newHashes.push(block.hash)
+                if (this.blockHashes[i].equals(block.hash)) {
+                    done = true
+                    break
+                }
+            }
+            if (done) break
+            newHashes.unshift(block.hash)
             block = await Block.load({ [config.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         }
+        // !
+        // const oldHashes = this.blockHashes.splice(index + 1, this.blockHashes.length, ...newHashes)
+        const oldHashes = this.blockHashes.slice(index + 1)
         this.blockHashes = this.blockHashes.slice(0, index)
         this.blockHashes.push(...newHashes)
+        return {
+            oldHashes,
+            newHashes,
+            index
+        }
     }
     createGenesisBlock() {
         return new Block({
@@ -134,55 +147,101 @@ class Blockchain {
         else if (block.height !== 0) return 15
         if (await Block.exists({ [config.block.hash.name]: block.hash.toString('binary') })) return 16
         await block.save()
+        if ((await this.getLatestBlock()).hash.equals(block.hash)) {
+            for (const transaction of block.transactions) {
+                if (transaction.to) await this.getBalanceOfAddress(transaction.to)
+                if (transaction.from) await this.getBalanceOfAddress(transaction.from)
+            }
+        }
         return 0
     }
-    async getTransactionsOfAddress(address: Buffer, projection: string | null = null) {
-        await this.updateBlockHashes()
-        const query = {
+    async getTransactionsOfAddress(address: Buffer, projection: string | null = null, optimization: boolean = false) {
+        const { oldHashes, newHashes, index } = await this.updateBlockHashes()
+        let blocks = [],
+        old_blocks = []
+        if (optimization) {
+            old_blocks = await Block.loadMany({
+                $or: [
+                    { [`${config.block.transactions.name}.${config.transaction.to.name}`]: address.toString('binary') },
+                    { [`${config.block.transactions.name}.${config.transaction.from.name}`]: address.toString('binary') }
+                ],
+                [config.block.hash.name]: {
+                    $in: oldHashes.map(e => e.toString('binary'))
+                }
+            }, projection, { lean: true })
+        }
+        blocks = await Block.loadMany({
             $or: [
                 { [`${config.block.transactions.name}.${config.transaction.to.name}`]: address.toString('binary') },
                 { [`${config.block.transactions.name}.${config.transaction.from.name}`]: address.toString('binary') }
-            ]
-        }
-        const blocks = (await Block.loadMany(query, projection, { lean: true })),
-        transactions = []
-        for (const block of blocks) {
-            if (!this.blockHashes.find(e => e.equals(block.hash))) continue
-            for (const transaction of block.transactions) {
-                if ((transaction.from && address.equals(transaction.from))
-                    || (transaction.to && address.equals(transaction.to))) {
-                    if (!transaction.timestamp && projection && projection.indexOf('timestamp') !== -1 || !projection) transaction.timestamp = block.timestamp
-                    transactions.push(transaction)
+            ],
+            [config.block.hash.name]: {
+                $in: newHashes.map(e => e.toString('binary'))
+            }
+        }, projection, { lean: true })
+        const getTransactions = (blocks: Array<{ hash: Buffer, transactions: Array<{ from: Buffer | undefined, to: Buffer | undefined, timestamp: number | undefined }>, timestamp: number | undefined }>) => {
+            const transactions = []
+            for (const block of blocks) {
+                if (!this.blockHashes.find(e => e.equals(block.hash))) continue
+                for (const transaction of block.transactions) {
+                    if ((transaction.from && address.equals(transaction.from))
+                        || (transaction.to && address.equals(transaction.to))) {
+                        if (!transaction.timestamp && projection && projection.indexOf('timestamp') !== -1 || !projection) transaction.timestamp = block.timestamp
+                        transactions.push(transaction)
+                    }
                 }
             }
+            return transactions
         }
-        return transactions
+        if (optimization) return {
+            transactions: getTransactions(blocks),
+            old_transactions: getTransactions(old_blocks)
+        }
+        else return getTransactions(blocks)
     }
     async getBalanceOfAddress(address: Buffer) {
         const document = await model_address.findOne({ [config.address.address.name]: address.toString('binary') })
         const latestBlock = await this.getLatestBlock()
+        let optimization = false
         if (document
         && document[config.address.balance.name]
-        && document[config.address.hash.name]
-        && Buffer.from(document[config.address.hash.name], 'binary').equals(latestBlock.hash)) {
-            return parseBigInt(document[config.address.balance.name])
+        && document[config.address.hash.name]) {
+            if (Buffer.from(document[config.address.hash.name], 'binary').equals(latestBlock.hash)) {
+                return parseBigInt(document[config.address.balance.name])
+            }
+            optimization = true
         }
-        const transactions = await this.getTransactionsOfAddress(address, `
+        const any = <any> await this.getTransactionsOfAddress(address, `
             ${config.block.transactions.name}.${config.transaction.to.name}
             ${config.block.transactions.name}.${config.transaction.from.name}
             ${config.block.transactions.name}.${config.transaction.amount.name}
             ${config.block.transactions.name}.${config.transaction.minerFee.name}
-        `)
-        let balance = 0n
-        for (const transaction of transactions) {
-            if (transaction.from && address.equals(transaction.from)) {
-                if (transaction.amount) balance -= parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee)
-                else balance -= parseBigInt(transaction.minerFee)
+        `, optimization)
+        const getBalance = (transactions: Array<{ from: Buffer | undefined, to: Buffer | undefined, amount: string | undefined, minerFee: string }>) => {
+            let balance = 0n
+            for (const transaction of transactions) {
+                if (transaction.from && address.equals(transaction.from)) {
+                    if (transaction.amount) balance -= parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee)
+                    else balance -= parseBigInt(transaction.minerFee)
+                }
+                if (transaction.to && address.equals(transaction.to)) {
+                    balance += parseBigInt(transaction.amount)
+                }
             }
-            if (transaction.to && address.equals(transaction.to)) {
-                balance += parseBigInt(transaction.amount)
-            }
+            return balance
         }
+        let transactions = []
+        let balance = 0n
+        if (optimization) {
+            transactions = <Array<object>> any.transactions
+            const old_transactions = <Array<any>> any.old_transactions
+            balance = parseBigInt(document[config.address.balance.name])
+            balance -= getBalance(old_transactions)
+        }
+        else {
+            transactions = <Array<object>> any
+        }
+        balance += getBalance(transactions)
         if (document) {
             document[config.address.hash.name] = latestBlock.hash.toString('binary')
             document[config.address.balance.name] = beautifyBigInt(balance)
