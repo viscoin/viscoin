@@ -17,7 +17,6 @@ class Blockchain {
         this.difficulty = 0
         this.pendingTransactions = []
         this.syncIndex = 0
-        this.setBlockHashes()
     }
     async setBlockHashes() {
         this.blockHashes = []
@@ -156,29 +155,33 @@ class Blockchain {
         return 0
     }
     async getTransactionsOfAddress(address: Buffer, projection: string | null = null, optimization: boolean = false) {
+        if (!this.blockHashes) await this.setBlockHashes()
         const { oldHashes, newHashes, index } = await this.updateBlockHashes()
         let blocks = [],
         old_blocks = []
+        const baseQuery = {
+            $or: [
+                { [`${config.block.transactions.name}.${config.transaction.to.name}`]: address.toString('binary') },
+                { [`${config.block.transactions.name}.${config.transaction.from.name}`]: address.toString('binary') }
+            ]
+        }
         if (optimization) {
             old_blocks = await Block.loadMany({
-                $or: [
-                    { [`${config.block.transactions.name}.${config.transaction.to.name}`]: address.toString('binary') },
-                    { [`${config.block.transactions.name}.${config.transaction.from.name}`]: address.toString('binary') }
-                ],
+                ...baseQuery,
                 [config.block.hash.name]: {
                     $in: oldHashes.map(e => e.toString('binary'))
                 }
             }, projection, { lean: true })
+            blocks = await Block.loadMany({
+                ...baseQuery,
+                [config.block.hash.name]: {
+                    $in: newHashes.map(e => e.toString('binary'))
+                }
+            }, projection, { lean: true })
         }
-        blocks = await Block.loadMany({
-            $or: [
-                { [`${config.block.transactions.name}.${config.transaction.to.name}`]: address.toString('binary') },
-                { [`${config.block.transactions.name}.${config.transaction.from.name}`]: address.toString('binary') }
-            ],
-            [config.block.hash.name]: {
-                $in: newHashes.map(e => e.toString('binary'))
-            }
-        }, projection, { lean: true })
+        else {
+            blocks = await Block.loadMany(baseQuery, projection, { lean: true })
+        }
         const getTransactions = (blocks: Array<{ hash: Buffer, transactions: Array<{ from: Buffer | undefined, to: Buffer | undefined, timestamp: number | undefined }>, timestamp: number | undefined }>) => {
             const transactions = []
             for (const block of blocks) {
@@ -201,13 +204,14 @@ class Blockchain {
             transactions: getTransactions(blocks)
         }
     }
-    async getBalanceOfAddress(address: Buffer) {
+    async getBalanceOfAddress(address: Buffer, disableOptimization: boolean = false) {
         const document = await model_address.findOne({ [config.address.address.name]: address.toString('binary') })
         const latestBlock = await this.getLatestBlock()
         let optimization = false
         if (document
         && document[config.address.balance.name]
-        && document[config.address.hash.name]) {
+        && document[config.address.hash.name]
+        && !disableOptimization) {
             if (Buffer.from(document[config.address.hash.name], 'binary').equals(latestBlock.hash)) {
                 return parseBigInt(document[config.address.balance.name])
             }
