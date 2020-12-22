@@ -5,7 +5,6 @@ import model_block from './mongoose/model/block'
 import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
 import model_address from './mongoose/model/address'
-import * as events from 'events'
 interface Blockchain {
     difficulty: number
     pendingTransactions: Array<Transaction>
@@ -14,15 +13,12 @@ interface Blockchain {
     blockHashes: Array<Buffer>
     oldHashes: Array<Buffer>
     newHashes: Array<Buffer>
-    updatingBlockHashes: boolean
 }
-class Blockchain extends events.EventEmitter {
+class Blockchain {
     constructor() {
-        super()
         this.difficulty = 0
         this.pendingTransactions = []
         this.syncIndex = 0
-        this.updatingBlockHashes = false
     }
     async setBlockHashes() {
         this.blockHashes = []
@@ -36,10 +32,6 @@ class Blockchain extends events.EventEmitter {
         if (!this.blockHashes) await this.setBlockHashes()
         if (!this.oldHashes) this.oldHashes = []
         if (!this.newHashes) this.newHashes = []
-        if (this.updatingBlockHashes) {
-            return await new Promise(resolve => this.once('updated-block-hashes', () => resolve()))
-        }
-        this.updatingBlockHashes = true
         let block = await this.getLatestBlock(),
         index: number = null,
         done: boolean = false
@@ -62,8 +54,6 @@ class Blockchain extends events.EventEmitter {
         this.blockHashes = this.blockHashes.slice(0, index)
         this.blockHashes.push(...newHashes)
         this.newHashes = newHashes
-        this.emit('updated-block-hashes')
-        this.updatingBlockHashes = false
     }
     createGenesisBlock() {
         return new Block({
@@ -179,10 +169,7 @@ class Blockchain extends events.EventEmitter {
             $or: [
                 { [`${config.block.transactions.name}.${config.transaction.to.name}`]: address.toString('binary') },
                 { [`${config.block.transactions.name}.${config.transaction.from.name}`]: address.toString('binary') }
-            ],
-            [config.block.hash.name]: {
-                $in: this.blockHashes.map(e => e.toString('binary'))
-            }
+            ]
         }
         if (optimization) {
             old_blocks = await Block.loadMany({
@@ -201,10 +188,10 @@ class Blockchain extends events.EventEmitter {
         else {
             blocks = await Block.loadMany(baseQuery, projection, { lean: true })
         }
-        blocks.push(await this.getLatestBlock())
         const getTransactions = (blocks: Array<{ hash: Buffer, transactions: Array<{ from: Buffer | undefined, to: Buffer | undefined, timestamp: number | undefined }>, timestamp: number | undefined }>) => {
             const transactions = []
             for (const block of blocks) {
+                if (!this.blockHashes.find(e => e.equals(block.hash))) continue
                 for (const transaction of block.transactions) {
                     if ((transaction.from && address.equals(transaction.from))
                         || (transaction.to && address.equals(transaction.to))) {
