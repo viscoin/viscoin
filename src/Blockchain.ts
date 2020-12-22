@@ -170,11 +170,9 @@ class Blockchain extends events.EventEmitter {
         return 0
     }
     async getTransactionsOfAddress(address: Buffer, projection: string | null = null, optimization: boolean = false) {
-        await this.updateBlockHashes()
-        // !
-        // if (!this.blockHashes
-        // || !this.oldHashes
-        // || !this.newHashes) await this.updateBlockHashes()
+        if (!this.blockHashes
+        || !this.oldHashes
+        || !this.newHashes) await this.updateBlockHashes()
         let blocks = [],
         old_blocks = []
         const baseQuery = {
@@ -203,6 +201,7 @@ class Blockchain extends events.EventEmitter {
         else {
             blocks = await Block.loadMany(baseQuery, projection, { lean: true })
         }
+        blocks.push(await this.getLatestBlock())
         const getTransactions = (blocks: Array<{ hash: Buffer, transactions: Array<{ from: Buffer | undefined, to: Buffer | undefined, timestamp: number | undefined }>, timestamp: number | undefined }>) => {
             const transactions = []
             for (const block of blocks) {
