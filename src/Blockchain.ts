@@ -11,6 +11,8 @@ interface Blockchain {
     syncIndex: number
     // popularAddresses: Array<{ address: Buffer, balance: BigInt }>
     blockHashes: Array<Buffer>
+    oldHashes: Array<Buffer>
+    newHashes: Array<Buffer>
 }
 class Blockchain {
     constructor() {
@@ -27,6 +29,9 @@ class Blockchain {
         }
     }
     async updateBlockHashes() {
+        if (!this.blockHashes) await this.setBlockHashes()
+        if (!this.oldHashes) this.oldHashes = []
+        if (!this.newHashes) this.newHashes = []
         let block = await this.getLatestBlock(),
         index: number = null,
         done: boolean = false
@@ -45,14 +50,10 @@ class Blockchain {
         }
         // !
         // const oldHashes = this.blockHashes.splice(index + 1, this.blockHashes.length, ...newHashes)
-        const oldHashes = this.blockHashes.slice(index + 1)
+        this.oldHashes = this.blockHashes.slice(index + 1)
         this.blockHashes = this.blockHashes.slice(0, index)
         this.blockHashes.push(...newHashes)
-        return {
-            oldHashes,
-            newHashes,
-            index
-        }
+        this.newHashes = newHashes
     }
     createGenesisBlock() {
         return new Block({
@@ -144,9 +145,13 @@ class Blockchain {
             if (valid === false) return 14
         }
         else if (block.height !== 0) return 15
-        if (await Block.exists({ [config.block.hash.name]: block.hash.toString('binary') })) return 16
+        if (await Block.exists({ [config.block.hash.name]: block.hash.toString('binary') })) {
+            if ((await this.getLatestBlock()).hash.equals(block.hash)) await this.updateBlockHashes()
+            return 16
+        }
         await block.save()
         if ((await this.getLatestBlock()).hash.equals(block.hash)) {
+            await this.updateBlockHashes()
             for (const transaction of block.transactions) {
                 if (transaction.to) await this.getBalanceOfAddress(transaction.to)
                 if (transaction.from) await this.getBalanceOfAddress(transaction.from)
@@ -155,8 +160,6 @@ class Blockchain {
         return 0
     }
     async getTransactionsOfAddress(address: Buffer, projection: string | null = null, optimization: boolean = false) {
-        if (!this.blockHashes) await this.setBlockHashes()
-        const { oldHashes, newHashes, index } = await this.updateBlockHashes()
         let blocks = [],
         old_blocks = []
         const baseQuery = {
@@ -169,13 +172,13 @@ class Blockchain {
             old_blocks = await Block.loadMany({
                 ...baseQuery,
                 [config.block.hash.name]: {
-                    $in: oldHashes.map(e => e.toString('binary'))
+                    $in: this.oldHashes.map(e => e.toString('binary'))
                 }
             }, projection, { lean: true })
             blocks = await Block.loadMany({
                 ...baseQuery,
                 [config.block.hash.name]: {
-                    $in: newHashes.map(e => e.toString('binary'))
+                    $in: this.newHashes.map(e => e.toString('binary'))
                 }
             }, projection, { lean: true })
         }
@@ -205,8 +208,8 @@ class Blockchain {
         }
     }
     async getBalanceOfAddress(address: Buffer, disableOptimization: boolean = false) {
-        const document = await model_address.findOne({ [config.address.address.name]: address.toString('binary') })
         const latestBlock = await this.getLatestBlock()
+        const document = await model_address.findOne({ [config.address.address.name]: address.toString('binary') })
         let optimization = false
         if (document
         && document[config.address.balance.name] !== undefined
@@ -247,7 +250,7 @@ class Blockchain {
             document[config.address.balance.name] = beautifyBigInt(balance)
             await document.save()
         }
-        else {
+        else if (!(await model_address.exists({ [config.address.address.name]: address.toString('binary') }))) {
             await new model_address({
                 [config.address.hash.name]: latestBlock.hash.toString('binary'),
                 [config.address.balance.name]: beautifyBigInt(balance),
