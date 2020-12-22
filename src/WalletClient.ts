@@ -47,8 +47,8 @@ class WalletClient extends BaseClient {
         else return await this.blockchain.getBalanceOfAddress(this.wallet.address)
     }
     async transactions(address: string | undefined = undefined) {
-        if (address) return await this.blockchain.getTransactionsOfAddress(base58.decode(address))
-        else return await this.blockchain.getTransactionsOfAddress(this.wallet.address)
+        if (address) return (await this.blockchain.getTransactionsOfAddress(base58.decode(address))).transactions
+        else return (await this.blockchain.getTransactionsOfAddress(this.wallet.address)).transactions
     }
 }
 export default WalletClient

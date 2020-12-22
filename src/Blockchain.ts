@@ -197,7 +197,9 @@ class Blockchain {
             transactions: getTransactions(blocks),
             old_transactions: getTransactions(old_blocks)
         }
-        else return getTransactions(blocks)
+        else return {
+            transactions: getTransactions(blocks)
+        }
     }
     async getBalanceOfAddress(address: Buffer) {
         const document = await model_address.findOne({ [config.address.address.name]: address.toString('binary') })
@@ -211,7 +213,7 @@ class Blockchain {
             }
             optimization = true
         }
-        const any = <any> await this.getTransactionsOfAddress(address, `
+        const { transactions, old_transactions } = <any> await this.getTransactionsOfAddress(address, `
             ${config.block.transactions.name}.${config.transaction.to.name}
             ${config.block.transactions.name}.${config.transaction.from.name}
             ${config.block.transactions.name}.${config.transaction.amount.name}
@@ -230,16 +232,10 @@ class Blockchain {
             }
             return balance
         }
-        let transactions = []
         let balance = 0n
         if (optimization) {
-            transactions = <Array<object>> any.transactions
-            const old_transactions = <Array<any>> any.old_transactions
             balance = parseBigInt(document[config.address.balance.name])
             balance -= getBalance(old_transactions)
-        }
-        else {
-            transactions = <Array<object>> any
         }
         balance += getBalance(transactions)
         if (document) {
