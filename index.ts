@@ -5,6 +5,8 @@ import Blockchain from './src/Blockchain'
 import Block from './src/Block'
 import Transaction from './src/Transaction'
 import base58 from './src/base58'
+import beautifyBigInt from './src/beautifyBigInt'
+import parseBigInt from './src/parseBigInt'
 export default {
     BaseClient,
     MinerClient,
@@ -12,5 +14,7 @@ export default {
     Blockchain,
     Block,
     Transaction,
-    base58
+    base58,
+    beautifyBigInt,
+    parseBigInt
 }

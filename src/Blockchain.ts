@@ -146,8 +146,11 @@ class Blockchain {
         }
         else if (block.height !== 0) return 15
         if (await Block.exists({ [config.block.hash.name]: block.hash.toString('binary') })) {
-            if ((await this.getLatestBlock()).hash.equals(block.hash)) await this.updateBlockHashes()
-            return 16
+            if ((await this.getLatestBlock()).hash.equals(block.hash)) {
+                await this.updateBlockHashes()
+                return 16
+            }
+            return 17
         }
         await block.save()
         if ((await this.getLatestBlock()).hash.equals(block.hash)) {
