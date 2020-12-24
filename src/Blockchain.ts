@@ -368,15 +368,24 @@ class Blockchain {
     }
     // !
     async getBlockByHeight(height: number) {
-        let block = await this.getLatestBlock()
-        // !
-        while (true) {
-            if (!block) break
-            block = await Block.load({ [config.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
-            if (!block || block.height === height) break
-        }
-        if (!block || block.height !== height) return null
-        return block
+        if (!this.blockHashes
+        || !this.oldHashes
+        || !this.newHashes) await this.updateBlockHashes()
+        return await Block.load({
+            [config.block.height.name]: height,
+            [config.block.hash.name]: {
+                $in: this.blockHashes.map(e => e.toString('binary'))
+            }
+        }, null, { lean: true })
+        // let block = await this.getLatestBlock()
+        // // !
+        // while (true) {
+        //     if (!block) break
+        //     block = await Block.load({ [config.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
+        //     if (!block || block.height === height) break
+        // }
+        // if (!block || block.height !== height) return null
+        // return block
     }
     // !
     // calling this function when pendingtransactions is full and the transaction does not get added will result in people being able to abuse the miner by keeping sending transaction with 0 mining reward
