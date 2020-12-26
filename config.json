@@ -8,6 +8,18 @@
     "wallet": {
         "timesToRepeatBroadcastTransaction": 5
     },
+    "api": {
+        "http": {
+            "enabled": true,
+            "host": "localhost",
+            "port": 80
+        },
+        "tcp": {
+            "enabled": false,
+            "host": "localhost",
+            "port": 8336
+        }
+    },
     "miner": {
         "miningRewardAddress": "2yUSy828g4hnpPF6KhWQ47835EQd",
         "threads": 1,

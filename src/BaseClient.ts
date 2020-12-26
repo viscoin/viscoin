@@ -1,21 +1,50 @@
 import Blockchain from "./Blockchain"
 import TCPNetworkNode from "./TCPNetworkNode"
+import TCPApi from "./TCPApi"
+import HTTPApi from "./HTTPApi"
 import * as config from '../config.json'
 import * as nodes from '../nodes.json'
 import * as events from 'events'
 import protocol from './protocol'
 import Block from './Block'
 import * as fs from 'fs'
+import Transaction from "./Transaction"
 interface BaseClient {
     node: TCPNetworkNode
+    tcpApi: TCPApi
+    httpApi: HTTPApi
     blockchain: Blockchain
 }
 class BaseClient extends events.EventEmitter {
     constructor() {
         super()
+        if (config.api.tcp.enabled) {
+            this.tcpApi = new TCPApi()
+            this.tcpApi.start()
+        }
+        if (config.api.http.enabled) {
+            this.httpApi = new HTTPApi()
+            this.httpApi.start()
+            this.httpApi.on('config', res => {
+                res.end(JSON.stringify(config, null, 4))
+            })
+            this.httpApi.on('block', async (res, height) => {
+                const block = await this.blockchain.getBlockByHeight(height)
+                if (!block) return res.status(404).end()
+                res.end(JSON.stringify(Block.minify(block), null, 4))
+            })
+            this.httpApi.on('latest-block', async res => {
+                const block = await this.blockchain.getLatestBlock()
+                if (!block) return res.status(404).end()
+                res.end(JSON.stringify(Block.minify(block), null, 4))
+            })
+            this.httpApi.on('pending-transactions', async res => {
+                res.end(JSON.stringify(this.blockchain.pendingTransactions.map(e => Transaction.minify(e)), null, 4))
+            })
+        }
         this.node = new TCPNetworkNode()
         this.blockchain = new Blockchain()
-        if (config.node.hostNode) this.node.start(config.network.port, config.network.address)
+        if (config.node.hostNode) this.node.start()
         if (config.node.connectToNodes) this.node.connectToNetwork(nodes)
         if (config.node.blockchainSynchronization) this.nextSync()
         this.node.on('block', async block => {

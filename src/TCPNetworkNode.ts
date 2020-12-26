@@ -32,6 +32,14 @@ class TCPNetworkNode extends events.EventEmitter {
         // server
         this.server = new net.Server()
         this.server.maxConnections = config.network.maxConnections
+        this.server
+            .on('connection', (socket: Socket) => {
+                this.addSocket(socket)
+                this.emit('connection', socket)
+            })
+            .on('listening', () => {})
+            .on('close', () => {})
+            .on('error', () => {})
         // client
     }
     interval: Array<Function> = [
@@ -187,16 +195,8 @@ class TCPNetworkNode extends events.EventEmitter {
         this.broadcastAndStoreDataHash(buf)
     }
     // server
-    start(port: number, address: string) {
-        this.server
-            .on('connection', (socket: Socket) => {
-                this.addSocket(socket)
-                this.emit('connection', socket)
-            })
-            .on('listening', () => {})
-            .on('close', () => {})
-            .on('error', () => {})
-            .listen(port, address)
+    start() {
+        this.server.listen(config.network.port, config.network.address)
     }
     stop() {
         this.server.close()
