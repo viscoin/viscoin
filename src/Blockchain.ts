@@ -5,6 +5,7 @@ import model_block from './mongoose/model/block'
 import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
 import model_address from './mongoose/model/address'
+import * as events from 'events'
 interface Blockchain {
     difficulty: number
     pendingTransactions: Array<Transaction>
@@ -13,12 +14,15 @@ interface Blockchain {
     blockHashes: Array<Buffer>
     oldHashes: Array<Buffer>
     newHashes: Array<Buffer>
+    updatingBlockHashes: boolean
 }
-class Blockchain {
+class Blockchain extends events.EventEmitter {
     constructor() {
+        super()
         this.difficulty = 0
         this.pendingTransactions = []
         this.syncIndex = 0
+        this.updatingBlockHashes = false
     }
     async setBlockHashes() {
         this.blockHashes = []
@@ -29,6 +33,10 @@ class Blockchain {
         }
     }
     async updateBlockHashes() {
+        if (this.updatingBlockHashes) {
+            return <void> await new Promise(resolve => this.once('updated-block-hashes', () => resolve()))
+        }
+        this.updatingBlockHashes = true
         if (!this.blockHashes) await this.setBlockHashes()
         if (!this.oldHashes) this.oldHashes = []
         if (!this.newHashes) this.newHashes = []
@@ -54,6 +62,8 @@ class Blockchain {
         this.blockHashes = this.blockHashes.slice(0, index)
         this.blockHashes.push(...newHashes)
         this.newHashes = newHashes
+        this.emit('updated-block-hashes')
+        this.updatingBlockHashes = false
     }
     createGenesisBlock() {
         return new Block({
@@ -213,7 +223,7 @@ class Blockchain {
             transactions: getTransactions(blocks)
         }
     }
-    async getBalanceOfAddress(address: Buffer, disableOptimization: boolean = false) {
+    async getBalanceOfAddress(address: Buffer, disableOptimization: boolean = config.disableOptimization) {
         const latestBlock = await this.getLatestBlock()
         const document = await model_address.findOne({ [config.address.address.name]: address.toString('binary') })
         let optimization = false

@@ -93,7 +93,7 @@ class TCPNetworkNode extends events.EventEmitter {
                     index = protocol.getEndIndex(socket.data)
                     if (index !== -1) {
                         const data = socket.data.slice(0, index)
-                        this.handleData(data, socket)
+                        this.onData(data, socket)
                         this.emit('data', data, socket)
                         socket.data = socket.data.slice(index + 32)
                     }
@@ -150,8 +150,8 @@ class TCPNetworkNode extends events.EventEmitter {
                     && Buffer.byteLength(Buffer.from(node.address.split(':'))) > 16) continue
             }
             // !
-            // if (node.port === config.network.port
-            //     && node.address === config.network.address) continue
+            if (node.port === config.network.port
+                && node.address === config.network.address) continue
             const socket = <Socket> net.connect(node.port, node.address)
             this.addSocket(socket)
         }
@@ -163,7 +163,7 @@ class TCPNetworkNode extends events.EventEmitter {
         }
         this.sockets = []
     }
-    async handleData(buf: Buffer, socket: Socket) {
+    async onData(buf: Buffer, socket: Socket) {
         if (this.compareAndStoreHash(buf)) return
         const parsed = protocol.parseDataBuffer(buf)
         if (!parsed) return this.emit('blacklist', socket, 'invalid buffer')

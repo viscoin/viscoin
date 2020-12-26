@@ -33,9 +33,13 @@
             "interval": 100
         }
     },
+    "disableOptimization": false,
+    "localApi": {
+        "maxConnections": 100
+    },
     "mining": {
         "reward": "1000",
-        "blockTime": 60000,
+        "blockTime": 2000,
         "trustedAfterBlocks": 60,
         "blockSize": 8388608,
         "popularAddresses": {
