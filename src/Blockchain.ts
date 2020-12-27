@@ -57,8 +57,9 @@ class Blockchain extends events.EventEmitter {
         }
         // !
         // const oldHashes = this.blockHashes.splice(index + 1, this.blockHashes.length, ...newHashes)
+        // console.log(this.blockHashes[this.blockHashes.length - 1].toString('hex'), this.blockHashes[this.blockHashes.length - 2].toString('hex'), this.blockHashes[this.blockHashes.length - 3].toString('hex'))
         this.oldHashes = this.blockHashes.slice(index + 1)
-        this.blockHashes = this.blockHashes.slice(0, index)
+        this.blockHashes = this.blockHashes.slice(0, index + 1)
         this.blockHashes.push(...newHashes)
         this.newHashes = newHashes
         this.emit('updated-block-hashes')
