@@ -154,12 +154,15 @@ const commands = {
                 minerFee: beautifyBigInt(parseBigInt(res.minerFee)),
                 data
             })
-            let i = 0
+            let i: number = 0,
+            log: boolean = true
             setTimeout(async function loop() {
                 try {
                     const code = await HTTPApi.send(transaction)
-                    if (code === 0) console.log(chalk.greenBright('Transaction accepted'))
-                    else console.log(chalk.redBright(`Transaction not accepted, code ${code}`))
+                    if (log) {
+                        if (code === 0) console.log(chalk.greenBright('Transaction accepted'))
+                        else console.log(chalk.redBright(`Transaction not accepted, code ${code}`))
+                    }
                     if (++i < config.Wallet.timesToRepeatBroadcastTransaction) setTimeout(loop, Math.pow(i, 2) * 1000)
                 }
                 catch {
@@ -167,6 +170,7 @@ const commands = {
                 }
             })
             await commands.pause()
+            log = false
         }
         console.clear()
         commands.commands()
