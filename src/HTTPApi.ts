@@ -148,7 +148,7 @@ class HTTPApi extends events.EventEmitter {
     static async send(transaction: Transaction) {
         return await this.post('/send', JSON.stringify(Transaction.minify(transaction)))
     }
-    static async ping() {
+    static async index() {
         return await this.get('/')
     }
 }

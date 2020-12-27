@@ -43,7 +43,7 @@ const commands = {
     commands: async () => {
         let choices: Array<{ title: string, description: string, value: Function }> = [
             { title: 'Wallet', description: 'Select wallet', value: commands.select_wallet },
-            { title: 'Ping', description: 'API node status', value: commands.ping },
+            { title: 'API', description: 'API node status', value: commands.check_status },
             { title: 'Generate', description: 'Generate new wallet', value: commands.generate },
             { title: 'Import', description: 'Import new wallet', value: commands.import_wallet },
             { title: 'Exit', description: 'Exits', value: commands.exit }
@@ -318,12 +318,12 @@ const commands = {
         console.clear()
         commands.commands()
     },
-    ping: async () => {
+    check_status: async () => {
         try {
-            if (await HTTPApi.ping()) console.log(chalk.greenBright('Connected'))
+            if (await HTTPApi.index()) console.log(chalk.greenBright('Online'))
         }
         catch {
-            console.log(chalk.redBright('Unable to connect to api node'))
+            console.log(chalk.redBright('Offline'))
         }
         await commands.pause()
         console.clear()
