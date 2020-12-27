@@ -36,6 +36,9 @@ const functions = {
         console.log(`${chalk.whiteBright.bold('Address')}        (${chalk.greenBright('SHARE')})  ${chalk.blueBright(base58.encode(address))}`)
         console.log(`${chalk.whiteBright.bold('Private key')}    (${chalk.redBright('SECRET')}) ${chalk.blueBright(base58.encode(privateKey))}`)
         console.log(`${chalk.whiteBright.bold('Recovery words')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(words.join(' '))}`)
+    },
+    log_unable_to_connect_to_api: () => {
+        console.log(chalk.redBright('Unable to connect to API'))
     }
 }
 
@@ -151,11 +154,16 @@ const commands = {
                 minerFee: beautifyBigInt(parseBigInt(res.minerFee)),
                 data
             })
-            for (let i = 0; i < config.Wallet.timesToRepeatBroadcastTransaction; i++) {
-                setTimeout(async () => {
+            let i = 0
+            setTimeout(async function loop() {
+                try {
                     await HTTPApi.send(transaction)
-                }, Math.pow(i, 2) * 1000)
-            }
+                    if (++i < config.Wallet.timesToRepeatBroadcastTransaction) setTimeout(loop, Math.pow(i, 2) * 1000)
+                }
+                catch {
+                    functions.log_unable_to_connect_to_api()
+                }
+            })
             await commands.pause()
         }
         console.clear()
@@ -208,7 +216,7 @@ const commands = {
             console.log(chalk.yellowBright(balance))
         }
         catch {
-            console.log(chalk.redBright('Unable to connect to api node'))
+            functions.log_unable_to_connect_to_api()
         }
         await commands.pause()
         console.clear()
@@ -501,9 +509,8 @@ const commands = {
                 console.log(chalk.redBright('No transactions'))
             }
         }
-        catch (err) {
-            console.log(chalk.redBright('Unable to connect to api node'))
-            console.log(err)
+        catch {
+            functions.log_unable_to_connect_to_api()
         }
         await commands.pause()
         console.clear()

@@ -31,7 +31,7 @@
     },
     "Wallet": {
         "wordlist": "english.txt",
-        "timesToRepeatBroadcastTransaction": 1
+        "timesToRepeatBroadcastTransaction": 5
     },
     "HTTPApi": {
         "enabled": true,
