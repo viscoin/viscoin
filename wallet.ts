@@ -14,6 +14,7 @@ import beautifyBigInt from './src/beautifyBigInt'
 import parseBigInt from './src/parseBigInt'
 import HTTPApi from './src/HTTPApi'
 import * as config from './config.json'
+import Transaction from './src/Transaction'
 
 let wallet: Wallet | undefined = undefined
 
@@ -182,8 +183,7 @@ const commands = {
             })
             for (let i = 0; i < config.wallet.timesToRepeatBroadcastTransaction; i++) {
                 setTimeout(async () => {
-                    const code = await HTTPApi.send(transaction)
-                    console.log(code)
+                    await HTTPApi.send(transaction)
                 }, Math.pow(i, 2) * 1000)
             }
             await commands.pause()
@@ -234,15 +234,17 @@ const commands = {
             return commands.commands()
         }
         try {
+            let balance = null
             if (res.address === undefined) {
-                console.log(chalk.yellowBright(await wallet.balance()))
+                balance = await wallet.balance()
             }
             else {
-                console.log(chalk.yellowBright(await HTTPApi.balanceAddress(res.address)))
+                balance = await HTTPApi.balanceAddress(res.address)
             }
+            console.log(chalk.yellowBright(balance))
         }
-        catch (err) {
-            console.log(err)
+        catch {
+            console.log(chalk.redBright('Unable to connect to api node'))
         }
         await commands.pause()
         console.clear()
@@ -524,24 +526,36 @@ const commands = {
             console.clear()
             return commands.commands()
         }
-        const transactions = (await wallet.transactions(res.address)).sort((a, b) => a.timestamp - b.timestamp)
-        if (transactions.length) {
-            for (const transaction of transactions) {
-                const date = chalk.magentaBright(new Date(transaction.timestamp).toLocaleTimeString()),
-                arrow = chalk.magentaBright('→')
-                let data = ''
-                if (transaction.data) data = `\n ${chalk.magentaBright('⤷')} ${chalk.grey(transaction.data.toString('hex'))}`
-                if (transaction.from && transaction.from.equals(wallet.address)) transaction.from = chalk.blueBright(base58.encode(transaction.from))
-                else if (transaction.from) transaction.from = base58.encode(transaction.from)
-                if (transaction.to && transaction.to.equals(wallet.address)) transaction.to = chalk.blueBright(base58.encode(transaction.to))
-                else if (transaction.to) transaction.to = base58.encode(transaction.to)
-                if (!transaction.from) console.log(`${date} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}`)
-                else if (!transaction.to) console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.minerFee))}`)}${data}`)
-                else console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee))}`)} ${arrow} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}${data}`)
+        try {
+            let transactions = null
+            if (res.address === undefined) {
+                transactions = await wallet.transactions()
+            }
+            else {
+                transactions = await HTTPApi.transactionsAddress(res.address)
+            }
+            if (transactions.length) {
+                for (const transaction of transactions.sort((a, b) => a.timestamp - b.timestamp).map(e => new Transaction(Transaction.beautify(e)))) {
+                    const date = chalk.magentaBright(new Date(transaction.timestamp).toLocaleTimeString()),
+                    arrow = chalk.magentaBright('→')
+                    let data = ''
+                    if (transaction.data) data = `\n ${chalk.magentaBright('⤷')} ${chalk.grey(transaction.data.toString('hex'))}`
+                    if (transaction.from && transaction.from.equals(wallet.address)) transaction.from = chalk.blueBright(base58.encode(transaction.from))
+                    else if (transaction.from) transaction.from = base58.encode(transaction.from)
+                    if (transaction.to && transaction.to.equals(wallet.address)) transaction.to = chalk.blueBright(base58.encode(transaction.to))
+                    else if (transaction.to) transaction.to = base58.encode(transaction.to)
+                    if (!transaction.from) console.log(`${date} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}`)
+                    else if (!transaction.to) console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.minerFee))}`)}${data}`)
+                    else console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee))}`)} ${arrow} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}${data}`)
+                }
+            }
+            else {
+                console.log(chalk.redBright('No transactions'))
             }
         }
-        else {
-            console.log(chalk.redBright('No transactions'))
+        catch (err) {
+            console.log(chalk.redBright('Unable to connect to api node'))
+            console.log(err)
         }
         await commands.pause()
         console.clear()
