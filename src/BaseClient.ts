@@ -19,11 +19,11 @@ interface BaseClient {
 class BaseClient extends events.EventEmitter {
     constructor() {
         super()
-        if (config.api.tcp.enabled) {
+        if (config.TCPApi.enabled) {
             this.tcpApi = new TCPApi()
             this.tcpApi.start()
         }
-        if (config.api.http.enabled) {
+        if (config.HTTPApi.enabled) {
             this.httpApi = new HTTPApi()
             this.httpApi.start()
             this.httpApi.on('config', res => {
@@ -59,9 +59,9 @@ class BaseClient extends events.EventEmitter {
         }
         this.node = new TCPNetworkNode()
         this.blockchain = new Blockchain()
-        if (config.node.hostNode) this.node.start()
-        if (config.node.connectToNodes) this.node.connectToNetwork(nodes)
-        if (config.node.blockchainSynchronization) this.nextSync()
+        if (config.BaseClient.hostNode) this.node.start()
+        if (config.BaseClient.connectToNodes) this.node.connectToNetwork(nodes)
+        if (config.BaseClient.blockchainSynchronization) this.nextSync()
         this.node.on('block', async block => {
             const code = await this.blockchain.addBlock(block)
             this.emit('block', block, code)
@@ -70,11 +70,14 @@ class BaseClient extends events.EventEmitter {
             const code = await this.blockchain.addTransaction(transaction)
             this.emit('transaction', transaction, code)
         })
-        this.node.on('node', node => this.emit('node', node))
+        this.node.on('node', node => {
+            if (config.BaseClient.connectToNodes) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
+            this.emit('node', node)
+        })
         this.node.on('data', data => this.emit('data', data))
         this.node.on('socket', socket => {
             if (!fs.existsSync('./log')) fs.mkdirSync('./log')
-            if (config.save_logs) fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (config.BaseClient.logs) fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('socket', socket)
         })
         this.node.on('connect', socket => this.emit('connect', socket))
@@ -82,7 +85,7 @@ class BaseClient extends events.EventEmitter {
         this.node.server.on('listening', () => this.emit('listening'))
         this.node.on('blacklist', (socket, reason) => {
             if (!fs.existsSync('./log')) fs.mkdirSync('./log')
-            if (config.save_logs) fs.appendFileSync('./log/blacklisted.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (config.BaseClient.logs) fs.appendFileSync('./log/blacklisted.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('blacklist', socket, reason)
         })
     }
@@ -92,7 +95,7 @@ class BaseClient extends events.EventEmitter {
             const buffer = protocol.constructDataBuffer('block', Block.minify(block))
             this.node.broadcast(buffer)
         }
-        setTimeout(this.nextSync.bind(this), config.node.blockchainSynchronization.timeout)
+        setTimeout(this.nextSync.bind(this), config.BaseClient.blockchainSynchronization.timeout)
     }
 }
 export default BaseClient

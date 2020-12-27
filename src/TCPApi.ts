@@ -12,7 +12,7 @@ class TCPApi extends events.EventEmitter {
     constructor() {
         super()
         this.server = new net.Server()
-        this.server.maxConnections = config.localApi.maxConnections
+        this.server.maxConnections = config.TCPApi.maxConnections
         this.server.on('connection', (socket: Socket) => {
             socket.data = Buffer.alloc(0)
             socket.on('data', chunk => {
@@ -30,7 +30,7 @@ class TCPApi extends events.EventEmitter {
         })
     }
     start() {
-        this.server.listen(config.api.tcp.port, config.api.tcp.host)
+        this.server.listen(config.TCPApi.port, config.TCPApi.host)
     }
     stop() {
         this.server.close()

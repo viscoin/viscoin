@@ -41,9 +41,9 @@ class Transaction {
     static minify(input: Transaction) {
         const output = {}
         for (const property in input) {
-            if (config.transaction[property]) {
-                if (input[property] instanceof Buffer) output[config.transaction[property].name] = input[property].toString('binary')
-                else output[config.transaction[property].name] = input[property]
+            if (config.mongoose.schema.transaction[property]) {
+                if (input[property] instanceof Buffer) output[config.mongoose.schema.transaction[property].name] = input[property].toString('binary')
+                else output[config.mongoose.schema.transaction[property].name] = input[property]
             }
         }
         return output
@@ -51,8 +51,8 @@ class Transaction {
     static beautify(input: object) {
         const output = {}
         for (const property in input) {
-            for (const _property in config.transaction) {
-                if (property === String(config.transaction[_property].name)) {
+            for (const _property in config.mongoose.schema.transaction) {
+                if (property === config.mongoose.schema.transaction[_property].name.toString()) {
                     // !
                     switch (_property) {
                         // case 'to':

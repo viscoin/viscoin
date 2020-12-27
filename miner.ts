@@ -9,7 +9,7 @@ import * as chalk from 'chalk'
 
 if (isMainThread) {
     mongoose.init()
-    const client = new MinerClient(base58.decode(config.miner.miningRewardAddress))
+    const client = new MinerClient(base58.decode(config.MinerClient.miningRewardAddress))
     client.on('hashrate', hashrate => console.log(`${chalk.magentaBright(new Date().toLocaleTimeString())} ${chalk.yellowBright(hashrate)} ${chalk.redBright('H/s')}`))
     client.on('mined', (block, code) => console.log('mined', block.height, 'code', code))
     // client.on('transaction', (transaction, code) => console.log('transaction', code))

@@ -181,7 +181,7 @@ const commands = {
                 minerFee: beautifyBigInt(parseBigInt(res.minerFee)),
                 data
             })
-            for (let i = 0; i < config.wallet.timesToRepeatBroadcastTransaction; i++) {
+            for (let i = 0; i < config.Wallet.timesToRepeatBroadcastTransaction; i++) {
                 setTimeout(async () => {
                     await HTTPApi.send(transaction)
                 }, Math.pow(i, 2) * 1000)

@@ -16,7 +16,7 @@ class MinerClient extends BaseClient {
         super()
         this.workers = []
         this.threads = cpus().length
-        if (config.miner.threads) this.threads = config.miner.threads
+        if (config.MinerClient.threads) this.threads = config.MinerClient.threads
         this.threadsReady = 0
         this.hashrate = 0
         setInterval(() => {

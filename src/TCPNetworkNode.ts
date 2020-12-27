@@ -28,10 +28,10 @@ class TCPNetworkNode extends events.EventEmitter {
             this.blacklisted.push(socket.remoteAddress)
         })
         setInterval(this.interval[0].bind(this), 1000)
-        setInterval(this.interval[1].bind(this), config.node.hashes.interval)
+        setInterval(this.interval[1].bind(this), config.TCPNetworkNode.hashes.interval)
         // server
         this.server = new net.Server()
-        this.server.maxConnections = config.network.maxConnections
+        this.server.maxConnections = config.TCPNetworkNode.server.maxConnections
         this.server
             .on('connection', (socket: Socket) => {
                 this.addSocket(socket)
@@ -51,14 +51,14 @@ class TCPNetworkNode extends events.EventEmitter {
             }
         },
         () => {
-            this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - config.node.hashes.timeToLive)
+            this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - config.TCPNetworkNode.hashes.timeToLive)
         }
     ]
     addSocket(socket: Socket) {
         if (this.blacklisted.includes(socket.remoteAddress)) return socket.destroy()
         let index = this.sockets.indexOf(undefined)
         const add = () => {
-            socket.setTimeout(config.node.socket.setTimeout)
+            socket.setTimeout(config.TCPNetworkNode.socket.setTimeout)
             if (this.hasSocket(socket)) {
                 return socket.destroy()
             }
@@ -93,9 +93,9 @@ class TCPNetworkNode extends events.EventEmitter {
             .on('data', chunk => {
                 const byteLength = Buffer.byteLength(chunk)
                 socket.bytesReadLastSecond += byteLength
-                if (socket.bytesReadLastSecond > config.node.socket.maxBytesPerSecond) return this.emit('blacklist', socket, 'sending data too fast')
+                if (socket.bytesReadLastSecond > config.TCPNetworkNode.socket.maxBytesPerSecond) return this.emit('blacklist', socket, 'sending data too fast')
                 socket.data = Buffer.concat([socket.data, chunk])
-                if (Buffer.byteLength(socket.data) > config.node.socket.maxBytesInMemory) return this.emit('blacklist', socket, 'sending too much data without end')
+                if (Buffer.byteLength(socket.data) > config.TCPNetworkNode.socket.maxBytesInMemory) return this.emit('blacklist', socket, 'sending too much data without end')
                 let index = null
                 while (index !== -1 && !socket.destroyed) {
                     index = protocol.getEndIndex(socket.data)
@@ -114,7 +114,7 @@ class TCPNetworkNode extends events.EventEmitter {
     // !
     // isValidBuffer(buf: Buffer) {
     //     // + 1 for the protocol byte in the beginning of the buffer
-    //     if (Buffer.byteLength(buf) > 1 + config.mining.blockSize) return false
+    //     if (Buffer.byteLength(buf) > 1 + config.Block.blockSize) return false
     //     if (protocol.parseDataBuffer(buf) === null) return false
     //     return true
     // }
@@ -127,7 +127,7 @@ class TCPNetworkNode extends events.EventEmitter {
     addHash(data: Buffer) {
         const hash = customHash(data)
         this.hashes.push({ hash, timestamp: Date.now() })
-        if (this.hashes.length > config.node.hashes.length) this.hashes.shift()
+        if (this.hashes.length > config.TCPNetworkNode.hashes.length) this.hashes.shift()
     }
     broadcast(data: Buffer) {
         for (const socket of this.sockets) {
@@ -158,8 +158,8 @@ class TCPNetworkNode extends events.EventEmitter {
                     && Buffer.byteLength(Buffer.from(node.address.split(':'))) > 16) continue
             }
             // !
-            if (node.port === config.network.port
-                && node.address === config.network.address) continue
+            if (node.port === config.TCPNetworkNode.server.port
+                && node.address === config.TCPNetworkNode.server.address) continue
             const socket = <Socket> net.connect(node.port, node.address)
             this.addSocket(socket)
         }
@@ -188,7 +188,6 @@ class TCPNetworkNode extends events.EventEmitter {
                 break
             case 'node':
                 if (!parsed.data) return this.emit('blacklist', socket, 'invalid parsed data node')
-                if (config.node.connectToNodes) this.connectToNetwork([ <{ port: number, address: string }> parsed.data ])
                 this.emit('node', parsed.data)
                 break
         }
@@ -196,7 +195,7 @@ class TCPNetworkNode extends events.EventEmitter {
     }
     // server
     start() {
-        this.server.listen(config.network.port, config.network.address)
+        this.server.listen(config.TCPNetworkNode.server.port, config.TCPNetworkNode.server.address)
     }
     stop() {
         this.server.close()

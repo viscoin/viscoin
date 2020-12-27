@@ -48,7 +48,7 @@ class Block {
         )
     }
     hasValidTransactions() {
-        let amount = parseBigInt(config.mining.reward)
+        let amount = parseBigInt(config.Block.reward)
         if (!this.transactions.length) return false
         const hashes = []
         for (let i = 0; i < this.transactions.length; i++) {
@@ -85,10 +85,10 @@ class Block {
     static minify(input: Block) {
         const output = {}
         for (const property in input) {
-            if (config.block[property]) {
-                if (input[property] instanceof Buffer) output[config.block[property].name] = input[property].toString('binary')
-                else if (property === 'transactions') output[config.block[property].name] = <Array<Transaction>> input[property].map(e => Transaction.minify(e))
-                else output[config.block[property].name] = input[property]
+            if (config.mongoose.schema.block[property]) {
+                if (input[property] instanceof Buffer) output[config.mongoose.schema.block[property].name] = input[property].toString('binary')
+                else if (property === 'transactions') output[config.mongoose.schema.block[property].name] = <Array<Transaction>> input[property].map(e => Transaction.minify(e))
+                else output[config.mongoose.schema.block[property].name] = input[property]
             }
         }
         return output
@@ -96,8 +96,8 @@ class Block {
     static beautify(input: object) {
         const output = {}
         for (const property in input) {
-            for (const _property in config.block) {
-                if (property === String(config.block[_property].name)) {
+            for (const _property in config.mongoose.schema.block) {
+                if (property === config.mongoose.schema.block[_property].name.toString()) {
                     if (_property === 'transactions') output[_property] = input[property].map(e => Transaction.beautify(e))
                     else output[_property] = input[property]
                 }

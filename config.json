@@ -1,139 +1,138 @@
 {
-    "network": {
-        "address": "192.168.0.11",
-        "port": 8334,
-        "maxConnections": 500
-    },
-    "wordlist": "english.txt",
-    "wallet": {
-        "timesToRepeatBroadcastTransaction": 1
-    },
-    "api": {
-        "http": {
-            "enabled": true,
-            "host": "localhost",
-            "port": 80
-        },
-        "tcp": {
-            "enabled": false,
-            "host": "localhost",
-            "port": 8336
-        }
-    },
-    "miner": {
-        "miningRewardAddress": "2yUSy828g4hnpPF6KhWQ47835EQd",
-        "threads": 1,
-        "hostNode": true,
-        "connectToNodes": true
-    },
-    "save_logs": true,
-    "node": {
+    "BaseClient": {
         "hostNode": true,
         "connectToNodes": true,
         "blockchainSynchronization": {
             "enabled": true,
             "timeout": 1000
         },
+        "logs": false
+    },
+    "MinerClient": {
+        "miningRewardAddress": "2yUSy828g4hnpPF6KhWQ47835EQd",
+        "threads": 1
+    },
+    "TCPNetworkNode": {
+        "hashes": {
+            "length": 10000,
+            "timeToLive": 60000,
+            "interval": 100
+        },
         "socket": {
             "maxBytesPerSecond": 10485760,
             "setTimeout": 60000,
             "maxBytesInMemory": 2097152
         },
-        "hashes": {
-            "length": 10000,
-            "timeToLive": 60000,
-            "interval": 100
+        "server": {
+            "address": "192.168.0.11",
+            "port": 8334,
+            "maxConnections": 500
         }
     },
-    "disableOptimization": false,
-    "localApi": {
+    "Wallet": {
+        "wordlist": "english.txt",
+        "timesToRepeatBroadcastTransaction": 1
+    },
+    "HTTPApi": {
+        "enabled": true,
+        "host": "localhost",
+        "port": 80
+    },
+    "TCPApi": {
+        "enabled": false,
+        "host": "localhost",
+        "port": 8336,
         "maxConnections": 100
     },
-    "mining": {
+    "Blockchain": {
+        "disableOptimization": false
+    },
+    "Block": {
         "reward": "1000",
         "blockTime": 2000,
         "trustedAfterBlocks": 60,
-        "blockSize": 8388608,
-        "popularAddresses": {
-            "maxInMemory": 100000000
-        }
+        "blockSize": 8388608
     },
-    "block": {
-        "previousHash": {
-            "type": "String",
-            "name": 0
-        },
-        "height": {
-            "type": "Number",
-            "name": 1
-        },
-        "difficulty": {
-            "type": "Number",
-            "name": 2
-        },
-        "nonce": {
-            "type": "Number",
-            "name": 3
-        },
-        "timestamp": {
-            "type": "Number",
-            "name": 4
-        },
-        "transactions": {
-            "type": "[transaction]",
-            "name": 5
-        },
-        "hash": {
-            "type": "String",
-            "name": "_id"
-        }
-    },
-    "transaction": {
-        "to": {
-            "type": "String",
-            "name": "a"
-        },
-        "from": {
-            "type": "String",
-            "name": "b"
-        },
-        "amount": {
-            "type": "String",
-            "name": "c"
-        },
-        "timestamp": {
-            "type": "Number",
-            "name": "d"
-        },
-        "minerFee": {
-            "type": "String",
-            "name": "e"
-        },
-        "signature": {
-            "type": "String",
-            "name": "f"
-        },
-        "recoveryParam": {
-            "type": "Number",
-            "name": "g"
-        },
-        "data": {
-            "type": "String",
-            "name": "h"
-        }
-    },
-    "address": {
-        "address": {
-            "type": "String",
-            "name": "_id"
-        },
-        "balance": {
-            "type": "String",
-            "name": 0
-        },
-        "hash": {
-            "type": "String",
-            "name": 1
+    "mongoose": {
+        "schema": {
+            "block": {
+                "previousHash": {
+                    "type": "String",
+                    "name": 0
+                },
+                "height": {
+                    "type": "Number",
+                    "name": 1
+                },
+                "difficulty": {
+                    "type": "Number",
+                    "name": 2
+                },
+                "nonce": {
+                    "type": "Number",
+                    "name": 3
+                },
+                "timestamp": {
+                    "type": "Number",
+                    "name": 4
+                },
+                "transactions": {
+                    "type": "[transaction]",
+                    "name": 5
+                },
+                "hash": {
+                    "type": "String",
+                    "name": "_id"
+                }
+            },
+            "transaction": {
+                "to": {
+                    "type": "String",
+                    "name": "a"
+                },
+                "from": {
+                    "type": "String",
+                    "name": "b"
+                },
+                "amount": {
+                    "type": "String",
+                    "name": "c"
+                },
+                "timestamp": {
+                    "type": "Number",
+                    "name": "d"
+                },
+                "minerFee": {
+                    "type": "String",
+                    "name": "e"
+                },
+                "signature": {
+                    "type": "String",
+                    "name": "f"
+                },
+                "recoveryParam": {
+                    "type": "Number",
+                    "name": "g"
+                },
+                "data": {
+                    "type": "String",
+                    "name": "h"
+                }
+            },
+            "address": {
+                "address": {
+                    "type": "String",
+                    "name": "_id"
+                },
+                "balance": {
+                    "type": "String",
+                    "name": 0
+                },
+                "hash": {
+                    "type": "String",
+                    "name": 1
+                }
+            }
         }
     }
 }
