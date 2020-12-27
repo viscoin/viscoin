@@ -53,16 +53,20 @@ class Transaction {
         for (const property in input) {
             for (const _property in config.transaction) {
                 if (property === String(config.transaction[_property].name)) {
+                    // !
                     switch (_property) {
-                        case 'to':
-                            output[_property] = Buffer.from(input[property], 'binary')
-                            break
-                        case 'from':
-                            output[_property] = Buffer.from(input[property], 'binary')
-                            break
-                        case 'data':
-                            output[_property] = Buffer.from(input[property], 'binary')
-                            break
+                        // case 'to':
+                        //     output[_property] = Buffer.from(input[property], 'binary')
+                        //     break
+                        // case 'from':
+                        //     output[_property] = Buffer.from(input[property], 'binary')
+                        //     break
+                        // case 'data':
+                        //     output[_property] = Buffer.from(input[property], 'binary')
+                        //     break
+                        // case 'signature':
+                        //     output[_property] = Buffer.from(input[property], 'binary')
+                        //     break
                         default:
                             output[_property] = input[property]
                             break

@@ -3,6 +3,8 @@ import * as events from 'events'
 import * as config from '../config.json'
 import * as http from 'http'
 import * as express from 'express'
+import Transaction from './Transaction'
+import base58 from './base58'
 interface HTTPApi {
     server: net.Server
 }
@@ -12,20 +14,41 @@ class HTTPApi extends events.EventEmitter {
         const app = express()
         app.use(express.urlencoded({ extended: true }))
         app.use(express.json())
-        app.use('/config', (req, res) => {
+        app.get('/config', (req, res) => {
             this.emit('config', res)
         })
-        app.use('/block/latest', (req, res) => {
+        app.get('/block/latest', (req, res) => {
             this.emit('latest-block', res)
         })
-        app.use('/block/:height', (req, res) => {
+        app.get('/block/:height', (req, res) => {
             this.emit('block', res, req.params.height)
         })
-        app.use('/block', (req, res) => {
+        app.get('/block', (req, res) => {
             this.emit('latest-block', res)
         })
-        app.use('/transactions/pending', (req, res) => {
+        app.get('/transactions/pending', (req, res) => {
             this.emit('pending-transactions', res)
+        })
+        app.get('/transactions/:address', (req, res) => {
+            try {
+                const address = base58.decode(req.params.address)
+                this.emit('address-transactions', res, address)
+            }
+            catch {}
+        })
+        app.get('/balance/:address', (req, res) => {
+            try {
+                const address = base58.decode(req.params.address)
+                this.emit('address-balance', res, address)
+            }
+            catch {}
+        })
+        app.post('/send', (req, res) => {
+            try {
+                const transaction = new Transaction(Transaction.beautify(req.body))
+                this.emit('send', res, transaction)
+            }
+            catch {}
         })
         this.server = http.createServer(app)
     }
@@ -34,6 +57,80 @@ class HTTPApi extends events.EventEmitter {
     }
     stop() {
         this.server.close()
+    }
+    static get(path: string) {
+        return <any> new Promise((resolve, reject) => {
+            const req = http.request({
+                host: config.api.http.host,
+                port: config.api.http.port,
+                method: 'GET',
+                path
+            }, res => {
+                let str: string = ''
+                res.on('data', chunk => {
+                    str += chunk
+                })
+                res.on('end', () => {
+                    try {
+                        resolve(JSON.parse(str))
+                    }
+                    catch {
+                        reject()
+                    }
+                })
+                res.on('error', () => {
+                    reject()
+                })
+            })
+            req.on('error', () => {
+                reject()
+            })
+            req.end()
+        })
+    }
+    static post(path: string, data: string) {
+        return <any> new Promise((resolve, reject) => {
+            const req = http.request({
+                host: config.api.http.host,
+                port: config.api.http.port,
+                method: 'POST',
+                path,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(data)
+                }
+            }, res => {
+                let str: string = ''
+                res.on('data', chunk => {
+                    str += chunk
+                })
+                res.on('end', () => {
+                    try {
+                        resolve(JSON.parse(str))
+                    }
+                    catch {
+                        reject()
+                    }
+                })
+                res.on('error', () => {
+                    reject()
+                })
+            })
+            req.on('error', () => {
+                reject()
+            })
+            req.write(data)
+            req.end()
+        })
+    }
+    static async balanceAddress(address: string) {
+        return await this.get(`/balance/${address}`)
+    }
+    static async transactionsAddress(address: string) {
+        return await this.get(`/transactions/${address}`)
+    }
+    static async send(transaction: Transaction) {
+        return await this.post('/send', JSON.stringify(Transaction.minify(transaction)))
     }
 }
 export default HTTPApi

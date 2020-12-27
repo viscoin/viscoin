@@ -9,6 +9,7 @@ import protocol from './protocol'
 import Block from './Block'
 import * as fs from 'fs'
 import Transaction from "./Transaction"
+import beautifyBigInt from "./beautifyBigInt"
 interface BaseClient {
     node: TCPNetworkNode
     tcpApi: TCPApi
@@ -28,6 +29,10 @@ class BaseClient extends events.EventEmitter {
             this.httpApi.on('config', res => {
                 res.end(JSON.stringify(config, null, 4))
             })
+            this.httpApi.on('pending-transactions', res => {
+                res.end(JSON.stringify(this.blockchain.pendingTransactions.map(e => Transaction.minify(e)), null, 4))
+            })
+
             this.httpApi.on('block', async (res, height) => {
                 const block = await this.blockchain.getBlockByHeight(height)
                 if (!block) return res.status(404).end()
@@ -38,8 +43,18 @@ class BaseClient extends events.EventEmitter {
                 if (!block) return res.status(404).end()
                 res.end(JSON.stringify(Block.minify(block), null, 4))
             })
-            this.httpApi.on('pending-transactions', async res => {
-                res.end(JSON.stringify(this.blockchain.pendingTransactions.map(e => Transaction.minify(e)), null, 4))
+            this.httpApi.on('address-transactions', async (res, address) => {
+                const { transactions } = await this.blockchain.getTransactionsOfAddress(address)
+                res.end(JSON.stringify(transactions.map(e => Transaction.minify(e)), null, 4))
+            })
+            this.httpApi.on('address-balance', async (res, address) => {
+                const balance = await this.blockchain.getBalanceOfAddress(address)
+                res.end(JSON.stringify(beautifyBigInt(balance), null, 4))
+            })
+            this.httpApi.on('send', async (res, transaction) => {
+                const code = await this.blockchain.addTransaction(transaction)
+                this.emit('transaction', transaction, code)
+                res.end(JSON.stringify(code), null, 4)
             })
         }
         this.node = new TCPNetworkNode()

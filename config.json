@@ -6,7 +6,7 @@
     },
     "wordlist": "english.txt",
     "wallet": {
-        "timesToRepeatBroadcastTransaction": 5
+        "timesToRepeatBroadcastTransaction": 1
     },
     "api": {
         "http": {
