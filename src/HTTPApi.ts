@@ -15,7 +15,20 @@ class HTTPApi extends events.EventEmitter {
         app.use(express.urlencoded({ extended: true }))
         app.use(express.json())
         app.get('/', (req, res) => {
-            res.end(JSON.stringify(true))
+            res.end(JSON.stringify({
+                get: [
+                    '/config',
+                    '/block/latest',
+                    '/block/:height',
+                    '/block',
+                    '/transactions/pending',
+                    '/transactions/:address',
+                    '/balance/:address'
+                ],
+                post: [
+                    '/send'
+                ]
+            }, null, 4))
         })
         app.get('/config', (req, res) => {
             this.emit('config', res)
