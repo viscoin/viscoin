@@ -157,7 +157,9 @@ const commands = {
             let i = 0
             setTimeout(async function loop() {
                 try {
-                    await HTTPApi.send(transaction)
+                    const code = await HTTPApi.send(transaction)
+                    if (code === 0) console.log(chalk.greenBright('Transaction accepted'))
+                    else console.log(chalk.redBright(`Transaction not accepted, code ${code}`))
                     if (++i < config.Wallet.timesToRepeatBroadcastTransaction) setTimeout(loop, Math.pow(i, 2) * 1000)
                 }
                 catch {
