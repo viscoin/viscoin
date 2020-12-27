@@ -438,7 +438,7 @@ const commands = {
         commands.commands()
     },
     pause: () => {
-        return new Promise(resolve => {
+        return new Promise <void> (resolve => {
             process.stdin.setRawMode(true)
             process.stdin.resume()
             process.stdin.once('data', () => resolve())
