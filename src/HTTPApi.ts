@@ -14,6 +14,9 @@ class HTTPApi extends events.EventEmitter {
         const app = express()
         app.use(express.urlencoded({ extended: true }))
         app.use(express.json())
+        app.get('/', (req, res) => {
+            res.end(JSON.stringify(true))
+        })
         app.get('/config', (req, res) => {
             this.emit('config', res)
         })
@@ -131,6 +134,9 @@ class HTTPApi extends events.EventEmitter {
     }
     static async send(transaction: Transaction) {
         return await this.post('/send', JSON.stringify(Transaction.minify(transaction)))
+    }
+    static async ping() {
+        return await this.get('/')
     }
 }
 export default HTTPApi

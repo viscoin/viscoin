@@ -32,11 +32,6 @@ const functions = {
             cipher.final()
         ]))
     },
-    log_numbers: (value) => {
-        console.log(chalk.yellowBright(value))
-        console.log(chalk.cyanBright(`2^${Math.log2(value)}`))
-        console.log(chalk.blueBright(`10^${Math.log10(value)}`))
-    },
     log_wallet_info: (address: Buffer, privateKey: Buffer, words: Array<string>) => {
         console.log(`${chalk.whiteBright.bold('Address')}        (${chalk.greenBright('SHARE')})  ${chalk.blueBright(base58.encode(address))}`)
         console.log(`${chalk.whiteBright.bold('Private key')}    (${chalk.redBright('SECRET')}) ${chalk.blueBright(base58.encode(privateKey))}`)
@@ -48,21 +43,18 @@ const commands = {
     commands: async () => {
         let choices: Array<{ title: string, description: string, value: Function }> = [
             { title: 'Wallet', description: 'Select wallet', value: commands.select_wallet },
-            { title: 'Network', description: 'View network nodes', value: commands.network },
-            { title: 'Generate', description: 'Generate a new wallet', value: commands.generate },
-            { title: 'Import', description: 'Import a new wallet', value: commands.import_wallet },
-            { title: 'Blockchain', description: 'View statistics about the blockchain', value: commands.blockchain },
+            { title: 'Ping', description: 'API node status', value: commands.ping },
+            { title: 'Generate', description: 'Generate new wallet', value: commands.generate },
+            { title: 'Import', description: 'Import new wallet', value: commands.import_wallet },
             { title: 'Exit', description: 'Exits', value: commands.exit }
         ]
         if (wallet) {
             choices = [
                 { title: 'Address', description: 'Show wallet address', value: commands.address },
                 { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
-                { title: 'Send', description: 'Send money to address', value: commands.send },
-                { title: 'Transactions', description: 'Lists all transactions', value: commands.transactions },
-                { title: 'Info', description: `View details about your current wallet (${chalk.redBright('Make sure no one is looking')})`, value: commands.info },
-                { title: 'Private key', description: `Shows private key (${chalk.redBright('Make sure no one is looking')})`, value: commands.secret },
-                { title: 'Recovery Words', description: `Shows recovery words (${chalk.redBright('Make sure no one is looking')})`, value: commands.recovery_words },
+                { title: 'Send', description: 'New transaction', value: commands.send },
+                { title: 'Transactions', description: 'Lists transaction history', value: commands.transactions },
+                { title: 'Info', description: `View sensitive details about wallet (${chalk.redBright('Make sure no one is looking')})`, value: commands.info },
                 ...choices
             ]
             if (wallet.name) console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${wallet.name}.wallet`))))
@@ -78,28 +70,6 @@ const commands = {
             type: 'autocomplete',
             name: 'value',
             message: 'Command',
-            choices
-        })
-        if (typeof res.value !== 'function') {
-            console.clear()
-            return commands.commands()
-        }
-        res.value()
-    },
-    blockchain: async () => {
-        const choices: Array<{ title: string, description: string, value: Function }> = [
-            { title: 'Latest Blocks', description: 'Info about the latest blocks', value: commands.latestBlocks },
-            { title: 'Work', description: 'Estimate how much work has been put into the blockchain', value: commands.estimate_work },
-            { title: 'Supply', description: 'Total circumlating supply', value: commands.circumlatingSupply },
-            { title: 'Transactions', description: 'Total transactions made on blockchain', value: commands.totalTransactions },
-            { title: 'Height', description: 'Height of blockchain', value: commands.height },
-            { title: 'Difficulty', description: 'Current difficulty', value: commands.difficulty },
-            { title: 'Validate', description: 'Validates integrity of blockchain', value: commands.isValid }
-        ]
-        const res = await prompts({
-            type: 'autocomplete',
-            name: 'value',
-            message: 'Blockchain',
             choices
         })
         if (typeof res.value !== 'function') {
@@ -193,12 +163,6 @@ const commands = {
     },
     address: async () => {
         console.log(chalk.blueBright(base58.encode(wallet.address)))
-        await commands.pause()
-        console.clear()
-        commands.commands()
-    },
-    secret: async () => {
-        console.log(chalk.redBright(base58.encode(wallet.privateKey)))
         await commands.pause()
         console.clear()
         commands.commands()
@@ -354,18 +318,13 @@ const commands = {
         console.clear()
         commands.commands()
     },
-    network: async () => {
-        // !
-        // if (wallet.node.sockets.filter(e => e !== undefined).length) {
-        //     for (const socket of wallet.node.sockets) {
-        //         if (!socket) continue
-        //         const info = <net.AddressInfo> socket.address()
-        //         console.log(chalk.whiteBright(`${info.address}${chalk.grey(':')}${chalk.white(info.port)} ${chalk.greenBright('=>')} ${socket.remoteAddress}${chalk.grey(':')}${chalk.blueBright(socket.remotePort)}`))
-        //     }
-        // }
-        // else {
-        //     console.log(chalk.redBright('Wallet is disconnected from the network'))
-        // }
+    ping: async () => {
+        try {
+            if (await HTTPApi.ping()) console.log(chalk.greenBright('Connected'))
+        }
+        catch {
+            console.log(chalk.redBright('Unable to connect to api node'))
+        }
         await commands.pause()
         console.clear()
         commands.commands()
@@ -425,17 +384,6 @@ const commands = {
             choices
         })
         commands.load_wallet(name)
-    },
-    recovery_words: async () => {
-        console.log(chalk.redBright(wallet.words.join(' ')))
-        await commands.pause()
-        console.clear()
-        commands.commands()
-    },
-    init: () => {
-        // !
-        // wallet.node.connectToNetwork(nodes)
-        commands.commands()
     },
     pause: () => {
         return new Promise <void> (resolve => {
@@ -560,65 +508,6 @@ const commands = {
         await commands.pause()
         console.clear()
         commands.commands()
-    },
-    estimate_work: async () => {
-        const work = await wallet.blockchain.getWork()
-        functions.log_numbers(work)
-        await commands.pause()
-        console.clear()
-        commands.commands()
-    },
-    circumlatingSupply: async () => {
-        const supply = await wallet.blockchain.getCircumlatingSupply()
-        console.log(chalk.greenBright(beautifyBigInt(supply)))
-        await commands.pause()
-        console.clear()
-        commands.commands()
-    },
-    totalTransactions: async () => {
-        const transactions = await wallet.blockchain.getTotalTransactions()
-        functions.log_numbers(transactions)
-        await commands.pause()
-        console.clear()
-        commands.commands()
-    },
-    isValid: async () => {
-        if (await wallet.blockchain.isChainValid()) console.log(chalk.greenBright('Valid'))
-        else console.log(chalk.redBright('Invalid'))
-        await commands.pause()
-        console.clear()
-        commands.commands()
-    },
-    height: async () => {
-        const height = await wallet.blockchain.getHeight()
-        functions.log_numbers(height)
-        await commands.pause()
-        console.clear()
-        commands.commands()
-    },
-    difficulty: async () => {
-        const difficulty = await wallet.blockchain.getDifficulty()
-        functions.log_numbers(difficulty)
-        await commands.pause()
-        console.clear()
-        commands.commands()
-    },
-    latestBlocks: async () => {
-        let latestBlocks = [
-            await wallet.blockchain.getLatestBlock()
-        ]
-        for (let i = 0; i < 9; i++) {
-            const block = await wallet.blockchain.getBlockByHeight(latestBlocks[0].height - 1 - i)
-            if (!block) break
-            latestBlocks.push(block)
-        }
-        latestBlocks = latestBlocks.sort((a, b) => a.timestamp - b.timestamp)
-        for (const block of latestBlocks) {
-            console.log(chalk.grey(`height: ${chalk.yellowBright(block.height)}, timestamp: ${chalk.magentaBright(new Date(block.timestamp).toLocaleTimeString())}`))
-        }
-        await commands.pause()
-        console.clear()
-        commands.commands()
     }
 }
-commands.init()
+commands.commands()
