@@ -26,8 +26,8 @@
         "hostNode": true,
         "connectToNodes": true
     },
+    "save_logs": true,
     "node": {
-        "save_logs": true,
         "hostNode": true,
         "connectToNodes": true,
         "blockchainSynchronization": {
