@@ -53,24 +53,7 @@ class Transaction {
         for (const property in input) {
             for (const _property in config.mongoose.schema.transaction) {
                 if (property === config.mongoose.schema.transaction[_property].name.toString()) {
-                    // !
-                    switch (_property) {
-                        // case 'to':
-                        //     output[_property] = Buffer.from(input[property], 'binary')
-                        //     break
-                        // case 'from':
-                        //     output[_property] = Buffer.from(input[property], 'binary')
-                        //     break
-                        // case 'data':
-                        //     output[_property] = Buffer.from(input[property], 'binary')
-                        //     break
-                        // case 'signature':
-                        //     output[_property] = Buffer.from(input[property], 'binary')
-                        //     break
-                        default:
-                            output[_property] = input[property]
-                            break
-                    }
+                    output[_property] = input[property]
                 }
             }
         }
