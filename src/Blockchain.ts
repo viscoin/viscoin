@@ -168,6 +168,7 @@ class Blockchain extends events.EventEmitter {
             }
             return 17
         }
+        await this.updateBlockHashes()
         await block.save()
         if ((await this.getLatestBlock()).hash.equals(block.hash)) {
             await this.updateBlockHashes()
