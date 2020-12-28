@@ -45,7 +45,8 @@
         "maxConnections": 100
     },
     "Blockchain": {
-        "disableOptimization": false
+        "disableOptimization": false,
+        "maxDesync": 30000
     },
     "Block": {
         "reward": "1000",
