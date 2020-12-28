@@ -39,7 +39,7 @@ class Transaction {
         }
     }
     static minify(input: Transaction) {
-        const output = {}
+        const output: object = {}
         for (const property in input) {
             if (config.mongoose.schema.transaction[property]) {
                 if (input[property] instanceof Buffer) output[config.mongoose.schema.transaction[property].name] = input[property].toString('binary')

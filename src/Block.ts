@@ -83,7 +83,7 @@ class Block {
         return true
     }
     static minify(input: Block) {
-        const output = {}
+        const output: object = {}
         for (const property in input) {
             if (config.mongoose.schema.block[property]) {
                 if (input[property] instanceof Buffer) output[config.mongoose.schema.block[property].name] = input[property].toString('binary')
@@ -129,7 +129,6 @@ class Block {
         const blocks = await model_block
             .find(query, projection, options)
             .exec()
-        if (!blocks) return null
         const _blocks = []
         for (const block of blocks) {
             _blocks.push(new Block(Block.beautify(block)))
