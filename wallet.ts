@@ -498,7 +498,7 @@ const commands = {
             }
             if (transactions.length) {
                 for (const transaction of transactions.sort((a, b) => a.timestamp - b.timestamp).map(e => new Transaction(Transaction.beautify(e)))) {
-                    const date = chalk.magentaBright(new Date(transaction.timestamp).toLocaleTimeString()),
+                    const date = chalk.magentaBright(new Date(transaction.timestamp).toLocaleString()),
                     arrow = chalk.magentaBright('→')
                     let data = ''
                     if (transaction.data) data = `\n ${chalk.magentaBright('⤷')} ${chalk.grey(transaction.data.toString('hex'))}`
