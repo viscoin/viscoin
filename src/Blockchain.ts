@@ -178,13 +178,13 @@ class Blockchain extends events.EventEmitter {
         }
         return 0
     }
-    async isBalanceValid(address: Buffer, hash: Buffer) {
-        if (this.hashes.current.includes(hash.toString('binary')) === false) return false
-        const height = this.hashes.current.indexOf(hash.toString('binary'))
+    async isBalanceValid(address: string, hash: string) {
+        const height = this.hashes.current.indexOf(hash)
+        if (height === -1) return false
         const blocks = await model_address.find({
             $or: [
-                { [`${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.to.name}`]: address.toString('binary') },
-                { [`${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.from.name}`]: address.toString('binary') }
+                { [`${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.to.name}`]: address },
+                { [`${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.from.name}`]: address }
             ],
             [config.mongoose.schema.block.height.name]: {
                 $gte: height
@@ -252,7 +252,7 @@ class Blockchain extends events.EventEmitter {
             if (Buffer.from(document[config.mongoose.schema.address.hash.name], 'binary').equals(latestBlock.hash)) {
                 return parseBigInt(document[config.mongoose.schema.address.balance.name])
             }
-            if (await this.isBalanceValid(address, Buffer.from(document[config.mongoose.schema.address.hash.name], 'binary'))) optimization = true
+            if (await this.isBalanceValid(address.toString('binary'), document[config.mongoose.schema.address.hash.name])) optimization = true
         }
         const { transactions, old_transactions } = <any> await this.getTransactionsOfAddress(address, `
             ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.to.name}
