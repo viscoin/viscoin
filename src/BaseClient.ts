@@ -39,9 +39,7 @@ class BaseClient extends events.EventEmitter {
                 res.end(JSON.stringify(Block.minify(block), null, 4))
             })
             this.httpApi.on('latest-block', async res => {
-                const block = await this.blockchain.getLatestBlock()
-                if (!block) return res.status(404).end()
-                res.end(JSON.stringify(Block.minify(block), null, 4))
+                res.end(JSON.stringify(Block.minify(this.blockchain.latestBlock), null, 4))
             })
             this.httpApi.on('address-transactions', async (res, address) => {
                 const { transactions } = await this.blockchain.getTransactionsOfAddress(address)

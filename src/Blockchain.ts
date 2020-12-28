@@ -16,6 +16,7 @@ interface Blockchain {
         new: Array<string>
     }
     updatingBlockHashes: boolean
+    latestBlock: Block
 }
 class Blockchain extends events.EventEmitter {
     constructor() {
@@ -32,7 +33,7 @@ class Blockchain extends events.EventEmitter {
             current: [],
             new: []
         }
-        let block = await this.getLatestBlock()
+        let block = await this.setLatestBlock()
         while (block) {
             this.hashes.current.unshift(block.hash.toString('binary'))
             block = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
@@ -44,7 +45,7 @@ class Blockchain extends events.EventEmitter {
         }
         this.updatingBlockHashes = true
         if (!this.hashes) await this.setBlockHashes()
-        let block = await this.getLatestBlock(),
+        let block = await this.setLatestBlock(),
         index: number = null
         const newHashes: Array<string> = []
         while (block && !index) {
@@ -79,10 +80,15 @@ class Blockchain extends events.EventEmitter {
             difficulty: this.difficulty
         })
     }
-    async getLatestBlock() {
-        const block = await Block.load(null, null, { sort: { [config.mongoose.schema.block.height.name]: -1, [config.mongoose.schema.block.difficulty.name]: -1 }, lean: true })
-        if (!block) return this.createGenesisBlock()
+    async setLatestBlock() {
+        let block = await Block.load(null, null, { sort: { [config.mongoose.schema.block.height.name]: -1, [config.mongoose.schema.block.difficulty.name]: -1 }, lean: true })
+        if (block === null) block = this.createGenesisBlock()
+        this.latestBlock = block
         return block
+    }
+    async getLatestBlock() {
+        if (!this.latestBlock) await this.setLatestBlock()
+        return this.latestBlock
     }
     async addTransaction(transaction: Transaction) {
         // sync
@@ -243,14 +249,13 @@ class Blockchain extends events.EventEmitter {
         }
     }
     async getBalanceOfAddress(address: Buffer, disableOptimization: boolean = config.Blockchain.disableOptimization) {
-        const latestBlock = await this.getLatestBlock()
         const document = await model_address.findOne({ [config.mongoose.schema.address.address.name]: address.toString('binary') })
         let optimization = false
         if (document
         && document[config.mongoose.schema.address.balance.name] !== undefined
         && document[config.mongoose.schema.address.hash.name] !== undefined
         && !disableOptimization) {
-            if (Buffer.from(document[config.mongoose.schema.address.hash.name], 'binary').equals(latestBlock.hash)) {
+            if (Buffer.from(document[config.mongoose.schema.address.hash.name], 'binary').equals((await this.getLatestBlock()).hash)) {
                 return parseBigInt(document[config.mongoose.schema.address.balance.name])
             }
             if (await this.isBalanceValid(address.toString('binary'), document[config.mongoose.schema.address.hash.name])) optimization = true
@@ -281,13 +286,13 @@ class Blockchain extends events.EventEmitter {
         }
         balance += getBalance(transactions)
         if (document) {
-            document[config.mongoose.schema.address.hash.name] = latestBlock.hash.toString('binary')
+            document[config.mongoose.schema.address.hash.name] = (await this.getLatestBlock()).hash.toString('binary')
             document[config.mongoose.schema.address.balance.name] = beautifyBigInt(balance)
             await document.save()
         }
         else if (!(await model_address.exists({ [config.mongoose.schema.address.address.name]: address.toString('binary') }))) {
             await new model_address({
-                [config.mongoose.schema.address.hash.name]: latestBlock.hash.toString('binary'),
+                [config.mongoose.schema.address.hash.name]: (await this.getLatestBlock()).hash.toString('binary'),
                 [config.mongoose.schema.address.balance.name]: beautifyBigInt(balance),
                 [config.mongoose.schema.address.address.name]: address.toString('binary')
             }).save()
@@ -324,7 +329,7 @@ class Blockchain extends events.EventEmitter {
     }
     async isChainValid() {
     // async isChainValid(limit: number = 0) {
-        let block = await this.getLatestBlock()
+        let block = (await this.getLatestBlock())
         let previousBlocks = []
         let blocks = []
         // let counter = 0
