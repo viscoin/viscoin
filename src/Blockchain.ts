@@ -40,28 +40,29 @@ class Blockchain extends events.EventEmitter {
         if (!this.oldHashes) this.oldHashes = []
         if (!this.newHashes) this.newHashes = []
         let block = await this.getLatestBlock(),
-        index: number = null,
-        done: boolean = false
+        index: number = null
         const newHashes: Array<Buffer> = []
-        while (block && !done) {
+        while (block && !index) {
             for (let i = this.blockHashes.length - 1; i >= 0; i--) {
-                index = i
                 if (this.blockHashes[i].equals(block.hash)) {
-                    done = true
+                    index = i
                     break
                 }
+                if (i < this.blockHashes.length - 1 - config.Block.trustedAfterBlocks) break
             }
-            if (done) break
+            if (index !== null) break
             newHashes.unshift(block.hash)
             block = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         }
         // !
         // const oldHashes = this.blockHashes.splice(index + 1, this.blockHashes.length, ...newHashes)
         // console.log(this.blockHashes[this.blockHashes.length - 1].toString('hex'), this.blockHashes[this.blockHashes.length - 2].toString('hex'), this.blockHashes[this.blockHashes.length - 3].toString('hex'))
-        this.oldHashes = this.blockHashes.slice(index + 1)
-        this.blockHashes = this.blockHashes.slice(0, index + 1)
-        this.blockHashes.push(...newHashes)
-        this.newHashes = newHashes
+        if (index !== null) {
+            this.oldHashes = this.blockHashes.slice(index + 1)
+            this.blockHashes = this.blockHashes.slice(0, index + 1)
+            this.blockHashes.push(...newHashes)
+            this.newHashes = newHashes
+        }
         this.emit('updated-block-hashes')
         this.updatingBlockHashes = false
     }
