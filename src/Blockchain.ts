@@ -249,13 +249,14 @@ class Blockchain extends events.EventEmitter {
         }
     }
     async getBalanceOfAddress(address: Buffer, disableOptimization: boolean = config.Blockchain.disableOptimization) {
+        const latestBlock = await this.getLatestBlock()
         const document = await model_address.findOne({ [config.mongoose.schema.address.address.name]: address.toString('binary') })
         let optimization = false
         if (document
         && document[config.mongoose.schema.address.balance.name] !== undefined
         && document[config.mongoose.schema.address.hash.name] !== undefined
         && !disableOptimization) {
-            if (Buffer.from(document[config.mongoose.schema.address.hash.name], 'binary').equals((await this.getLatestBlock()).hash)) {
+            if (Buffer.from(document[config.mongoose.schema.address.hash.name], 'binary').equals(latestBlock.hash)) {
                 return parseBigInt(document[config.mongoose.schema.address.balance.name])
             }
             if (await this.isBalanceValid(address.toString('binary'), document[config.mongoose.schema.address.hash.name])) optimization = true
@@ -286,13 +287,13 @@ class Blockchain extends events.EventEmitter {
         }
         balance += getBalance(transactions)
         if (document) {
-            document[config.mongoose.schema.address.hash.name] = (await this.getLatestBlock()).hash.toString('binary')
+            document[config.mongoose.schema.address.hash.name] = latestBlock.hash.toString('binary')
             document[config.mongoose.schema.address.balance.name] = beautifyBigInt(balance)
             await document.save()
         }
         else if (!(await model_address.exists({ [config.mongoose.schema.address.address.name]: address.toString('binary') }))) {
             await new model_address({
-                [config.mongoose.schema.address.hash.name]: (await this.getLatestBlock()).hash.toString('binary'),
+                [config.mongoose.schema.address.hash.name]: latestBlock.hash.toString('binary'),
                 [config.mongoose.schema.address.balance.name]: beautifyBigInt(balance),
                 [config.mongoose.schema.address.address.name]: address.toString('binary')
             }).save()
