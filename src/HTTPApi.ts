@@ -37,7 +37,9 @@ class HTTPApi extends events.EventEmitter {
             this.emit('latest-block', res)
         })
         app.get('/block/:height', (req, res) => {
-            this.emit('block', res, req.params.height)
+            const height = parseInt(req.params.height)
+            if (isNaN(height)) return
+            this.emit('block', res, height)
         })
         app.get('/block', (req, res) => {
             this.emit('latest-block', res)
