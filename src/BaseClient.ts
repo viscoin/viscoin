@@ -34,9 +34,7 @@ class BaseClient extends events.EventEmitter {
             })
 
             this.httpApi.on('block', async (res, height) => {
-                const block = await this.blockchain.getBlockByHeight(height)
-                if (!block) return res.status(404).end()
-                res.end(JSON.stringify(Block.minify(block), null, 4))
+                res.end(JSON.stringify(Block.minify(await this.blockchain.getBlockByHeight(height)), null, 4))
             })
             this.httpApi.on('latest-block', async res => {
                 res.end(JSON.stringify(Block.minify(await this.blockchain.getLatestBlock()), null, 4))
