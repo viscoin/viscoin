@@ -33,7 +33,7 @@ class MinerClient extends BaseClient {
         })
         // !
         this.on('block', async (block, code) => {
-            if (block.hash.equals(this.blockchain.latestBlock.hash)) this.emitThreadsMineNewBlock()
+            if (block.hash.equals((await this.blockchain.getLatestBlock()).hash)) this.emitThreadsMineNewBlock()
         })
     }
     async emitThreadsMineNewBlock() {
