@@ -171,27 +171,14 @@ class TCPNetworkNode extends events.EventEmitter {
         }
         this.sockets = []
     }
-    async onData(buf: Buffer, socket: Socket) {
-        if (this.compareAndStoreHash(buf)) return
-        const parsed = protocol.parseDataBuffer(buf)
-        if (!parsed) return this.emit('blacklist', socket, 'invalid buffer')
-        switch (parsed.type) {
-            case 'block':
-                if (!parsed.data) return this.emit('blacklist', socket, 'invalid parsed data block')
-                const block = new Block(Block.beautify(parsed.data))
-                this.emit('block', block)
-                break
-            case 'transaction':
-                if (!parsed.data) return this.emit('blacklist', socket, 'invalid parsed data transaction')
-                const transaction = new Transaction(Transaction.beautify(parsed.data))
-                this.emit('transaction', transaction)
-                break
-            case 'node':
-                if (!parsed.data) return this.emit('blacklist', socket, 'invalid parsed data node')
-                this.emit('node', parsed.data)
-                break
-        }
-        this.broadcastAndStoreDataHash(buf)
+    async onData(buffer: Buffer, socket: Socket) {
+        if (this.compareAndStoreHash(buffer)) return null
+        const parsed = protocol.parse(buffer)
+        if (parsed === null) return this.emit('blacklist', socket, 'parsed === null')
+        const { type, data } = parsed
+        this.emit(type, data)
+        this.broadcastAndStoreDataHash(buffer)
+        return true
     }
     // server
     start() {

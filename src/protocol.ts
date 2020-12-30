@@ -1,3 +1,6 @@
+import Block from "./Block"
+import Transaction from "./Transaction"
+
 const types = [
     'null',
     'block',
@@ -9,25 +12,46 @@ export default {
     types,
     getType(type: types_string | number): types_string | number {
         if (typeof type === 'string') {
-            // !
-            const index = this.types.indexOf(type)
-            if (index === -1) throw new Error('getType index')
-            return this.types.indexOf(type)
+            if (this.types.indexOf(type) !== -1) return this.types.indexOf(type)
+            return null
         }
         else if (typeof type === 'number') {
-            return this.types[type]
+            if (this.types[type]) return this.types[type]
+            return null
         }
+        return null
     },
     constructDataBuffer(type: types_string | number, data: object) {
         return Buffer.concat([ Buffer.alloc(1, this.getType(type)), Buffer.from(JSON.stringify(data), 'binary') ])
     },
-    parseDataBuffer(data: Buffer) {
+    parse(buffer: Buffer) {
         try {
-            return {
-                type: <string> this.getType(data[0]),
-                data: <object> JSON.parse(data.slice(1).toString('binary'))
+            if (Buffer.byteLength(buffer) === 0) return null
+            const type = this.getType(buffer[0])
+            if (type === null) return null
+            let data = JSON.parse(buffer.slice(1).toString('binary'))
+            switch (type) {
+                case 'block':
+                    data = new Block(Block.beautify(data))
+                    break
+                case 'transaction':
+                    data = new Transaction(Transaction.beautify(data))
+                    break
+                case 'node':
+                    data = {
+                        port: data.port,
+                        address: data.address
+                    }
+                    break
+                default:
+                    return null
             }
-        } catch {
+            return {
+                type,
+                data
+            }
+        }
+        catch {
             return null
         }
     },
