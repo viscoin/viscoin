@@ -33,9 +33,6 @@ class HTTPApi extends events.EventEmitter {
         app.get('/config', (req, res) => {
             this.emit('config', res)
         })
-        app.get('/block/latest', (req, res) => {
-            this.emit('latest-block', res)
-        })
         app.get('/block/:height', (req, res) => {
             const height = parseInt(req.params.height)
             if (isNaN(height)) return
@@ -152,6 +149,12 @@ class HTTPApi extends events.EventEmitter {
     }
     static async index() {
         return await this.get('/')
+    }
+    static async getBlockByHeight(height: number) {
+        return await this.get(`/black/${height}`)
+    }
+    static async getLatestBlock() {
+        return await this.get('/block')
     }
 }
 export default HTTPApi
