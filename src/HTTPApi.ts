@@ -143,7 +143,8 @@ class HTTPApi extends events.EventEmitter {
         return await this.get(`/balance/${address}`)
     }
     static async getTransactionsOfAddress(address: string) {
-        return await this.get(`/transactions/${address}`)
+        const transactions = await this.get(`/transactions/${address}`)
+        return transactions.map(e => new Transaction(Transaction.beautify(e)))
     }
     static async send(transaction: Transaction) {
         return await this.post('/send', JSON.stringify(Transaction.minify(transaction)))
@@ -162,7 +163,8 @@ class HTTPApi extends events.EventEmitter {
         return new Block(Block.beautify(block))
     }
     static async getPendingTransactions() {
-        return await this.get('/transactions/pending')
+        const transactions = await this.get('/transactions/pending')
+        return transactions.map(e => new Transaction(Transaction.beautify(e)))
     }
 }
 export default HTTPApi
