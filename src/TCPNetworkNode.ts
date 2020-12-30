@@ -3,8 +3,6 @@ import * as events from 'events'
 import * as config from '../config.json'
 import customHash from './customHash'
 import protocol from './protocol'
-import Transaction from './Transaction'
-import Block from './Block'
 interface Socket extends net.Socket {
     bytesReadLastSecond: number
     data: Buffer
