@@ -5,6 +5,7 @@ import * as http from 'http'
 import * as express from 'express'
 import Transaction from './Transaction'
 import base58 from './base58'
+import Block from './Block'
 interface HTTPApi {
     server: net.Server
 }
@@ -151,10 +152,14 @@ class HTTPApi extends events.EventEmitter {
         return await this.get('/')
     }
     static async getBlockByHeight(height: number) {
-        return await this.get(`/block/${height}`)
+        const block = await this.get(`/block/${height}`)
+        if (!block) return null
+        return new Block(Block.beautify(block))
     }
     static async getLatestBlock() {
-        return await this.get('/block')
+        const block = await this.get('/block')
+        if (!block) return null
+        return new Block(Block.beautify(block))
     }
     static async getPendingTransactions() {
         return await this.get('/transactions/pending')
