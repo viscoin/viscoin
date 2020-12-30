@@ -39,7 +39,7 @@
         "port": 80
     },
     "TCPApi": {
-        "enabled": false,
+        "enabled": true,
         "host": "localhost",
         "port": 8336,
         "maxConnections": 100

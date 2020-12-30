@@ -53,11 +53,11 @@ class BaseClient extends events.EventEmitter {
         if (config.TCPApi.enabled) {
             this.tcpServer = TCPApi.createServer()
             this.tcpServer.start()
-            this.on('block', block => {
-                this.tcpServer.broadcast(protocol.constructDataBuffer('block', Block.minify(block)))
+            this.on('block', (block, code) => {
+                if (code === 0) this.tcpServer.broadcast(protocol.constructDataBuffer('block', Block.minify(block)))
             })
-            this.on('transaction', transaction => {
-                this.tcpServer.broadcast(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
+            this.on('transaction', (transaction, code) => {
+                if (code === 0) this.tcpServer.broadcast(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
             })
         }
         if (config.HTTPApi.enabled) {

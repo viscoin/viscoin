@@ -13,9 +13,7 @@ class Server extends events.EventEmitter {
         this.server = new net.Server()
         this.server.maxConnections = config.TCPApi.maxConnections
         this.server.on('connection', (socket: net.Socket) => {
-            socket.on('connect', () => {
-                this.sockets.add(socket)
-            })
+            this.sockets.add(socket)
             socket.on('close', () => this.sockets.delete(socket))
             socket.on('data', () => socket.destroy())
         })
@@ -28,7 +26,6 @@ class Server extends events.EventEmitter {
     }
     broadcast(buffer: Buffer) {
         for (const socket of this.sockets) {
-            console.log('write')
             socket.write(buffer)
             socket.write(protocol.end)
         }
@@ -42,8 +39,8 @@ class Client extends events.EventEmitter {
         super()
         this.sockets = new Set()
     }
-    connect(port: number, address: string) {
-        const socket = net.connect(port, address)
+    connect(port: number, host: string) {
+        const socket = net.connect(port, host)
         socket.on('connect', () => {
             this.sockets.add(socket)
         })
