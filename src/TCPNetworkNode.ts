@@ -9,7 +9,7 @@ interface Socket extends net.Socket {
 }
 interface TCPNetworkNode {
     hashes: Array<{ hash: Buffer, timestamp: number }>
-    sockets: Array<Socket>
+    sockets: Set<Socket>
     blacklisted: Array<String>
     // server
     server: net.Server
@@ -19,10 +19,10 @@ class TCPNetworkNode extends events.EventEmitter {
     constructor() {
         super()
         this.hashes = []
-        this.sockets = []
+        this.sockets = new Set()
         this.blacklisted = []
         this.on('blacklist', (socket: Socket, reason: string) => {
-            socket.destroy()
+            this.destroySocket(socket)
             this.blacklisted.push(socket.remoteAddress)
         })
         setInterval(this.interval[0].bind(this), 1000)
@@ -53,20 +53,11 @@ class TCPNetworkNode extends events.EventEmitter {
         }
     ]
     addSocket(socket: Socket) {
-        if (this.blacklisted.includes(socket.remoteAddress)) return socket.destroy()
-        let index = this.sockets.indexOf(undefined)
+        if (this.blacklisted.includes(socket.remoteAddress)) return this.destroySocket(socket)
         const add = () => {
             socket.setTimeout(config.TCPNetworkNode.socket.setTimeout)
-            if (this.hasSocket(socket)) {
-                return socket.destroy()
-            }
-            if (index !== -1) {
-                this.sockets[index] = socket
-            }
-            else {
-                this.sockets.push(socket)
-                index = this.sockets.length - 1
-            }
+            if (this.hasSocket(socket)) return this.destroySocket(socket)
+            this.sockets.add(socket)
             this.broadcastAndStoreDataHash(protocol.constructDataBuffer('node', {
                 address: socket.remoteAddress,
                 family: socket.remoteFamily,
@@ -74,20 +65,14 @@ class TCPNetworkNode extends events.EventEmitter {
             }))
             this.emit('socket', socket)
         }
-        if (!socket.connecting) add()
+        if (socket.connecting === false) add()
         socket.bytesReadLastSecond = socket.bytesRead
         socket.data = Buffer.alloc(0)
         socket
-            .on('connect', () => {
-                add()
-                this.emit('connect', socket)
-            })
-            .on('error', () => socket.destroy())
-            .on('close', () => {
-                socket.destroy()
-                this.sockets[index] = undefined
-            })
-            .on('timeout', () => this.emit('blacklist', socket, 'not sending data'))
+            .on('connect', () => add())
+            .on('error', () => {})
+            .on('close', () => this.destroySocket(socket))
+            .on('timeout', () => this.emit('blacklist', socket, 'idle'))
             .on('data', chunk => {
                 const byteLength = Buffer.byteLength(chunk)
                 socket.bytesReadLastSecond += byteLength
@@ -110,7 +95,8 @@ class TCPNetworkNode extends events.EventEmitter {
                     index = protocol.getEndIndex(socket.data)
                 }
             })
-            .on('end', () => socket.destroy())
+            // !
+            .on('end', () => {})
             .on('drain', () => {})
             .on('lookup', () => {})
     }
@@ -169,10 +155,13 @@ class TCPNetworkNode extends events.EventEmitter {
     }
     disconnectFromNetwork() {
         for (const socket of this.sockets) {
-            socket.destroy()
-            socket.removeAllListeners()
+            this.destroySocket(socket)
         }
-        this.sockets = []
+    }
+    destroySocket(socket: Socket) {
+        socket.destroy()
+        socket.removeAllListeners()
+        this.sockets.delete(socket)
     }
     // server
     start() {

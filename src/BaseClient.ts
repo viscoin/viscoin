@@ -41,8 +41,6 @@ class BaseClient extends events.EventEmitter {
             if (config.BaseClient.logs) fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('socket', socket)
         })
-        this.node.on('connect', socket => this.emit('connect', socket))
-        this.node.on('connection', socket => this.emit('connection', socket))
         this.node.server.on('listening', () => this.emit('listening'))
         this.node.on('blacklist', (socket, reason) => {
             if (!fs.existsSync('./log')) fs.mkdirSync('./log')
