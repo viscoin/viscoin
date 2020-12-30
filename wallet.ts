@@ -217,7 +217,7 @@ const commands = {
                 balance = await wallet.balance()
             }
             else {
-                balance = await HTTPApi.balanceAddress(res.address)
+                balance = await HTTPApi.getBalanceOfAddress(res.address)
             }
             console.log(chalk.yellowBright(balance))
         }
@@ -494,7 +494,7 @@ const commands = {
                 transactions = await wallet.transactions()
             }
             else {
-                transactions = await HTTPApi.transactionsAddress(res.address)
+                transactions = await HTTPApi.getTransactionsOfAddress(res.address)
             }
             if (transactions.length) {
                 for (const transaction of transactions.sort((a, b) => a.timestamp - b.timestamp).map(e => new Transaction(Transaction.beautify(e)))) {

@@ -139,10 +139,10 @@ class HTTPApi extends events.EventEmitter {
             req.end()
         })
     }
-    static async balanceAddress(address: string) {
+    static async getBalanceOfAddress(address: string) {
         return await this.get(`/balance/${address}`)
     }
-    static async transactionsAddress(address: string) {
+    static async getTransactionsOfAddress(address: string) {
         return await this.get(`/transactions/${address}`)
     }
     static async send(transaction: Transaction) {

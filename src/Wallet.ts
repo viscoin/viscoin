@@ -45,10 +45,10 @@ class Wallet {
         return a
     }
     async balance() {
-        return await HTTPApi.balanceAddress(base58.encode(this.address))
+        return await HTTPApi.getBalanceOfAddress(base58.encode(this.address))
     }
     async transactions() {
-        return await HTTPApi.transactionsAddress(base58.encode(this.address))
+        return await HTTPApi.getTransactionsOfAddress(base58.encode(this.address))
     }
 }
 export default Wallet
