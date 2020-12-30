@@ -156,5 +156,8 @@ class HTTPApi extends events.EventEmitter {
     static async getLatestBlock() {
         return await this.get('/block')
     }
+    static async getPendingTransactions() {
+        return await this.get('/transactions/pending')
+    }
 }
 export default HTTPApi
