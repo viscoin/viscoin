@@ -96,15 +96,20 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (socket.bytesReadLastSecond > config.TCPNetworkNode.socket.maxBytesPerSecond) return this.emit('blacklist', socket, 'sending data too fast')
                 socket.data = Buffer.concat([socket.data, chunk])
                 if (Buffer.byteLength(socket.data) > config.TCPNetworkNode.socket.maxBytesInMemory) return this.emit('blacklist', socket, 'sending too much data without end')
-                let index = null
+                let index = protocol.getEndIndex(socket.data)
                 while (index !== -1 && !socket.destroyed) {
+                    const buffer = socket.data.slice(0, index)
+                    socket.data = socket.data.slice(index + Buffer.byteLength(protocol.end))
+                    if (this.compareAndStoreHash(buffer)) continue
+                    const parsed = protocol.parse(buffer)
+                    // !
+                    if (parsed === null) return this.emit('blacklist', socket, 'parsed === null')
+                    // !
+                    // if (parsed === null) continue
+                    const { type, data } = parsed
+                    this.emit(type, data)
+                    this.broadcastAndStoreDataHash(buffer)
                     index = protocol.getEndIndex(socket.data)
-                    if (index !== -1) {
-                        const data = socket.data.slice(0, index)
-                        this.onData(data, socket)
-                        this.emit('data', data, socket)
-                        socket.data = socket.data.slice(index + 32)
-                    }
                 }
             })
             .on('end', () => socket.destroy())
@@ -170,15 +175,6 @@ class TCPNetworkNode extends events.EventEmitter {
             socket.removeAllListeners()
         }
         this.sockets = []
-    }
-    async onData(buffer: Buffer, socket: Socket) {
-        if (this.compareAndStoreHash(buffer)) return null
-        const parsed = protocol.parse(buffer)
-        if (parsed === null) return this.emit('blacklist', socket, 'parsed === null')
-        const { type, data } = parsed
-        this.emit(type, data)
-        this.broadcastAndStoreDataHash(buffer)
-        return true
     }
     // server
     start() {

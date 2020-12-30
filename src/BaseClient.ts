@@ -36,7 +36,6 @@ class BaseClient extends events.EventEmitter {
             if (config.BaseClient.connectToNodes) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
             this.emit('node', node)
         })
-        this.node.on('data', data => this.emit('data', data))
         this.node.on('socket', socket => {
             if (!fs.existsSync('./log')) fs.mkdirSync('./log')
             if (config.BaseClient.logs) fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
