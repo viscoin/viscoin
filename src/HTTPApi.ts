@@ -151,7 +151,7 @@ class HTTPApi extends events.EventEmitter {
         return await this.get('/')
     }
     static async getBlockByHeight(height: number) {
-        return await this.get(`/black/${height}`)
+        return await this.get(`/block/${height}`)
     }
     static async getLatestBlock() {
         return await this.get('/block')
