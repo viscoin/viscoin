@@ -17,6 +17,10 @@ interface Blockchain {
     }
     updatingBlockHashes: boolean
     latestBlock: Block
+    minByteFee: {
+        bigint: bigint,
+        remainder: bigint
+    }
 }
 class Blockchain extends events.EventEmitter {
     constructor() {
@@ -140,6 +144,9 @@ class Blockchain extends events.EventEmitter {
         // !
         // limit amount of transactions from address to not slow down database when calculating balance
         // if ((await this.getTransactionsOfAddress(transaction.from)).length >= config.maxTransactions) return 23
+        const { bigint, remainder } = transaction.byteFee()
+        if (bigint < this.minByteFee.bigint
+        || (bigint === this.minByteFee.bigint && remainder <= this.minByteFee.remainder)) return 24
         this.pendingTransactions.push(transaction)
         return 0
     }
@@ -436,8 +443,8 @@ class Blockchain extends events.EventEmitter {
                 .filter(e => e.timestamp >= previousBlock.timestamp)
                 .sort((a, b) => {
                     const byteLength = {
-                        a: BigInt(Buffer.byteLength(JSON.stringify(a))),
-                        b: BigInt(Buffer.byteLength(JSON.stringify(b)))
+                        a: BigInt(Buffer.byteLength(JSON.stringify(Transaction.minify(a)))),
+                        b: BigInt(Buffer.byteLength(JSON.stringify(Transaction.minify(b))))
                     }
                     const minerFee = {
                         a: parseBigInt(a.minerFee),
@@ -472,6 +479,8 @@ class Blockchain extends events.EventEmitter {
         while (Buffer.byteLength(JSON.stringify(Block.minify(block))) > config.Blockchain.maxBlockSize) {
             const transaction = block.transactions.pop()
             block.transactions[0].amount = beautifyBigInt(parseBigInt(block.transactions[0].amount) - parseBigInt(transaction.minerFee))
+            this.minByteFee = block.transactions[block.transactions.length - 1].byteFee()
+            console.log(this.minByteFee)
         }
         return block
     }

@@ -2,6 +2,7 @@ import * as elliptic from 'elliptic'
 import customHash from './customHash'
 import addressFromPublicKey from './addressFromPublicKey'
 import * as config from '../config.json'
+import parseBigInt from './parseBigInt'
 interface Transaction {
     from: Buffer
     to: Buffer
@@ -97,6 +98,17 @@ class Transaction {
         }
         catch {
             return false
+        }
+    }
+    byteFee() {
+        console.log(Transaction.minify(this))
+        const bytes = BigInt(Buffer.byteLength(JSON.stringify(Transaction.minify(this))))
+        const fee = parseBigInt(this.minerFee)
+        const bigint = bytes / fee
+        const remainder = fee % bytes
+        return {
+            bigint,
+            remainder
         }
     }
 }
