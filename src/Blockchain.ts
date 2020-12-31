@@ -129,14 +129,14 @@ class Blockchain extends events.EventEmitter {
         if (typeof transaction.recoveryParam !== 'number') return 17
         if (transaction.recoveryParam >> 2) return 18
         // verify
-        if (Buffer.byteLength(JSON.stringify(Transaction.minify(transaction))) > config.Blockchain.maxTransactionSize) return 11
-        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 19
-        if (!transaction.verify()) return 20
+        if (Buffer.byteLength(JSON.stringify(Transaction.minify(transaction))) > config.Blockchain.maxTransactionSize) return 19
+        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 20
+        if (!transaction.verify()) return 21
         // async
-        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 21
+        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 22
         let sum = parseBigInt(transaction.minerFee)
         if (transaction.amount) sum += parseBigInt(transaction.amount)
-        if (await this.getBalanceOfAddress(transaction.from) < sum) return 22
+        if (await this.getBalanceOfAddress(transaction.from) < sum) return 23
         // !
         // limit amount of transactions from address to not slow down database when calculating balance
         // if ((await this.getTransactionsOfAddress(transaction.from)).length >= config.maxTransactions) return 23
