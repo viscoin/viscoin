@@ -479,6 +479,8 @@ class Blockchain extends events.EventEmitter {
         while (Buffer.byteLength(JSON.stringify(Block.minify(block))) > config.Blockchain.maxBlockSize) {
             const transaction = block.transactions.pop()
             block.transactions[0].amount = beautifyBigInt(parseBigInt(block.transactions[0].amount) - parseBigInt(transaction.minerFee))
+            // !
+            if (block.transactions.length === 1) break
             this.minByteFee = block.transactions[block.transactions.length - 1].byteFee()
             console.log(this.minByteFee)
         }

@@ -101,9 +101,12 @@ class Transaction {
         }
     }
     byteFee() {
-        console.log(Transaction.minify(this))
         const bytes = BigInt(Buffer.byteLength(JSON.stringify(Transaction.minify(this))))
         const fee = parseBigInt(this.minerFee)
+        if (fee === 0n) return {
+            bigint: 0n,
+            remainder: 0n
+        }
         const bigint = bytes / fee
         const remainder = fee % bytes
         return {
