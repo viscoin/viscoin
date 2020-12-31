@@ -46,13 +46,12 @@
     },
     "Blockchain": {
         "disableOptimization": false,
-        "maxDesync": 30000
-    },
-    "Block": {
-        "reward": "1000",
+        "maxDesync": 30000,
+        "maxTransactionSize": 16384,
+        "blockReward": "1000",
         "blockTime": 2000,
-        "trustedAfterBlocks": 60,
-        "blockSize": 8388608
+        "trustedAfterBlocks": 1000,
+        "maxBlockSize": 1048576
     },
     "mongoose": {
         "schema": {

@@ -54,7 +54,7 @@ class Blockchain extends events.EventEmitter {
                     index = i
                     break
                 }
-                if (i < this.hashes.current.length - 1 - config.Block.trustedAfterBlocks) break
+                if (i < this.hashes.current.length - 1 - config.Blockchain.trustedAfterBlocks) break
             }
             if (index !== null) break
             newHashes.unshift(block.hash.toString('binary'))
@@ -129,6 +129,7 @@ class Blockchain extends events.EventEmitter {
         if (typeof transaction.recoveryParam !== 'number') return 17
         if (transaction.recoveryParam >> 2) return 18
         // verify
+        if (Buffer.byteLength(JSON.stringify(Transaction.minify(transaction))) > config.Blockchain.maxTransactionSize) return 11
         if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 19
         if (!transaction.verify()) return 20
         // async
@@ -154,9 +155,9 @@ class Blockchain extends events.EventEmitter {
         if (block.previousHash instanceof Buffer === false) return 8
         if (Array.isArray(block.transactions) === false) return 9
         if (block.timestamp > Date.now() + config.Blockchain.maxDesync) return 10
-        if (Buffer.byteLength(JSON.stringify(block)) > config.Block.blockSize) return 11
+        if (Buffer.byteLength(JSON.stringify(Block.minify(block))) > config.Blockchain.maxBlockSize) return 11
         // async
-        if (block.height < await this.getHeight() - config.Block.trustedAfterBlocks) return 12
+        if (block.height < await this.getHeight() - config.Blockchain.trustedAfterBlocks) return 12
         const previousBlock = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         if (previousBlock) {
             if (block.timestamp <= previousBlock.timestamp) return 13
@@ -378,8 +379,8 @@ class Blockchain extends events.EventEmitter {
     static getNextDifficulty(blocks: Array<Block>) {
         let difficulty = blocks[1].difficulty
         const blockTime = blocks[1].timestamp - blocks[0].timestamp
-        if (blockTime < config.Block.blockTime && difficulty < 64) difficulty++
-        else if (blockTime >= config.Block.blockTime && difficulty > 0) difficulty--
+        if (blockTime < config.Blockchain.blockTime && difficulty < 64) difficulty++
+        else if (blockTime >= config.Blockchain.blockTime && difficulty > 0) difficulty--
         return difficulty
     }
     async deleteAllBlocksNotIncludedInChain() {
@@ -429,7 +430,7 @@ class Blockchain extends events.EventEmitter {
         const transactions = [
             new Transaction({
                 to: address,
-                amount: beautifyBigInt(parseBigInt(config.Block.reward))
+                amount: beautifyBigInt(parseBigInt(config.Blockchain.blockReward))
             }),
             ...this.pendingTransactions
                 .filter(e => e.timestamp >= previousBlock.timestamp)
@@ -468,7 +469,7 @@ class Blockchain extends events.EventEmitter {
             if (i === 0) continue
             block.transactions[0].amount = beautifyBigInt(parseBigInt(block.transactions[0].amount) + parseBigInt(block.transactions[i].minerFee))
         }
-        while (Buffer.byteLength(JSON.stringify(block)) > config.Block.blockSize) {
+        while (Buffer.byteLength(JSON.stringify(Block.minify(block))) > config.Blockchain.maxBlockSize) {
             const transaction = block.transactions.pop()
             block.transactions[0].amount = beautifyBigInt(parseBigInt(block.transactions[0].amount) - parseBigInt(transaction.minerFee))
         }
@@ -480,7 +481,7 @@ class Blockchain extends events.EventEmitter {
         return block
     }
     async getCircumlatingSupply() {
-        return BigInt(await this.getHeight()) * parseBigInt(config.Block.reward)
+        return BigInt(await this.getHeight()) * parseBigInt(config.Blockchain.blockReward)
     }
     async getTotalTransactions(timestamp: number | null = null) {
         let block = await this.getLatestBlock(),

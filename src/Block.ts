@@ -48,7 +48,7 @@ class Block {
         )
     }
     hasValidTransactions() {
-        let amount = parseBigInt(config.Block.reward)
+        let amount = parseBigInt(config.Blockchain.blockReward)
         if (!this.transactions.length) return false
         const hashes = []
         for (let i = 0; i < this.transactions.length; i++) {
