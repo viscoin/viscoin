@@ -29,6 +29,10 @@ class Blockchain extends events.EventEmitter {
         this.pendingTransactions = []
         this.syncIndex = 0
         this.updatingBlockHashes = false
+        this.minByteFee = {
+            bigint: 0n,
+            remainder: 0n
+        }
         this.updateBlockHashes()
     }
     async setBlockHashes() {
@@ -427,10 +431,6 @@ class Blockchain extends events.EventEmitter {
         // if (!block || block.height !== height) return null
         // return block
     }
-    // !
-    // calling this function when pendingtransactions is full and the transaction does not get added will result in people being able to abuse the miner by keeping sending transaction with 0 mining reward
-    // resetting the miners nonce resulting in miner being stuck without being able to reach the nonce where it mines block
-    // but new block is generated with new timestamp so nonce does not matter
     async getNewBlock(address: Buffer) {
         const previousBlock = await this.getLatestBlock()
         if (previousBlock.height === 0) await previousBlock.save()
