@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose'
+import * as config from '../../config.json'
 export default {
     init: () => {
         const dbOptions = {
@@ -9,19 +10,15 @@ export default {
             family: 4,
             useUnifiedTopology: true
         }
-        
-        mongoose.connect("mongodb://localhost:27017/js-coin", dbOptions)
+        mongoose.connect(config.mongoose.connectionString, dbOptions)
         mongoose.set("useFindAndModify", false)
         mongoose.Promise = global.Promise
-
         mongoose.connection.on("connected", () => {
             // console.log("Mongoose connection successfully opened!")
         })
-
         mongoose.connection.on("err", err => {
             console.error(`Mongoose connection error:\n${err.stack}`)
         })
-
         mongoose.connection.on("disconnected", () => {
             console.log("Mongoose connection disconnected")
         })
