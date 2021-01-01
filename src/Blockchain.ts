@@ -29,10 +29,6 @@ class Blockchain extends events.EventEmitter {
         this.pendingTransactions = []
         this.syncIndex = 0
         this.updatingBlockHashes = false
-        this.minByteFee = {
-            bigint: 0n,
-            remainder: 0n
-        }
         this.updateBlockHashes()
     }
     async setBlockHashes() {
@@ -432,6 +428,10 @@ class Blockchain extends events.EventEmitter {
         // return block
     }
     async getNewBlock(address: Buffer) {
+        this.minByteFee = {
+            bigint: 0n,
+            remainder: 0n
+        }
         const previousBlock = await this.getLatestBlock()
         if (previousBlock.height === 0) await previousBlock.save()
         const transactions = [
