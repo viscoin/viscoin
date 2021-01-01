@@ -54,7 +54,8 @@
         "blockReward": "1000",
         "blockTime": 2000,
         "trustedAfterBlocks": 1000,
-        "maxBlockSize": 1048576
+        "maxBlockSize": 1048576,
+        "decimalPrecision": 15
     },
     "mongoose": {
         "connectionString": "mongodb://localhost:27017/milk",

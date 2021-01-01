@@ -1,3 +1,4 @@
+import * as config from '../config.json'
 export default (str: string) => {
     const signs = []
     for (const sign of [ '.', ',' ]) {
@@ -9,7 +10,7 @@ export default (str: string) => {
     if (sign) {
         if (str.replace(sign, '').includes(sign)) return null
         const index = str.indexOf(sign)
-        while (str.slice(index).length <= 15) {
+        while (str.slice(index).length <= config.Blockchain.decimalPrecision) {
             str += '0'
         }
         str = str.replace(sign, '')
