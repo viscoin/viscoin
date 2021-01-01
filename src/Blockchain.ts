@@ -256,23 +256,21 @@ class Blockchain extends events.EventEmitter {
             transactions: getTransactions(blocks)
         }
     }
-    async getBalanceOfAddress(address: Buffer, randomTest: boolean = false, disableOptimization: boolean = false) {
+    async getBalanceOfAddress(address: Buffer, enableChanceToNotUseOptimization: boolean = false) {
         const latestBlock = await this.getLatestBlock()
         const document = await model_address.findOne({ [config.mongoose.schema.address.address.name]: address.toString('binary') })
         let optimization = false
         if (document
         && document[config.mongoose.schema.address.balance.name] !== undefined
-        && document[config.mongoose.schema.address.hash.name] !== undefined
-        && config.Blockchain.optimization.enabled
-        && disableOptimization === false) {
-            if (config.Blockchain.optimization.randomTest.enabled
-            && randomTest
-            && Math.random() < config.Blockchain.optimization.randomTest.chance) {}
-            else {
-                if (Buffer.from(document[config.mongoose.schema.address.hash.name], 'binary').equals(latestBlock.hash)) {
-                    return parseBigInt(document[config.mongoose.schema.address.balance.name])
+        && document[config.mongoose.schema.address.hash.name] !== undefined) {
+            if (config.Blockchain.optimization.enabled) {
+                if (enableChanceToNotUseOptimization === false
+                || Math.random() < config.Blockchain.optimization.chanceToNotUse === false) {
+                    if (Buffer.from(document[config.mongoose.schema.address.hash.name], 'binary').equals(latestBlock.hash)) {
+                        return parseBigInt(document[config.mongoose.schema.address.balance.name])
+                    }
+                    if (await this.isBalanceValid(address.toString('binary'), document[config.mongoose.schema.address.hash.name])) optimization = true
                 }
-                if (await this.isBalanceValid(address.toString('binary'), document[config.mongoose.schema.address.hash.name])) optimization = true
             }
         }
         const { transactions, old_transactions } = <any> await this.getTransactionsOfAddress(address, `
