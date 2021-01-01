@@ -187,8 +187,8 @@ class Blockchain extends events.EventEmitter {
         await this.updateBlockHashes()
         if ((await this.getLatestBlock()).hash.equals(block.hash)) {
             for (const transaction of block.transactions) {
-                if (transaction.to) await this.getBalanceOfAddress(transaction.to)
-                if (transaction.from) await this.getBalanceOfAddress(transaction.from)
+                if (transaction.to) await this.getBalanceOfAddress(transaction.to, true)
+                if (transaction.from) await this.getBalanceOfAddress(transaction.from, true)
             }
         }
         return 0
@@ -256,18 +256,24 @@ class Blockchain extends events.EventEmitter {
             transactions: getTransactions(blocks)
         }
     }
-    async getBalanceOfAddress(address: Buffer, disableOptimization: boolean = config.Blockchain.disableOptimization) {
+    async getBalanceOfAddress(address: Buffer, randomTest: boolean = false, disableOptimization: boolean = false) {
         const latestBlock = await this.getLatestBlock()
         const document = await model_address.findOne({ [config.mongoose.schema.address.address.name]: address.toString('binary') })
         let optimization = false
         if (document
         && document[config.mongoose.schema.address.balance.name] !== undefined
         && document[config.mongoose.schema.address.hash.name] !== undefined
-        && !disableOptimization) {
-            if (Buffer.from(document[config.mongoose.schema.address.hash.name], 'binary').equals(latestBlock.hash)) {
-                return parseBigInt(document[config.mongoose.schema.address.balance.name])
+        && config.Blockchain.optimization.enabled
+        && disableOptimization === false) {
+            if (config.Blockchain.optimization.randomTest.enabled
+            && randomTest
+            && Math.random() < config.Blockchain.optimization.randomTest.chance) {}
+            else {
+                if (Buffer.from(document[config.mongoose.schema.address.hash.name], 'binary').equals(latestBlock.hash)) {
+                    return parseBigInt(document[config.mongoose.schema.address.balance.name])
+                }
+                if (await this.isBalanceValid(address.toString('binary'), document[config.mongoose.schema.address.hash.name])) optimization = true
             }
-            if (await this.isBalanceValid(address.toString('binary'), document[config.mongoose.schema.address.hash.name])) optimization = true
         }
         const { transactions, old_transactions } = <any> await this.getTransactionsOfAddress(address, `
             ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.to.name}

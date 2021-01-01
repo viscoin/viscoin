@@ -45,7 +45,13 @@
         "maxConnections": 100
     },
     "Blockchain": {
-        "disableOptimization": false,
+        "optimization": {
+            "enabled": true,
+            "randomTest": {
+                "enabled": true,
+                "chance": 0.001
+            }
+        },
         "maxDesync": 30000,
         "maxTransactionSize": 16384,
         "blockReward": "1000",
