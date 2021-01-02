@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import * as config from '../config.json'
-const wordlist = fs.readFileSync(`./wordlist/${config.Wallet.wordlist}`).toString().split('\n')
+import { EOL } from 'os'
+const wordlist = fs.readFileSync(`./wordlist/${config.Wallet.wordlist}`).toString().split(EOL)
 export default () => {
     const words = []
     for (let i = 0; i < 12; i++) {

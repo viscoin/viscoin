@@ -247,7 +247,7 @@ const commands = {
             type: 'text',
             name: 'words_confirm',
             message: 'Confirm words 1 - 12 (space separated)',
-            validate: words_confirm => words_confirm.split(' ').join('') === words.join('') ? true : "Words don't match"
+            validate: words_confirm => words_confirm.trim().split(' ').join('') === words.join('') ? true : "Words don't match"
         })
         if (words_confirm === undefined) {
             console.clear()
@@ -411,7 +411,7 @@ const commands = {
             type: 'text',
             name: 'words',
             message: 'Enter the 12 word recovery passphrase 1 - 12 (space separated)',
-            validate: words => words.split(' ').length === 12 ? true : 'Invalid length'
+            validate: words => words.trim().split(' ').length === 12 ? true : 'Invalid length'
         })
         if (res.words === undefined) {
             console.clear()
