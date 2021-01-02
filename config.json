@@ -42,7 +42,8 @@
         "enabled": true,
         "host": "localhost",
         "port": 8336,
-        "maxConnections": 100
+        "maxConnections": 100,
+        "autoReconnect": 1000
     },
     "Blockchain": {
         "optimization": {

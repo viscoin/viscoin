@@ -43,14 +43,17 @@ class Client extends events.EventEmitter {
         super()
         this.sockets = new Set()
     }
-    connect(port: number, host: string) {
+    connect(port: number, host: string, autoReconnect: boolean = false) {
         const socket = <Socket> net.connect(port, host)
         socket.data = Buffer.alloc(0)
         socket.on('connect', () => {
             this.sockets.add(socket)
         })
         socket.on('error', () => {})
-        socket.on('close', () => this.sockets.delete(socket))
+        socket.on('close', () => {
+            this.sockets.delete(socket)
+            if (autoReconnect) setTimeout(() => this.connect(port, host, autoReconnect), config.TCPApi.autoReconnect)
+        })
         socket.on('data', chunk => {
             socket.data = Buffer.concat([ socket.data, chunk ])
             let index = protocol.getEndIndex(socket.data)
