@@ -72,6 +72,9 @@ class BaseClient extends events.EventEmitter {
             this.httpApi.on('get-block-latest', async res => {
                 res.end(JSON.stringify(Block.minify(await this.blockchain.getLatestBlock()), null, 4))
             })
+            this.httpApi.on('get-block-new', async (res, address: Buffer) => {
+                res.end(JSON.stringify(Block.minify(await this.blockchain.getNewBlock(address)), null, 4))
+            })
             this.httpApi.on('get-transactions-address', async (res, address) => {
                 const { transactions } = await this.blockchain.getTransactionsOfAddress(address)
                 res.end(JSON.stringify(transactions.map(e => Transaction.minify(e)), null, 4))
@@ -83,6 +86,11 @@ class BaseClient extends events.EventEmitter {
             this.httpApi.on('post-transaction', async (res, transaction) => {
                 const code = await this.blockchain.addTransaction(transaction)
                 this.emit('transaction', transaction, code)
+                res.end(JSON.stringify(code), null, 4)
+            })
+            this.httpApi.on('post-block', async (res, block) => {
+                const code = await this.blockchain.addBlock(block)
+                this.emit('block', block, code)
                 res.end(JSON.stringify(code), null, 4)
             })
         }

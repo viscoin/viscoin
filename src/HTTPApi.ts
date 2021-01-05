@@ -42,6 +42,13 @@ class HTTPApi extends events.EventEmitter {
         app.get('/block', (req, res) => {
             this.emit('get-block-latest', res)
         })
+        app.get('/block/new/:address', (req, res) => {
+            try {
+                const address = base58.decode(req.params.address)
+                this.emit('get-block-new', res, address)
+            }
+            catch {}
+        })
         app.get('/transactions/pending', (req, res) => {
             this.emit('get-transactions-pending', res)
         })
@@ -177,6 +184,9 @@ class HTTPApi extends events.EventEmitter {
         const block = await this.get(`/block/new/${base58.encode(address)}`)
         if (!block) return null
         return new Block(Block.beautify(block))
+    }
+    static async postBlock(block: Block) {
+        return await this.post('/block', JSON.stringify(Block.minify(block)))
     }
 }
 export default HTTPApi

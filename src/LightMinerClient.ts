@@ -1,0 +1,76 @@
+import * as config from '../config.json'
+import Block from './Block'
+import { Worker } from 'worker_threads'
+import { cpus } from 'os'
+import * as events from 'events'
+import HTTPApi from './HTTPApi'
+import TCPApi from './TCPApi'
+
+interface LightMinerClient {
+    workers: Array<Worker>
+    threads: number
+    threadsReady: number
+    hashrate: number
+    miningRewardAddress: Buffer
+    tcpClient: TCPApi['Client']
+}
+class LightMinerClient extends events.EventEmitter {
+    constructor(miningRewardAddress: Buffer) {
+        super()
+        if (config.TCPApi.enabled) {
+            this.tcpClient = TCPApi.createClient()
+            this.tcpClient.connect(config.TCPApi.port, config.TCPApi.host, true)
+            this.tcpClient.on('block', async () => await this.start())
+        }
+        this.workers = []
+        this.threads = cpus().length
+        if (config.MinerClient.threads) this.threads = config.MinerClient.threads
+        this.threadsReady = 0
+        this.hashrate = 0
+        setInterval(() => {
+            this.emit('hashrate', this.hashrate)
+            this.hashrate = 0
+        }, 1000)
+        this.miningRewardAddress = miningRewardAddress
+        this.once('ready', async () => await this.start())
+        this.on('mine', async (block: Block) => {
+            await this.emitThreadsMineNewBlock(block)
+        })
+    }
+    async start() {
+        const block = await this.getNewBlock()
+        await this.emitThreadsMineNewBlock(block)
+    }
+    async emitThreadsMineNewBlock(block: Block) {
+        for (const worker of this.workers) {
+            worker.postMessage(JSON.stringify({ code: 'mine', block, threads: this.threads }))
+        }
+    }
+    async getNewBlock() {
+        return await HTTPApi.getNewBlock(this.miningRewardAddress)
+    }
+    addWorker(worker: Worker) {
+        this.workers.push(worker)
+        worker.on('message', async e => {
+            e = JSON.parse(e)
+            switch (e.code) {
+                case 'ready':
+                    if (++this.threadsReady === this.threads) this.emit('ready')
+                    break
+                case 'mined':
+                    const block = new Block(e.block)
+                    const code = await HTTPApi.postBlock(block)
+                    this.emit('mined', block, code)
+                    break
+                case 'hashrate':
+                    this.hashrate += e.hashrate
+                    break
+            }
+        })
+        worker.on('error', e => console.log('error', e))
+        worker.on('exit', e => console.log('exit', e))
+        worker.on('messageerror', e => console.log('messageerror', e))
+        // worker.on('online', e => console.log('online', e))
+    }
+}
+export default LightMinerClient
