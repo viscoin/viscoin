@@ -32,37 +32,44 @@ class HTTPApi extends events.EventEmitter {
             }, null, 4))
         })
         app.get('/config', (req, res) => {
-            this.emit('config', res)
+            this.emit('get-config', res)
         })
         app.get('/block/:height', (req, res) => {
             const height = parseInt(req.params.height)
             if (isNaN(height)) return
-            this.emit('block', res, height)
+            this.emit('get-block', res, height)
         })
         app.get('/block', (req, res) => {
-            this.emit('latest-block', res)
+            this.emit('get-block-latest', res)
         })
         app.get('/transactions/pending', (req, res) => {
-            this.emit('pending-transactions', res)
+            this.emit('get-transactions-pending', res)
         })
         app.get('/transactions/:address', (req, res) => {
             try {
                 const address = base58.decode(req.params.address)
-                this.emit('address-transactions', res, address)
+                this.emit('get-transactions-address', res, address)
             }
             catch {}
         })
         app.get('/balance/:address', (req, res) => {
             try {
                 const address = base58.decode(req.params.address)
-                this.emit('address-balance', res, address)
+                this.emit('get-balance-address', res, address)
             }
             catch {}
         })
-        app.post('/send', (req, res) => {
+        app.post('/transaction', (req, res) => {
             try {
                 const transaction = new Transaction(Transaction.beautify(req.body))
-                this.emit('send', res, transaction)
+                this.emit('post-transaction', res, transaction)
+            }
+            catch {}
+        })
+        app.post('/block', (req, res) => {
+            try {
+                const block = new Block(Block.beautify(req.body))
+                this.emit('post-block', res, block)
             }
             catch {}
         })
@@ -147,7 +154,7 @@ class HTTPApi extends events.EventEmitter {
         return transactions.map(e => new Transaction(Transaction.beautify(e)))
     }
     static async send(transaction: Transaction) {
-        return await this.post('/send', JSON.stringify(Transaction.minify(transaction)))
+        return await this.post('/transaction', JSON.stringify(Transaction.minify(transaction)))
     }
     static async index() {
         return await this.get('/')
@@ -165,6 +172,11 @@ class HTTPApi extends events.EventEmitter {
     static async getPendingTransactions() {
         const transactions = await this.get('/transactions/pending')
         return transactions.map(e => new Transaction(Transaction.beautify(e)))
+    }
+    static async getNewBlock(address: Buffer) {
+        const block = await this.get(`/block/new/${base58.encode(address)}`)
+        if (!block) return null
+        return new Block(Block.beautify(block))
     }
 }
 export default HTTPApi

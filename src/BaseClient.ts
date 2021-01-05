@@ -60,28 +60,27 @@ class BaseClient extends events.EventEmitter {
         if (config.HTTPApi.enabled) {
             this.httpApi = new HTTPApi()
             this.httpApi.start()
-            this.httpApi.on('config', res => {
+            this.httpApi.on('get-config', res => {
                 res.end(JSON.stringify(config, null, 4))
             })
-            this.httpApi.on('pending-transactions', res => {
+            this.httpApi.on('get-transactions-pending', res => {
                 res.end(JSON.stringify(this.blockchain.pendingTransactions.map(e => Transaction.minify(e)), null, 4))
             })
-
-            this.httpApi.on('block', async (res, height) => {
+            this.httpApi.on('get-block', async (res, height) => {
                 res.end(JSON.stringify(Block.minify(await this.blockchain.getBlockByHeight(height)), null, 4))
             })
-            this.httpApi.on('latest-block', async res => {
+            this.httpApi.on('get-block-latest', async res => {
                 res.end(JSON.stringify(Block.minify(await this.blockchain.getLatestBlock()), null, 4))
             })
-            this.httpApi.on('address-transactions', async (res, address) => {
+            this.httpApi.on('get-transactions-address', async (res, address) => {
                 const { transactions } = await this.blockchain.getTransactionsOfAddress(address)
                 res.end(JSON.stringify(transactions.map(e => Transaction.minify(e)), null, 4))
             })
-            this.httpApi.on('address-balance', async (res, address) => {
+            this.httpApi.on('get-balance-address', async (res, address) => {
                 const balance = await this.blockchain.getBalanceOfAddress(address)
                 res.end(JSON.stringify(beautifyBigInt(balance), null, 4))
             })
-            this.httpApi.on('send', async (res, transaction) => {
+            this.httpApi.on('post-transaction', async (res, transaction) => {
                 const code = await this.blockchain.addTransaction(transaction)
                 this.emit('transaction', transaction, code)
                 res.end(JSON.stringify(code), null, 4)
