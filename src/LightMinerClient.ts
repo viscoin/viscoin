@@ -33,18 +33,22 @@ class LightMinerClient extends events.EventEmitter {
         }, 1000)
         this.miningRewardAddress = miningRewardAddress
         this.once('ready', async () => await this.start())
-        this.on('mine', async (block: Block) => {
-            await this.emitThreadsMineNewBlock(block)
-        })
     }
     async start() {
         const block = await this.getNewBlock()
-        if (block === null) return
-        await this.emitThreadsMineNewBlock(block)
+        if (block === null) return setTimeout(async () => {
+            await this.start()
+        }, config.HTTPApi.autoRetry)
+        this.emitThreadsMineNewBlock(block)
     }
-    async emitThreadsMineNewBlock(block: Block) {
+    emitThreadsMineNewBlock(block: Block) {
         for (const worker of this.workers) {
             worker.postMessage(JSON.stringify({ code: 'mine', block, threads: this.threads }))
+        }
+    }
+    emitThreadsPause() {
+        for (const worker of this.workers) {
+            worker.postMessage(JSON.stringify({ code: 'pause' }))
         }
     }
     async getNewBlock() {
@@ -60,7 +64,11 @@ class LightMinerClient extends events.EventEmitter {
             const code = await HTTPApi.postBlock(block)
             this.emit('mined', block, code)
         }
-        catch {}
+        catch {
+            setTimeout(async () => {
+                await this.postBlock(block)
+            }, config.HTTPApi.autoRetry)
+        }
     }
     addWorker(worker: Worker) {
         this.workers.push(worker)
@@ -71,6 +79,7 @@ class LightMinerClient extends events.EventEmitter {
                     if (++this.threadsReady === this.threads) this.emit('ready')
                     break
                 case 'mined':
+                    this.emitThreadsPause()
                     await this.postBlock(new Block(e.block))
                     break
                 case 'hashrate':

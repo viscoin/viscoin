@@ -17,6 +17,7 @@ class Miner extends events.EventEmitter {
             this.threads = threads
             this.loop(new Block(block))
         })
+        this.on('pause', () => clearImmediate(this.immediate))
     }
     loop(block) {
         clearImmediate(this.immediate)

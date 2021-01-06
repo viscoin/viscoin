@@ -26,6 +26,9 @@ else {
                 e.block.nonce = threadId
                 miner.emit('mine', e.block, e.threads)
                 break
+            case 'pause':
+                miner.emit('pause')
+                break
         }
     })
     parentPort.postMessage(JSON.stringify({ code: 'ready' }))
