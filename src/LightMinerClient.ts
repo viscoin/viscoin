@@ -39,6 +39,8 @@ class LightMinerClient extends events.EventEmitter {
     }
     async start() {
         const block = await this.getNewBlock()
+        console.log(block)
+        if (block === null) return
         await this.emitThreadsMineNewBlock(block)
     }
     async emitThreadsMineNewBlock(block: Block) {
@@ -47,7 +49,19 @@ class LightMinerClient extends events.EventEmitter {
         }
     }
     async getNewBlock() {
-        return await HTTPApi.getNewBlock(this.miningRewardAddress)
+        try {
+            return await HTTPApi.getNewBlock(this.miningRewardAddress)
+        }
+        catch {
+            return null
+        }
+    }
+    async postBlock(block: Block) {
+        try {
+            const code = await HTTPApi.postBlock(block)
+            this.emit('mined', block, code)
+        }
+        catch {}
     }
     addWorker(worker: Worker) {
         this.workers.push(worker)
@@ -58,9 +72,7 @@ class LightMinerClient extends events.EventEmitter {
                     if (++this.threadsReady === this.threads) this.emit('ready')
                     break
                 case 'mined':
-                    const block = new Block(e.block)
-                    const code = await HTTPApi.postBlock(block)
-                    this.emit('mined', block, code)
+                    await this.postBlock(new Block(e.block))
                     break
                 case 'hashrate':
                     this.hashrate += e.hashrate

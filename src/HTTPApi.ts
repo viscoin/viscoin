@@ -108,13 +108,9 @@ class HTTPApi extends events.EventEmitter {
                         reject()
                     }
                 })
-                res.on('error', () => {
-                    reject()
-                })
+                res.on('error', () => reject())
             })
-            req.on('error', () => {
-                reject()
-            })
+            req.on('error', () => reject())
             req.end()
         })
     }
@@ -142,13 +138,9 @@ class HTTPApi extends events.EventEmitter {
                         reject()
                     }
                 })
-                res.on('error', () => {
-                    reject()
-                })
+                res.on('error', () => reject())
             })
-            req.on('error', () => {
-                reject()
-            })
+            req.on('error', () => reject())
             req.write(data)
             req.end()
         })
