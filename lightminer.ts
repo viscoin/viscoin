@@ -7,7 +7,7 @@ import { setPriority } from 'os'
 import * as chalk from 'chalk'
 
 if (isMainThread) {
-    const client = new LightMinerClient(base58.decode(config.MinerClient.miningRewardAddress))
+    const client = new LightMinerClient(base58.decode(config.LightMinerClient.miningRewardAddress))
     client.on('hashrate', hashrate => console.log(`${chalk.magentaBright(new Date().toLocaleTimeString())} ${chalk.yellowBright(hashrate)} ${chalk.redBright('H/s')}`))
     client.on('mined', (block, code) => console.log('mined', block.height, 'code', code))
     setPriority(19)

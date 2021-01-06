@@ -24,7 +24,7 @@ class LightMinerClient extends events.EventEmitter {
         }
         this.workers = []
         this.threads = cpus().length
-        if (config.MinerClient.threads) this.threads = config.MinerClient.threads
+        if (config.LightMinerClient.threads) this.threads = config.LightMinerClient.threads
         this.threadsReady = 0
         this.hashrate = 0
         setInterval(() => {
