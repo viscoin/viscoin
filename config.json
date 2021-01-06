@@ -35,12 +35,12 @@
     },
     "HTTPApi": {
         "enabled": true,
-        "host": "localhost",
+        "host": "192.168.0.11",
         "port": 80
     },
     "TCPApi": {
         "enabled": true,
-        "host": "localhost",
+        "host": "192.168.0.11",
         "port": 8336,
         "maxConnections": 100,
         "autoReconnect": 1000
