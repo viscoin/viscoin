@@ -1,6 +1,6 @@
 import * as crypto from 'crypto'
 const salt = Buffer.alloc(0)
-const length = 20
+const length = 32
 const N = 1024
 const r = 8
 const p = 1

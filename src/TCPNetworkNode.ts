@@ -1,7 +1,7 @@
 import * as net from 'net'
 import * as events from 'events'
 import * as config from '../config.json'
-import customHash from './customHash'
+import * as crypto from 'crypto'
 import protocol from './protocol'
 interface Socket extends net.Socket {
     bytesReadLastSecond: number
@@ -108,13 +108,13 @@ class TCPNetworkNode extends events.EventEmitter {
     //     return true
     // }
     compareAndStoreHash(data: Buffer) {
-        const hash = customHash(data)
+        const hash = crypto.createHash('sha256').update(data).digest()
         this.addHash(hash)
         if (this.hashes.find(e => e.hash.compare(hash) === 0)) return true
         return false
     }
     addHash(data: Buffer) {
-        const hash = customHash(data)
+        const hash = crypto.createHash('sha256').update(data).digest()
         this.hashes.push({ hash, timestamp: Date.now() })
         if (this.hashes.length > config.TCPNetworkNode.hashes.length) this.hashes.shift()
     }

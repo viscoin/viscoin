@@ -1,4 +1,4 @@
-import customHash from './customHash'
+import * as crypto from 'crypto'
 export default (publicKey: Buffer) => {
-    return customHash(publicKey).slice(-20)
+    return crypto.createHash('sha256').update(publicKey).digest().slice(-20)
 }

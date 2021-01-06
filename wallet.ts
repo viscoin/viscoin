@@ -6,7 +6,6 @@ import * as chalk from 'chalk'
 import * as fs from 'fs'
 import Wallet from './src/Wallet'
 import base58 from './src/base58'
-import customHash from './src/customHash'
 import * as path from 'path'
 import wordgen from './src/wordgen'
 import wordsToKey from './src/wordsToKey'
@@ -21,7 +20,7 @@ let wallet: Wallet | undefined = undefined
 const functions = {
     save_wallet: (privateKey: Buffer, words: Array<string>, name: string, passphrase: string) => {
         const iv = crypto.randomBytes(16)
-        const cipher = crypto.createCipheriv('aes-256-cbc', customHash(passphrase), iv)
+        const cipher = crypto.createCipheriv('aes-256-cbc', crypto.createHash('sha256').update(passphrase).digest(), iv)
         if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
         fs.writeFileSync(`./wallets/${name}.wallet`, Buffer.concat([
             iv,
@@ -355,7 +354,7 @@ const commands = {
             message: 'Enter passphrase',
             validate: passphrase => {
                 try {
-                    const decipher = crypto.createDecipheriv('aes-256-cbc', customHash(passphrase), data.slice(0, 16))
+                    const decipher = crypto.createDecipheriv('aes-256-cbc', crypto.createHash('sha256').update(passphrase).digest(), data.slice(0, 16))
                     const decrypted = JSON.parse(String(Buffer.concat([
                         decipher.update(data.slice(16)),
                         decipher.final()

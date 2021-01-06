@@ -1,5 +1,5 @@
 import * as elliptic from 'elliptic'
-import customHash from './customHash'
+import * as crypto from 'crypto'
 import addressFromPublicKey from './addressFromPublicKey'
 import * as config from '../config.json'
 import parseBigInt from './parseBigInt'
@@ -65,12 +65,12 @@ class Transaction {
         if (this.from) buf = Buffer.concat([ buf, this.from ])
         if (this.to) buf = Buffer.concat([ buf, this.to ])
         if (this.data) buf = Buffer.concat([ buf, this.data ])
-        return customHash(
+        return crypto.createHash('sha256').update(
             buf.toString('binary')
             + this.amount
             + this.minerFee
             + this.timestamp
-        )
+        ).digest()
     }
     sign(privateKey: Buffer) {
         const ec = new elliptic.ec('secp256k1')
