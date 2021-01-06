@@ -39,7 +39,6 @@ class LightMinerClient extends events.EventEmitter {
     }
     async start() {
         const block = await this.getNewBlock()
-        console.log(block)
         if (block === null) return
         await this.emitThreadsMineNewBlock(block)
     }
