@@ -9,11 +9,11 @@
         "logs": false
     },
     "MinerClient": {
-        "miningRewardAddress": "3Zj2LSe4ZVBDbPVWYPpti9Va15D6",
-        "threads": 0
+        "miningRewardAddress": "WoGrLA8kjznMcPKBHVJgJjgPoHd",
+        "threads": 1
     },
     "LightMinerClient": {
-        "miningRewardAddress": "3Zj2LSe4ZVBDbPVWYPpti9Va15D6",
+        "miningRewardAddress": "WoGrLA8kjznMcPKBHVJgJjgPoHd",
         "threads": 0
     },
     "TCPNetworkNode": {
@@ -58,7 +58,7 @@
         "maxDesync": 30000,
         "maxTransactionSize": 16384,
         "blockReward": "1000",
-        "blockTime": 2000,
+        "blockTime": 60000,
         "trustedAfterBlocks": 1000,
         "maxBlockSize": 1048576,
         "decimalPrecision": 15

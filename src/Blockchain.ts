@@ -48,7 +48,7 @@ class Blockchain extends events.EventEmitter {
             return <void> await new Promise(resolve => this.once('updated-block-hashes', () => resolve()))
         }
         this.updatingBlockHashes = true
-        if (!this.hashes) await this.setBlockHashes()
+        if (!this.hashes || this.hashes.current.length === 1) await this.setBlockHashes()
         let block = await this.setLatestBlock(),
         index: number = null
         const newHashes: Array<string> = []
@@ -182,7 +182,6 @@ class Blockchain extends events.EventEmitter {
             }
             return 17
         }
-        await this.updateBlockHashes()
         await block.save()
         await this.updateBlockHashes()
         if ((await this.getLatestBlock()).hash.equals(block.hash)) {
@@ -437,37 +436,38 @@ class Blockchain extends events.EventEmitter {
             remainder: 0n
         }
         const previousBlock = await this.getLatestBlock()
-        if (previousBlock.height === 0) await previousBlock.save()
+        if (previousBlock.height === 0) await this.addBlock(previousBlock)
+        this.pendingTransactions = this.pendingTransactions
+            .filter(e => e.timestamp >= previousBlock.timestamp)
+            .sort((a, b) => {
+                const byteLength = {
+                    a: BigInt(Buffer.byteLength(JSON.stringify(Transaction.minify(a)))),
+                    b: BigInt(Buffer.byteLength(JSON.stringify(Transaction.minify(b))))
+                }
+                const minerFee = {
+                    a: parseBigInt(a.minerFee),
+                    b: parseBigInt(b.minerFee)
+                }
+                const div = {
+                    a: minerFee.a / byteLength.a,
+                    b: minerFee.b / byteLength.b
+                }
+                if (div.b - div.a < 0) return -1
+                else if (div.b - div.a > 0) return 1
+                const remainder = {
+                    a: minerFee.a % byteLength.a,
+                    b: minerFee.b % byteLength.b
+                }
+                if (remainder.b < remainder.a) return -1
+                else if (remainder.b > remainder.a) return 1
+                else return 0
+            })
         const transactions = [
             new Transaction({
                 to: address,
                 amount: beautifyBigInt(parseBigInt(config.Blockchain.blockReward))
             }),
             ...this.pendingTransactions
-                .filter(e => e.timestamp >= previousBlock.timestamp)
-                .sort((a, b) => {
-                    const byteLength = {
-                        a: BigInt(Buffer.byteLength(JSON.stringify(Transaction.minify(a)))),
-                        b: BigInt(Buffer.byteLength(JSON.stringify(Transaction.minify(b))))
-                    }
-                    const minerFee = {
-                        a: parseBigInt(a.minerFee),
-                        b: parseBigInt(b.minerFee)
-                    }
-                    const div = {
-                        a: minerFee.a / byteLength.a,
-                        b: minerFee.b / byteLength.b
-                    }
-                    if (div.b - div.a < 0) return -1
-                    else if (div.b - div.a > 0) return 1
-                    const remainder = {
-                        a: minerFee.a % byteLength.a,
-                        b: minerFee.b % byteLength.b
-                    }
-                    if (remainder.b < remainder.a) return -1
-                    else if (remainder.b > remainder.a) return 1
-                    else return 0
-                })
         ]
         await this.updateDifficulty()
         const block = new Block({
