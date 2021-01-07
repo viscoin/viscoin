@@ -86,8 +86,8 @@ class TCPNetworkNode extends events.EventEmitter {
                     if (Buffer.byteLength(buffer) !== 0) {
                         if (this.compareAndStoreHash(buffer)) continue
                         const parsed = protocol.parse(buffer)
-                        if (parsed === null) return this.emit('blacklist', socket, 'parsed === null')
-                        // if (parsed === null) continue
+                        // if (parsed === null) return this.emit('blacklist', socket, 'parsed === null')
+                        if (parsed === null) continue
                         const { type, data } = parsed
                         this.emit(type, data)
                         this.broadcastAndStoreDataHash(buffer)
