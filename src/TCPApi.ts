@@ -60,11 +60,12 @@ class Client extends events.EventEmitter {
             while (index !== -1 && !socket.destroyed) {
                 const buffer = socket.data.slice(0, index)
                 socket.data = socket.data.slice(index + Buffer.byteLength(protocol.end))
-                if (Buffer.byteLength(buffer) === 0) continue
-                const parsed = protocol.parse(buffer)
-                if (parsed === null) continue
-                const { type, data } = parsed
-                this.emit(type, data)
+                if (Buffer.byteLength(buffer) !== 0) {
+                    const parsed = protocol.parse(buffer)
+                    if (parsed === null) continue
+                    const { type, data } = parsed
+                    this.emit(type, data)
+                }
                 index = protocol.getEndIndex(socket.data)
             }
         })
