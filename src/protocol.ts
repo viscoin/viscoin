@@ -25,11 +25,13 @@ export default {
         return Buffer.concat([ Buffer.alloc(1, this.getType(type)), Buffer.from(JSON.stringify(data), 'binary') ])
     },
     parse(buffer: Buffer) {
+        console.log(buffer)
         try {
-            if (Buffer.byteLength(buffer) === 0) return null
             const type = this.getType(buffer[0])
+            console.log(type)
             if (type === null) return null
             let data = JSON.parse(buffer.slice(1).toString('binary'))
+            console.log(data)
             switch (type) {
                 case 'block':
                     data = new Block(Block.beautify(data))
