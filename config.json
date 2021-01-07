@@ -4,7 +4,7 @@
         "connectToNodes": true,
         "blockchainSynchronization": {
             "enabled": true,
-            "timeout": 1000
+            "timeout": 500
         },
         "logs": false
     },
@@ -14,7 +14,7 @@
     },
     "LightMinerClient": {
         "miningRewardAddress": "WoGrLA8kjznMcPKBHVJgJjgPoHd",
-        "threads": 0
+        "threads": 1
     },
     "TCPNetworkNode": {
         "hashes": {
