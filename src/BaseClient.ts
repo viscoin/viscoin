@@ -99,7 +99,7 @@ class BaseClient extends events.EventEmitter {
         const block = await this.blockchain.getNextSyncBlock()
         if (block) {
             const buffer = protocol.constructDataBuffer('block', Block.minify(block))
-            this.node.broadcast(buffer)
+            this.node.broadcastAndStoreDataHash(buffer)
         }
         setTimeout(this.nextSync.bind(this), config.BaseClient.blockchainSynchronization.timeout)
     }
