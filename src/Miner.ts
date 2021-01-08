@@ -24,7 +24,7 @@ class Miner extends events.EventEmitter {
         this.immediate = setImmediate(() => this.mine(block))
     }
     async mine(block: Block) {
-        const found = block.recalculateHash(this.threads)
+        const found = await block.recalculateHash(this.threads)
         if (found) this.emit('mined', block)
         else this.loop(block)
         this.hashrate++

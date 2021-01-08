@@ -14,7 +14,7 @@
     },
     "LightMinerClient": {
         "miningRewardAddress": "WoGrLA8kjznMcPKBHVJgJjgPoHd",
-        "threads": 1
+        "threads": 0
     },
     "TCPNetworkNode": {
         "hashes": {

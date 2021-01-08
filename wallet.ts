@@ -252,7 +252,7 @@ const commands = {
             console.clear()
             return commands.commands()
         }
-        const { privateKey, address } = wordsToKey(words)
+        const { privateKey, address } = await wordsToKey(words)
         functions.log_wallet_info(address, privateKey, words)
         wallet = new Wallet(Wallet.import({ name: '', privateKey, words }))
         const { save } = await prompts({
@@ -417,7 +417,7 @@ const commands = {
             return commands.commands()
         }
         const words = res.words.split(' ')
-        const { address, privateKey } = wordsToKey(words)
+        const { address, privateKey } = await wordsToKey(words)
         functions.log_wallet_info(address, privateKey, words)
         wallet = new Wallet(Wallet.import({ name: '', privateKey, words }))
         const { save } = await prompts({
