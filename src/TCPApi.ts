@@ -15,12 +15,14 @@ class Server extends events.EventEmitter {
         this.sockets = new Set()
         this.server = new net.Server()
         this.server.maxConnections = config.TCPApi.maxConnections
-        this.server.on('connection', (socket: net.Socket) => {
-            this.sockets.add(socket)
-            socket.on('error', () => {})
-            socket.on('close', () => this.sockets.delete(socket))
-            socket.on('data', () => socket.destroy())
-        })
+        this.server
+            .on('connection', (socket: net.Socket) => {
+                this.sockets.add(socket)
+                socket.on('error', () => {})
+                socket.on('close', () => this.sockets.delete(socket))
+                socket.on('data', () => socket.destroy())
+            })
+            .on('listening', () => this.emit('listening'))
     }
     start() {
         this.server.listen(config.TCPApi.port, config.TCPApi.host)

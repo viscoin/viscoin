@@ -21,6 +21,8 @@ class BaseClient extends events.EventEmitter {
         super()
         this.node = new TCPNetworkNode()
         this.blockchain = new Blockchain()
+        this.tcpServer = TCPApi.createServer()
+        this.httpApi = new HTTPApi()
         if (config.BaseClient.hostNode) this.node.start()
         if (config.BaseClient.connectToNodes) this.node.connectToNetwork(nodes)
         if (config.BaseClient.blockchainSynchronization) this.nextSync()
@@ -41,14 +43,12 @@ class BaseClient extends events.EventEmitter {
             if (config.BaseClient.logs) fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('socket', socket)
         })
-        this.node.server.on('listening', () => this.emit('listening'))
         this.node.on('blacklist', (socket, reason) => {
             if (!fs.existsSync('./log')) fs.mkdirSync('./log')
             if (config.BaseClient.logs) fs.appendFileSync('./log/blacklisted.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('blacklist', socket, reason)
         })
         if (config.TCPApi.enabled) {
-            this.tcpServer = TCPApi.createServer()
             this.tcpServer.start()
             this.on('block', (block, code) => {
                 if (code === 0) this.tcpServer.broadcast(protocol.constructDataBuffer('block', Block.minify(block)))
@@ -58,7 +58,6 @@ class BaseClient extends events.EventEmitter {
             })
         }
         if (config.HTTPApi.enabled) {
-            this.httpApi = new HTTPApi()
             this.httpApi.start()
             this.httpApi.on('get-config', res => {
                 res.end(JSON.stringify(config, null, 4))

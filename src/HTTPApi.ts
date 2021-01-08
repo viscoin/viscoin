@@ -81,6 +81,7 @@ class HTTPApi extends events.EventEmitter {
             catch {}
         })
         this.server = http.createServer(app)
+        this.server.on('listening', () => this.emit('listening'))
     }
     start() {
         this.server.listen(config.HTTPApi.port, config.HTTPApi.host)
