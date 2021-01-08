@@ -4,7 +4,7 @@
         "connectToNodes": true,
         "blockchainSynchronization": {
             "enabled": true,
-            "timeout": 500
+            "timeout": 100
         },
         "logs": false
     },
@@ -19,7 +19,7 @@
     "TCPNetworkNode": {
         "hashes": {
             "length": 10000,
-            "timeToLive": 60000,
+            "timeToLive": 1000,
             "interval": 100
         },
         "socket": {
