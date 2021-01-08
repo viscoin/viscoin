@@ -17,8 +17,8 @@ interface LightMinerClient {
 class LightMinerClient extends events.EventEmitter {
     constructor(miningRewardAddress: Buffer) {
         super()
+        this.tcpClient = TCPApi.createClient()
         if (config.TCPApi.enabled) {
-            this.tcpClient = TCPApi.createClient()
             this.tcpClient.connect(config.TCPApi.port, config.TCPApi.host, true)
             this.tcpClient.on('block', async () => await this.start())
         }

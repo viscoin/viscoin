@@ -50,6 +50,7 @@ class Client extends events.EventEmitter {
         socket.data = Buffer.alloc(0)
         socket.on('connect', () => {
             this.sockets.add(socket)
+            this.emit('connect', port, host)
         })
         socket.on('error', () => {})
         socket.on('close', () => {

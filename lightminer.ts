@@ -9,6 +9,7 @@ import * as chalk from 'chalk'
 if (isMainThread) {
     const client = new LightMinerClient(base58.decode(config.LightMinerClient.miningRewardAddress))
     console.log(`${chalk.cyanBright('Starting lightminer with')} ${chalk.yellowBright(client.threads)} ${chalk.cyanBright('threads...')}`)
+    client.tcpClient.on('connect', (port, address) => console.log(`${chalk.cyanBright('API (TCP) connected')} ${chalk.blueBright(`${address}:${port}`)}`))
     client.on('hashrate', hashrate => console.log(`${chalk.magentaBright(new Date().toLocaleTimeString())} ${chalk.yellowBright(hashrate)} ${chalk.redBright('H/s')}`))
     client.on('mined', (block, code) => console.log(`${chalk.magentaBright('Mined')} ${chalk.green('new')} ${chalk.yellow('Block')} { height: ${chalk.yellowBright(block.height)} } { code: ${chalk.yellowBright(code)} }`))
     setPriority(19)
