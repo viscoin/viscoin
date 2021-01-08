@@ -19,8 +19,8 @@ if (isMainThread) {
     client.on('listening', () => console.log('Server listening'))
     client.on('socket', socket => console.log(`New TCP connection ${socket.address().address}:${socket.address().port} - ${socket.remoteAddress}:${socket.remotePort}`))
     client.on('blacklist', (socket, reason) => console.log(`Banned ${socket.remoteAddress}:${socket.remotePort} ${reason}`))
-    client.on('transaction', (transaction, code) => console.log(`Received new transaction ${chalk.yellowBright(code)}`))
-    client.on('block', (block, code) => console.log(`Received new block ${chalk.yellowBright(code)}`))
+    // client.on('transaction', (transaction, code) => console.log(`Received new transaction ${chalk.yellowBright(code)}`))
+    // client.on('block', (block, code) => console.log(`Received new block ${chalk.yellowBright(code)}`))
     client.on('node', node => console.log(`Received new node ${node.address}:${node.port}`))
     for (let i = 0; i < client.threads; i++) {
         client.addWorker(new Worker(__filename))
