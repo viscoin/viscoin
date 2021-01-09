@@ -3,6 +3,7 @@ import * as crypto from 'crypto'
 import addressFromPublicKey from './addressFromPublicKey'
 import * as config from '../config.json'
 import parseBigInt from './parseBigInt'
+import beautifyBigInt from './beautifyBigInt'
 interface Transaction {
     from: Buffer
     to: Buffer
@@ -99,6 +100,46 @@ class Transaction {
         catch {
             return false
         }
+    }
+    isValid() {
+        // from
+        if (typeof this.from !== 'object') return 1
+        if (this.from instanceof Buffer === false) return 2
+        // to
+        if (typeof this.to === 'object') {
+            if (this.to instanceof Buffer === false) return 3
+            if (Buffer.byteLength(this.to) !== 20) return 4
+            // amount
+            if (typeof this.amount !== 'string') return 5
+            const amount = parseBigInt(this.amount)
+            if (amount === null
+                || amount <= 0
+                || beautifyBigInt(amount) !== this.amount) return 6
+        }
+        else if (typeof this.to !== 'undefined') return 7
+        // signature
+        if (typeof this.signature !== 'object') return 8
+        if (this.signature instanceof Buffer === false) return 9
+        // data
+        if (typeof this.data === 'object') {
+            if (this.data instanceof Buffer === false) return 10
+            if (Buffer.byteLength(this.data) === 0) return 11
+            if (Buffer.byteLength(this.data) > 32) return 12
+        }
+        else if (typeof this.data !== 'undefined') return 13
+        // timestamp
+        if (typeof this.timestamp !== 'number') return 14
+        if (this.timestamp > Date.now() + config.Blockchain.maxDesync) return 15
+        // minerFee
+        if (typeof this.minerFee !== 'string') return 16
+        const minerFee = parseBigInt(this.minerFee)
+            if (minerFee === null
+                || minerFee < 0
+                || beautifyBigInt(minerFee) !== this.minerFee) return 17
+        // recoveryParam
+        if (typeof this.recoveryParam !== 'number') return 18
+        if (this.recoveryParam >> 2) return 19
+        return 0
     }
     byteFee() {
         const bytes = BigInt(Buffer.byteLength(JSON.stringify(Transaction.minify(this))))

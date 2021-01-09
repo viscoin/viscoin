@@ -96,57 +96,22 @@ class Blockchain extends events.EventEmitter {
     }
     async addTransaction(transaction: Transaction) {
         // sync
-        // from
-        if (typeof transaction.from !== 'object') return 1
-        if (transaction.from instanceof Buffer === false) return 2
-        // to
-        if (typeof transaction.to === 'object') {
-            if (transaction.to instanceof Buffer === false) return 3
-            if (Buffer.byteLength(transaction.to) !== 20) return 4
-            // amount
-            if (typeof transaction.amount !== 'string') return 5
-            const amount = parseBigInt(transaction.amount)
-            if (amount === null
-                || amount <= 0
-                || beautifyBigInt(amount) !== transaction.amount) return 6
-        }
-        else if (typeof transaction.to !== 'undefined') return 7
-        // signature
-        if (typeof transaction.signature !== 'object') return 8
-        if (transaction.signature instanceof Buffer === false) return 9
-        // data
-        if (typeof transaction.data === 'object') {
-            if (transaction.data instanceof Buffer === false) return 10
-            if (Buffer.byteLength(transaction.data) === 0) return 11
-        }
-        else if (typeof transaction.data !== 'undefined') return 12
-        // timestamp
-        if (typeof transaction.timestamp !== 'number') return 13
-        if (transaction.timestamp > Date.now() + config.Blockchain.maxDesync) return 14
-        // minerFee
-        if (typeof transaction.minerFee !== 'string') return 15
-        const minerFee = parseBigInt(transaction.minerFee)
-            if (minerFee === null
-                || minerFee < 0
-                || beautifyBigInt(minerFee) !== transaction.minerFee) return 16
-        // recoveryParam
-        if (typeof transaction.recoveryParam !== 'number') return 17
-        if (transaction.recoveryParam >> 2) return 18
+        if (transaction.isValid() !== 0) return 1
         // verify
-        if (Buffer.byteLength(JSON.stringify(Transaction.minify(transaction))) > config.Blockchain.maxTransactionSize) return 19
-        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 20
-        if (!transaction.verify()) return 21
+        if (Buffer.byteLength(JSON.stringify(Transaction.minify(transaction))) > config.Blockchain.maxTransactionSize) return 2
+        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 3
+        if (!transaction.verify()) return 4
         // async
-        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 22
+        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 5
         let sum = parseBigInt(transaction.minerFee)
         if (transaction.amount) sum += parseBigInt(transaction.amount)
-        if (await this.getBalanceOfAddress(transaction.from) < sum) return 23
+        if (await this.getBalanceOfAddress(transaction.from) < sum) return 6
         // !
         // limit amount of transactions from address to not slow down database when calculating balance
         // if ((await this.getTransactionsOfAddress(transaction.from)).length >= config.maxTransactions) return 23
         const { bigint, remainder } = transaction.byteFee()
         if (bigint < this.minByteFee.bigint
-        || (bigint === this.minByteFee.bigint && remainder <= this.minByteFee.remainder)) return 24
+        || (bigint === this.minByteFee.bigint && remainder <= this.minByteFee.remainder)) return 7
         this.pendingTransactions.push(transaction)
         return 0
     }
