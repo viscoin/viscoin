@@ -6,7 +6,7 @@ salt = Buffer.alloc(8),
 options = {
     hashLength: 32,
     timeCost: 1,
-    memoryCost: 2**14,
+    memoryCost: 2**10,
     parallelism: 1,
     type: types.argon2d,
     version
