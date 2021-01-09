@@ -432,8 +432,8 @@ class Blockchain extends events.EventEmitter {
     }
     async getNewBlock(address: Buffer) {
         this.minByteFee = {
-            bigint: 0n,
-            remainder: 0n
+            bigint: parseBigInt(config.Blockchain.minByteFee.bigint),
+            remainder: parseBigInt(config.Blockchain.minByteFee.remainder)
         }
         const previousBlock = await this.getLatestBlock()
         if (previousBlock.height === 0) await this.addBlock(previousBlock)

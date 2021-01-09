@@ -61,7 +61,11 @@
         "blockTime": 60000,
         "trustedAfterBlocks": 1000,
         "maxBlockSize": 1048576,
-        "decimalPrecision": 15
+        "decimalPrecision": 15,
+        "minByteFee": {
+            "bigint": "0",
+            "remainder": "0"
+        }
     },
     "mongoose": {
         "connectionString": "mongodb://localhost:27017/milk",
