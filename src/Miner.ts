@@ -2,8 +2,8 @@ import * as events from 'events'
 import Block from './Block'
 interface Miner {
     threads: number
-    immediate: NodeJS.Immediate
     hashrate: number
+    paused: boolean
 }
 class Miner extends events.EventEmitter {
     constructor() {
@@ -13,21 +13,18 @@ class Miner extends events.EventEmitter {
             this.emit('hashrate', this.hashrate)
             this.hashrate = 0
         }, 1000)
-        this.on('mine', (block, threads) => {
+        this.on('mine', async (block, threads) => {
             this.threads = threads
-            this.loop(new Block(block))
+            this.paused = false
+            await this.mine(new Block(block))
         })
-        this.on('pause', () => clearImmediate(this.immediate))
-    }
-    loop(block) {
-        clearImmediate(this.immediate)
-        this.immediate = setImmediate(() => this.mine(block))
+        this.on('pause', () => this.paused = true)
     }
     async mine(block: Block) {
-        const found = await block.recalculateHash(this.threads)
-        if (found) this.emit('mined', block)
-        else this.loop(block)
+        if (this.paused === true) return
         this.hashrate++
+        if (await block.recalculateHash(this.threads) === true) return this.emit('mined', block)
+        await this.mine(block)
     }
 }
 export default Miner
