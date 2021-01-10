@@ -353,9 +353,10 @@ class Blockchain extends events.EventEmitter {
     }
     static getNextDifficulty(blocks: Array<Block>) {
         let difficulty = blocks[1].difficulty
-        const blockTime = blocks[1].timestamp - blocks[0].timestamp
-        if (blockTime < config.Blockchain.blockTime && difficulty < 64) difficulty++
-        else if (blockTime >= config.Blockchain.blockTime && difficulty > 0) difficulty--
+        const blockTime = blocks[1].timestamp - blocks[0].timestamp,
+        _blockTime = config.Blockchain.blockTime / 2
+        if (blockTime < _blockTime && difficulty < 64) difficulty++
+        else if (blockTime >= _blockTime && difficulty > 0) difficulty--
         return difficulty
     }
     async deleteAllBlocksNotIncludedInChain() {
