@@ -20,7 +20,14 @@ class Miner extends events.EventEmitter {
         this.tcpClient = TCPApi.createClient()
         if (config.TCPApi.enabled) {
             this.tcpClient.connect(config.TCPApi.port, config.TCPApi.host, true)
-            this.tcpClient.on('block', async () => await this.start())
+            this.tcpClient.on('block', async () => {
+                this.emitThreadsPause()
+                await this.start()
+            })
+            this.tcpClient.on('transaction', async (tsx) => {
+                this.emitThreadsPause()
+                await this.start()
+            })
         }
         this.workers = []
         this.threads = cpus().length
