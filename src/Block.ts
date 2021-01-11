@@ -111,6 +111,7 @@ class Block {
     }
     async recalculateHash(add: number) {
         this.nonce += add
+        this.timestamp = Date.now()
         this.hash = await this.calculateHash()
         return this.meetsDifficulty()
     }
