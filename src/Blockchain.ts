@@ -284,7 +284,7 @@ class Blockchain extends events.EventEmitter {
             if (previousBlock.height !== currentBlock.height - 1) return false
             if (!currentBlock.meetsDifficulty()) return false
             if (!currentBlock.hasValidTransactions()) return false
-            if (!currentBlock.hash.equals(await currentBlock.calculateHash())) return false
+            if (!currentBlock.hash.equals(await Block.calculateHash(currentBlock))) return false
             if (!currentBlock.previousHash.equals(previousBlock.hash)) return false
             for (const transaction of currentBlock.transactions) {
                 if (transaction.timestamp < previousBlock.timestamp) return false

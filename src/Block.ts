@@ -9,43 +9,54 @@ interface Block {
     height: number
     timestamp: number
     difficulty: number
+    _difficulty: Buffer
     hash: Buffer
     previousHash: Buffer
-    preAllocatedBuffer: Buffer
     transactions: Array<Transaction>
 }
 class Block {
-    constructor({ timestamp = Date.now(), transactions, previousHash, height, nonce = 0, hash = null, difficulty }) {
-        this.timestamp = timestamp
+    constructor({ timestamp = Date.now(), transactions, previousHash, height, nonce = 0, hash = undefined, difficulty }) {
+        if (hash instanceof Buffer) this.hash = hash
+        else if (hash) this.hash = Buffer.from(hash, 'binary')
+        else this.hash = Buffer.alloc(32, 0xff)
         if (previousHash instanceof Buffer) this.previousHash = previousHash
         else if (previousHash) this.previousHash = Buffer.from(previousHash, 'binary')
-        this.height = height
         const _transactions = []
         for (const transaction of transactions) {
             if (transaction instanceof Transaction) _transactions.push(transaction)
             else _transactions.push(new Transaction(transaction))
         }
         this.transactions = _transactions
+        this.height = height
+        this.timestamp = timestamp
         this.nonce = nonce
         this.difficulty = difficulty
-        if (hash instanceof Buffer) this.hash = hash
-        else if (hash) this.hash = Buffer.from(hash, 'binary')
-        else this.hash = Buffer.alloc(32, 0xff)
-        if (this.difficulty !== undefined) {
-            const index = Math.floor(this.difficulty / 8),
-            remainder = this.difficulty % 8
-            this.preAllocatedBuffer = Buffer.alloc(32).fill(Math.pow(2, 7 - remainder), index, index + 1)
-        }
     }
-    async calculateHash() {
+    static async calculateHash(block: Block) {
         return await customHash(
-            this.previousHash.toString('binary')
-            + this.timestamp
-            + JSON.stringify(this.transactions)
-            + this.nonce
-            + this.height
-            + this.difficulty
+            block.previousHash.toString('binary')
+            + block.timestamp
+            + JSON.stringify(block.transactions)
+            + block.nonce
+            + block.height
+            + block.difficulty
         )
+    }
+    static getDifficultyBuffer(difficulty: number) {
+        const index = Math.floor(difficulty / 8),
+        remainder = difficulty % 8
+        return Buffer.alloc(32).fill(Math.pow(2, 7 - remainder), index, index + 1)
+    }
+    async recalculateHash(add: number) {
+        this.nonce += add
+        this.timestamp = Date.now()
+        this.hash = await Block.calculateHash(this)
+        return this.meetsDifficulty()
+    }
+    meetsDifficulty() {
+        if (this._difficulty === undefined) this._difficulty = Block.getDifficultyBuffer(this.difficulty)
+        if (Buffer.compare(this.hash, this._difficulty) !== -1) return false
+        return true
     }
     hasValidTransactions() {
         let amount = parseBigInt(config.Blockchain.blockReward)
@@ -108,16 +119,6 @@ class Block {
     }
     async save() {
         return await new model_block(Block.minify(this)).save()
-    }
-    async recalculateHash(add: number) {
-        this.nonce += add
-        this.timestamp = Date.now()
-        this.hash = await this.calculateHash()
-        return this.meetsDifficulty()
-    }
-    meetsDifficulty() {
-        if (Buffer.compare(this.hash, this.preAllocatedBuffer) !== -1) return false
-        else return true
     }
     static async load(query: object | null, projection: string | null = null, options: object | null = null) {
         let block = await model_block
