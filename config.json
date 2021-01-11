@@ -1,5 +1,5 @@
 {
-    "BaseClient": {
+    "Node": {
         "hostNode": true,
         "connectToNodes": true,
         "blockchainSynchronization": {
@@ -8,11 +8,7 @@
         },
         "logs": false
     },
-    "MinerClient": {
-        "miningRewardAddress": "WoGrLA8kjznMcPKBHVJgJjgPoHd",
-        "threads": 1
-    },
-    "LightMinerClient": {
+    "Miner": {
         "miningRewardAddress": "WoGrLA8kjznMcPKBHVJgJjgPoHd",
         "threads": 0
     },

@@ -10,22 +10,22 @@ import Block from './Block'
 import * as fs from 'fs'
 import Transaction from "./Transaction"
 import beautifyBigInt from "./beautifyBigInt"
-interface BaseClient {
+interface Node {
     node: TCPNetworkNode
     tcpServer: TCPApi['Server']
     httpApi: HTTPApi
     blockchain: Blockchain
 }
-class BaseClient extends events.EventEmitter {
+class Node extends events.EventEmitter {
     constructor() {
         super()
         this.node = new TCPNetworkNode()
         this.blockchain = new Blockchain()
         this.tcpServer = TCPApi.createServer()
         this.httpApi = new HTTPApi()
-        if (config.BaseClient.hostNode) this.node.start()
-        if (config.BaseClient.connectToNodes) this.node.connectToNetwork(nodes)
-        if (config.BaseClient.blockchainSynchronization) this.nextSync()
+        if (config.Node.hostNode) this.node.start()
+        if (config.Node.connectToNodes) this.node.connectToNetwork(nodes)
+        if (config.Node.blockchainSynchronization) this.nextSync()
         this.node.on('block', async block => {
             const code = await this.blockchain.addBlock(block)
             this.emit('block', block, code)
@@ -35,17 +35,17 @@ class BaseClient extends events.EventEmitter {
             this.emit('transaction', transaction, code)
         })
         this.node.on('node', node => {
-            if (config.BaseClient.connectToNodes) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
+            if (config.Node.connectToNodes) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
             this.emit('node', node)
         })
         this.node.on('socket', socket => {
             if (!fs.existsSync('./log')) fs.mkdirSync('./log')
-            if (config.BaseClient.logs) fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (config.Node.logs) fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('socket', socket)
         })
         this.node.on('blacklist', (socket, reason) => {
             if (!fs.existsSync('./log')) fs.mkdirSync('./log')
-            if (config.BaseClient.logs) fs.appendFileSync('./log/blacklisted.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (config.Node.logs) fs.appendFileSync('./log/blacklisted.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('blacklist', socket, reason)
         })
         if (config.TCPApi.enabled) {
@@ -100,7 +100,7 @@ class BaseClient extends events.EventEmitter {
             const buffer = protocol.constructDataBuffer('block', Block.minify(block))
             this.node.broadcastAndStoreDataHash(buffer)
         }
-        setTimeout(this.nextSync.bind(this), config.BaseClient.blockchainSynchronization.timeout)
+        setTimeout(this.nextSync.bind(this), config.Node.blockchainSynchronization.timeout)
     }
 }
-export default BaseClient
+export default Node
