@@ -36,7 +36,7 @@ class Block {
         return await customHash(
             block.previousHash.toString('binary')
             + block.timestamp
-            + JSON.stringify(block.transactions)
+            + JSON.stringify(block.transactions.map(e => Transaction.minify(e)))
             + block.nonce
             + block.height
             + block.difficulty
