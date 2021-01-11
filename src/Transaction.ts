@@ -61,16 +61,16 @@ class Transaction {
         }
         return <Transaction> output
     }
-    calculateHash() {
+    static calculateHash(transaction: Transaction) {
         let buf = Buffer.alloc(0)
-        if (this.from) buf = Buffer.concat([ buf, this.from ])
-        if (this.to) buf = Buffer.concat([ buf, this.to ])
-        if (this.data) buf = Buffer.concat([ buf, this.data ])
+        if (transaction.from) buf = Buffer.concat([ buf, transaction.from ])
+        if (transaction.to) buf = Buffer.concat([ buf, transaction.to ])
+        if (transaction.data) buf = Buffer.concat([ buf, transaction.data ])
         return crypto.createHash('sha256').update(
             buf.toString('binary')
-            + this.amount
-            + this.minerFee
-            + this.timestamp
+            + transaction.amount
+            + transaction.minerFee
+            + transaction.timestamp
         ).digest()
     }
     sign(privateKey: Buffer) {
@@ -79,7 +79,7 @@ class Transaction {
         const pubPoint = key.getPublic()
         const publicKey = Buffer.from(pubPoint.encode())
         this.from = addressFromPublicKey(publicKey)
-        const hash = this.calculateHash()
+        const hash = Transaction.calculateHash(this)
         const signature = key.sign(hash)
         this.signature = Buffer.from(signature.toDER())
         this.recoveryParam = signature.recoveryParam
@@ -89,7 +89,7 @@ class Transaction {
             if (!this.signature) return false
             if (typeof this.recoveryParam !== 'number' || this.recoveryParam >> 2) return false
             const ec = new elliptic.ec('secp256k1')
-            const hash = this.calculateHash()
+            const hash = Transaction.calculateHash(this)
             const pubPoint = ec.recoverPubKey(hash, this.signature, this.recoveryParam)
             const publicKey = Buffer.from(pubPoint.encode())
             const address = addressFromPublicKey(publicKey)

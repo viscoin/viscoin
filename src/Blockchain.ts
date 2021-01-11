@@ -99,7 +99,7 @@ class Blockchain extends events.EventEmitter {
         if (transaction.isValid() !== 0) return 1
         // verify
         if (Buffer.byteLength(JSON.stringify(Transaction.minify(transaction))) > config.Blockchain.maxTransactionSize) return 2
-        if (this.pendingTransactions.find(e => e.calculateHash().equals(transaction.calculateHash()))) return 3
+        if (this.pendingTransactions.find(_transaction => Transaction.calculateHash(transaction).equals(Transaction.calculateHash(_transaction)))) return 3
         if (!transaction.verify()) return 4
         // async
         if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 5

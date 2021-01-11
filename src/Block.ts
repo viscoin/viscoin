@@ -77,7 +77,7 @@ class Block {
                 if (_amount === null
                     || beautifyBigInt(_amount) !== transaction.amount) return false
             }
-            hashes.push(transaction.calculateHash())
+            hashes.push(Transaction.calculateHash(transaction))
         }
         const _amount = parseBigInt(this.transactions[0].amount)
         if (_amount === null
