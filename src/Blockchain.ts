@@ -129,23 +129,24 @@ class Blockchain extends events.EventEmitter {
         if (block.timestamp > Date.now() + config.Blockchain.maxDesync) return 10
         if (Buffer.byteLength(JSON.stringify(Block.minify(block))) > config.Blockchain.maxBlockSize) return 11
         // async
-        if (block.height < await this.getHeight() - config.Blockchain.trustedAfterBlocks) return 12
+        if (block.hash.equals(await Block.calculateHash(block)) === false) return 12
+        if (block.height < await this.getHeight() - config.Blockchain.trustedAfterBlocks) return 13
         const previousBlock = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         if (previousBlock) {
-            if (block.timestamp <= previousBlock.timestamp) return 13
+            if (block.timestamp <= previousBlock.timestamp) return 14
             const valid = await Blockchain.isPartOfChainValid([
                 previousBlock,
                 block
             ])
-            if (valid === false) return 14
+            if (valid === false) return 15
         }
-        else if (block.height !== 0) return 15
+        else if (block.height !== 0) return 16
         if (await Block.exists({ [config.mongoose.schema.block.hash.name]: block.hash.toString('binary') })) {
             if ((await this.getLatestBlock()).hash.equals(block.hash)) {
                 await this.updateBlockHashes()
-                return 16
+                return 17
             }
-            return 17
+            return 18
         }
         await block.save()
         await this.updateBlockHashes()
@@ -315,6 +316,7 @@ class Blockchain extends events.EventEmitter {
                 if (!block) break
                 block = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
                 if (!block) break
+                if (block.hash.equals(await Block.calculateHash(block)) === false) return false
                 blocks.unshift(block)
                 // counter++
             }
@@ -402,7 +404,10 @@ class Blockchain extends events.EventEmitter {
             remainder: parseBigInt(config.Blockchain.minByteFee.remainder)
         }
         const previousBlock = await this.getLatestBlock()
-        if (previousBlock.height === 0) await this.addBlock(previousBlock)
+        if (previousBlock.height === 0) {
+            previousBlock.hash = await Block.calculateHash(previousBlock)
+            await this.addBlock(previousBlock)
+        }
         this.pendingTransactions = this.pendingTransactions
             .filter(e => e.timestamp >= previousBlock.timestamp)
             .sort((a, b) => {
