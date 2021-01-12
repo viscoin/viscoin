@@ -43,14 +43,17 @@ class Miner extends events.EventEmitter {
     }
     async start() {
         const block = await this.getNewBlock()
-        if (block === null) return setTimeout(async () => {
+        const previousBlock = await this.getLatestBlock()
+        if (block === null
+        || previousBlock === null
+        || previousBlock.hash.equals(block.previousHash) === false) return setTimeout(async () => {
             await this.start()
         }, config.HTTPApi.autoRetry)
-        this.emitThreadsMineNewBlock(block)
+        this.emitThreadsMineNewBlock(block, previousBlock)
     }
-    emitThreadsMineNewBlock(block: Block) {
+    emitThreadsMineNewBlock(block: Block, previousBlock: Block) {
         for (const worker of this.workers) {
-            worker.postMessage(JSON.stringify({ code: 'mine', block, threads: this.threads }))
+            worker.postMessage(JSON.stringify({ code: 'mine', block, previousBlock, threads: this.threads }))
         }
     }
     emitThreadsPause() {
@@ -61,6 +64,14 @@ class Miner extends events.EventEmitter {
     async getNewBlock() {
         try {
             return await HTTPApi.getNewBlock(this.miningRewardAddress)
+        }
+        catch {
+            return null
+        }
+    }
+    async getLatestBlock() {
+        try {
+            return await HTTPApi.getLatestBlock()
         }
         catch {
             return null

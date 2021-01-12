@@ -15,10 +15,9 @@ interface Block {
     transactions: Array<Transaction>
 }
 class Block {
-    constructor({ timestamp = Date.now(), transactions, previousHash, height, nonce = 0, hash = undefined, difficulty }) {
+    constructor({ transactions, previousHash, height, nonce = undefined, hash = undefined, difficulty = undefined, timestamp = undefined }) {
         if (hash instanceof Buffer) this.hash = hash
         else if (hash) this.hash = Buffer.from(hash, 'binary')
-        else this.hash = Buffer.alloc(32, 0xff)
         if (previousHash instanceof Buffer) this.previousHash = previousHash
         else if (previousHash) this.previousHash = Buffer.from(previousHash, 'binary')
         const _transactions = []
@@ -28,9 +27,9 @@ class Block {
         }
         this.transactions = _transactions
         this.height = height
-        this.timestamp = timestamp
-        this.nonce = nonce
-        this.difficulty = difficulty
+        if (nonce !== undefined) this.nonce = nonce
+        if (difficulty !== undefined) this.difficulty = difficulty
+        if (timestamp !== undefined) this.timestamp = timestamp
     }
     static async calculateHash(block: Block) {
         return await customHash(
@@ -49,7 +48,6 @@ class Block {
     }
     async recalculateHash(add: number) {
         this.nonce += add
-        this.timestamp = Date.now()
         this.hash = await Block.calculateHash(this)
         return this.meetsDifficulty()
     }

@@ -7,7 +7,6 @@ import beautifyBigInt from './beautifyBigInt'
 import model_address from './mongoose/model/address'
 import * as events from 'events'
 interface Blockchain {
-    difficulty: number
     pendingTransactions: Array<Transaction>
     syncIndex: number
     hashes: {
@@ -25,7 +24,6 @@ interface Blockchain {
 class Blockchain extends events.EventEmitter {
     constructor() {
         super()
-        this.difficulty = 0
         this.pendingTransactions = []
         this.syncIndex = 0
         this.updatingBlockHashes = false
@@ -81,7 +79,7 @@ class Blockchain extends events.EventEmitter {
             transactions: [],
             previousHash: Buffer.alloc(32, 0x00),
             height: 0,
-            difficulty: this.difficulty
+            difficulty: 0
         })
     }
     async setLatestBlock() {
@@ -278,11 +276,11 @@ class Blockchain extends events.EventEmitter {
         return balance
     }
     static async isPartOfChainValid(chain: Array<Block>) {
-        // i = 2
         for (let i = 1; i < chain.length; i++) {
             const currentBlock = chain[i]
             const previousBlock = chain[i - 1]
             if (previousBlock.height !== currentBlock.height - 1) return false
+            if (Blockchain.getBlockDifficulty([ previousBlock, currentBlock ]) !== currentBlock.difficulty) return false
             if (!currentBlock.meetsDifficulty()) return false
             if (!currentBlock.hasValidTransactions()) return false
             if (!currentBlock.hash.equals(await Block.calculateHash(currentBlock))) return false
@@ -294,45 +292,16 @@ class Blockchain extends events.EventEmitter {
                 if (transaction.timestamp >= currentBlock.timestamp) return false
             }
         }
-        for (let i = 2; i < chain.length; i++) {
-            const blocks = [
-                chain[i - 2],
-                chain[i - 1],
-                chain[i]
-            ]
-            const difficulty = this.getNextDifficulty(blocks)
-            if (blocks[2].difficulty !== difficulty) return false
-        }
         return true
     }
     async isChainValid() {
-    // async isChainValid(limit: number = 0) {
-        let block = (await this.getLatestBlock())
-        let previousBlocks = []
-        let blocks = []
-        // let counter = 0
-        while (true) {
-            for (let i = 0; i < 2; i++) {
-                if (!block) break
-                block = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
-                if (!block) break
-                if (block.hash.equals(await Block.calculateHash(block)) === false) return false
-                blocks.unshift(block)
-                // counter++
-            }
-            if (!blocks.length) break
-            blocks = [
-                ...blocks,
-                ...previousBlocks
-            ]
-            // return object with info about invalidity
-            if (!Blockchain.isPartOfChainValid(blocks)) return false
-            // if (limit !== 0 && counter >= limit) break
-            previousBlocks = [
-                blocks[0],
-                blocks[1]
-            ]
-            blocks = []
+        let blocks = [ await this.getLatestBlock() ]
+        blocks.unshift(await Block.load({ [config.mongoose.schema.block.hash.name]: blocks[0].previousHash.toString('binary') }, null, { lean: true }))
+        while (blocks[0]) {
+            if (await Blockchain.isPartOfChainValid(blocks) === false) return false
+            blocks.unshift(await Block.load({ [config.mongoose.schema.block.hash.name]: blocks[0].previousHash.toString('binary') }, null, { lean: true }))
+            blocks = blocks.slice(0, 2)
+            if (blocks[0].height === 0) break
         }
         return true
     }
@@ -347,18 +316,11 @@ class Blockchain extends events.EventEmitter {
         }
         return work
     }
-    async updateDifficulty() {
-        const blocks = [ await this.getLatestBlock() ]
-        blocks.unshift(await Block.load({ [config.mongoose.schema.block.hash.name]: blocks[0].previousHash.toString('binary') }, null, { lean: true }))
-        if (!blocks[0]) return
-        this.difficulty = Blockchain.getNextDifficulty(blocks)
-    }
-    static getNextDifficulty(blocks: Array<Block>) {
-        let difficulty = blocks[1].difficulty
-        const blockTime = blocks[1].timestamp - blocks[0].timestamp,
-        _blockTime = config.Blockchain.blockTime / 2
-        if (blockTime < _blockTime && difficulty < 64) difficulty++
-        else if (blockTime >= _blockTime && difficulty > 0) difficulty--
+    static getBlockDifficulty(blocks: Array<Block>) {
+        let difficulty = blocks[0].difficulty
+        const time = blocks[1].timestamp - blocks[0].timestamp
+        if (time < config.Blockchain.blockTime && difficulty < 64) difficulty++
+        else if (time >= config.Blockchain.blockTime && difficulty > 0) difficulty--
         return difficulty
     }
     async deleteAllBlocksNotIncludedInChain() {
@@ -440,12 +402,10 @@ class Blockchain extends events.EventEmitter {
             }),
             ...this.pendingTransactions
         ]
-        await this.updateDifficulty()
         const block = new Block({
             transactions,
             previousHash: previousBlock.hash,
-            height: previousBlock.height + 1,
-            difficulty: this.difficulty
+            height: previousBlock.height + 1
         })
         for (let i = 0; i < block.transactions.length; i++) {
             if (i === 0) continue

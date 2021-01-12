@@ -28,7 +28,7 @@ else {
         switch (e.code) {
             case 'mine':
                 e.block.nonce = threadId
-                minerThread.emit('mine', e.block, e.threads)
+                minerThread.emit('mine', e.block, e.previousBlock, e.threads)
                 break
             case 'pause':
                 minerThread.emit('pause')
