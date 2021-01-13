@@ -75,7 +75,15 @@ class Node extends events.EventEmitter {
                 res.end(JSON.stringify(Block.minify(await this.blockchain.getNewBlock(address)), null, 4))
             })
             this.httpApi.on('get-transactions-address', async (res, address) => {
-                const { transactions } = await this.blockchain.getTransactionsOfAddress(address)
+                const projection = `
+                    ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.to.name}
+                    ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.from.name}
+                    ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.amount.name}
+                    ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.minerFee.name}
+                    ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.timestamp.name}
+                    ${config.mongoose.schema.block.timestamp.name}
+                `
+                const { transactions } = await this.blockchain.getTransactionsOfAddress(address, projection)
                 res.end(JSON.stringify(transactions.map(e => Transaction.minify(e)), null, 4))
             })
             this.httpApi.on('get-balance-address', async (res, address) => {

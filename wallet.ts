@@ -496,18 +496,33 @@ const commands = {
                 transactions = await HTTPApi.getTransactionsOfAddress(res.address)
             }
             if (transactions.length) {
-                for (const transaction of transactions.sort((a, b) => a.timestamp - b.timestamp).map(e => new Transaction(Transaction.beautify(e)))) {
-                    const date = chalk.magentaBright(new Date(transaction.timestamp).toLocaleString()),
-                    arrow = chalk.magentaBright('→')
-                    let data = ''
-                    if (transaction.data) data = `\n ${chalk.magentaBright('⤷')} ${chalk.grey(transaction.data.toString('hex'))}`
-                    if (transaction.from && transaction.from.equals(wallet.address)) transaction.from = chalk.blueBright(base58.encode(transaction.from))
-                    else if (transaction.from) transaction.from = base58.encode(transaction.from)
-                    if (transaction.to && transaction.to.equals(wallet.address)) transaction.to = chalk.blueBright(base58.encode(transaction.to))
-                    else if (transaction.to) transaction.to = base58.encode(transaction.to)
-                    if (!transaction.from) console.log(`${date} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}`)
-                    else if (!transaction.to) console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.minerFee))}`)}${data}`)
-                    else console.log(`${date} ${transaction.from} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee))}`)} ${arrow} ${transaction.to} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}${data}`)
+                transactions = transactions.sort((a, b) => a.timestamp - b.timestamp)
+                for (const transaction of transactions) {
+                    let str = chalk.magentaBright(new Date(transaction.timestamp).toLocaleString())
+                    if (transaction.from) {
+                        if (transaction.from.equals(wallet.address)) {
+                            str = `${str} ${chalk.blueBright(base58.encode(transaction.from))}`
+                        }
+                        else {
+                            str = `${str} ${base58.encode(transaction.from)}`
+                        }
+                        if (transaction.amount) str = `${str} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee))}`)}`
+                        else str = `${str} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.minerFee))}`)}`
+                    }
+                    if (transaction.to) {
+                        if (transaction.from) str = `${str} ${chalk.magentaBright('→')}`
+                        if (transaction.to.equals(wallet.address)) {
+                            str = `${str} ${chalk.blueBright(base58.encode(transaction.to))}`
+                        }
+                        else {
+                            str = `${str} ${base58.encode(transaction.to)}`
+                        }
+                        if (transaction.amount) str = `${str} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}`
+                    }
+                    if (transaction.data) {
+                        str = `${str}\n ${chalk.magentaBright('⤷')} ${chalk.grey(transaction.data.toString('hex'))}`
+                    }
+                    console.log(str)
                 }
             }
             else {

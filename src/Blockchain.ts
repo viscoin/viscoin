@@ -181,7 +181,7 @@ class Blockchain extends events.EventEmitter {
         if (blocks.length) return false
         return true
     }
-    async getTransactionsOfAddress(address: Buffer, projection: string | null = null, optimization: boolean = false) {
+    async getTransactionsOfAddress(address: Buffer, projection: string = undefined, optimization: boolean = false) {
         let blocks = [],
         old_blocks = []
         const baseQuery = {
@@ -213,8 +213,11 @@ class Blockchain extends events.EventEmitter {
                 if (this.hashes.current.includes(block.hash.toString('binary')) === false) continue
                 for (const transaction of block.transactions) {
                     if ((transaction.from && address.equals(transaction.from))
-                        || (transaction.to && address.equals(transaction.to))) {
-                        if (!transaction.timestamp && projection && projection.indexOf('timestamp') !== -1 || !projection) transaction.timestamp = block.timestamp
+                    || (transaction.to && address.equals(transaction.to))) {
+                        if (transaction.timestamp === undefined) {
+                            if (projection === undefined
+                            || projection.indexOf(`${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.timestamp.name}`) !== -1) transaction.timestamp = block.timestamp
+                        }
                         transactions.push(transaction)
                     }
                 }
