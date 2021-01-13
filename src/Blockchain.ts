@@ -27,6 +27,10 @@ class Blockchain extends events.EventEmitter {
         this.pendingTransactions = []
         this.syncIndex = 0
         this.updatingBlockHashes = false
+        this.minByteFee = {
+            bigint: parseBigInt(config.Blockchain.minByteFee.bigint),
+            remainder: parseBigInt(config.Blockchain.minByteFee.remainder)
+        }
         this.updateBlockHashes()
     }
     async setBlockHashes() {
@@ -103,6 +107,12 @@ class Blockchain extends events.EventEmitter {
         if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 5
         let sum = parseBigInt(transaction.minerFee)
         if (transaction.amount) sum += parseBigInt(transaction.amount)
+        for (const { from, amount, minerFee } of this.pendingTransactions) {
+            if (transaction.from.equals(from)) {
+                sum += parseBigInt(minerFee)
+                if (amount) sum += parseBigInt(amount)
+            }
+        }
         if (await this.getBalanceOfAddress(transaction.from) < sum) return 6
         // !
         // limit amount of transactions from address to not slow down database when calculating balance
@@ -132,7 +142,7 @@ class Blockchain extends events.EventEmitter {
         const previousBlock = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         if (previousBlock) {
             if (block.timestamp <= previousBlock.timestamp) return 14
-            const valid = await Blockchain.isPartOfChainValid([
+            const valid = await this.isPartOfChainValid([
                 previousBlock,
                 block
             ])
@@ -275,21 +285,33 @@ class Blockchain extends events.EventEmitter {
         }
         return balance
     }
-    static async isPartOfChainValid(chain: Array<Block>) {
+    async isPartOfChainValid(chain: Array<Block>) {
         for (let i = 1; i < chain.length; i++) {
-            const currentBlock = chain[i]
+            const block = chain[i]
             const previousBlock = chain[i - 1]
-            if (previousBlock.height !== currentBlock.height - 1) return false
-            if (Blockchain.getBlockDifficulty([ previousBlock, currentBlock ]) !== currentBlock.difficulty) return false
-            if (!currentBlock.meetsDifficulty()) return false
-            if (!currentBlock.hasValidTransactions()) return false
-            if (!currentBlock.hash.equals(await Block.calculateHash(currentBlock))) return false
-            if (!currentBlock.previousHash.equals(previousBlock.hash)) return false
-            for (const transaction of currentBlock.transactions) {
+            if (previousBlock.height !== block.height - 1) return false
+            if (Blockchain.getBlockDifficulty([ previousBlock, block ]) !== block.difficulty) return false
+            if (!block.meetsDifficulty()) return false
+            if (!block.hasValidTransactions()) return false
+            for (let i = 1; i < block.transactions.length; i++) {
+                const transaction = block.transactions[i]
+                let sum = 0n
+                for (let j = 1; j < block.transactions.length; j++) {
+                    const _transaction = block.transactions[j]
+                    if (transaction.from.equals(_transaction.from)) {
+                        sum += parseBigInt(_transaction.minerFee)
+                        if (_transaction.amount) sum += parseBigInt(_transaction.amount)
+                    }
+                }
+                if (await this.getBalanceOfAddress(transaction.from) < sum) return false
+            }
+            if (!block.hash.equals(await Block.calculateHash(block))) return false
+            if (!block.previousHash.equals(previousBlock.hash)) return false
+            for (const transaction of block.transactions) {
                 if (transaction.timestamp < previousBlock.timestamp) return false
             }
             for (const transaction of previousBlock.transactions) {
-                if (transaction.timestamp >= currentBlock.timestamp) return false
+                if (transaction.timestamp >= block.timestamp) return false
             }
         }
         return true
@@ -298,7 +320,7 @@ class Blockchain extends events.EventEmitter {
         let blocks = [ await this.getLatestBlock() ]
         blocks.unshift(await Block.load({ [config.mongoose.schema.block.hash.name]: blocks[0].previousHash.toString('binary') }, null, { lean: true }))
         while (blocks[0]) {
-            if (await Blockchain.isPartOfChainValid(blocks) === false) return false
+            if (await this.isPartOfChainValid(blocks) === false) return false
             blocks.unshift(await Block.load({ [config.mongoose.schema.block.hash.name]: blocks[0].previousHash.toString('binary') }, null, { lean: true }))
             blocks = blocks.slice(0, 2)
             if (blocks[0].height === 0) break
