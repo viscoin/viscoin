@@ -36,6 +36,7 @@
         "maxConnections": 50
     },
     "EOL": "",
+    "argon2": "./node_modules/argon2/lib/binding/napi-v3/argon2.node",
     "Wallet": {
         "wordlist": "english.txt",
         "timesToRepeatBroadcastTransaction": 5

@@ -1,6 +1,7 @@
 import * as crypto from 'crypto'
+import * as config from '../config.json'
 import * as util from 'util'
-const { hash: _hash, types, version } = require('../node_modules/argon2/lib/binding/napi-v3/argon2.node')
+const { hash: _hash, types, version } = require(`../${config.argon2}`)
 const hash = util.promisify(_hash),
 salt = Buffer.alloc(8),
 options = {
