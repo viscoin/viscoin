@@ -39,13 +39,13 @@ class Node extends events.EventEmitter {
             this.emit('node', node)
         })
         this.node.on('socket', socket => {
-            if (!fs.existsSync('./log')) fs.mkdirSync('./log')
-            if (config.Node.logs) fs.appendFileSync('./log/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (!fs.existsSync('./logs')) fs.mkdirSync('./logs')
+            if (config.Node.logs) fs.appendFileSync('./logs/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('socket', socket)
         })
         this.node.on('blacklist', (socket, reason) => {
-            if (!fs.existsSync('./log')) fs.mkdirSync('./log')
-            if (config.Node.logs) fs.appendFileSync('./log/blacklisted.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (!fs.existsSync('./logs')) fs.mkdirSync('./logs')
+            if (config.Node.logs) fs.appendFileSync('./logs/blacklisted.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('blacklist', socket, reason)
         })
         if (config.TCPApi.enabled) {

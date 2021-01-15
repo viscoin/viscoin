@@ -25,7 +25,7 @@ class Server extends events.EventEmitter {
             .on('listening', () => this.emit('listening'))
     }
     start() {
-        this.server.listen(config.TCPApi.port, config.TCPApi.host)
+        this.server.listen(config.TCPApi.port, config.TCPApi.address)
     }
     stop() {
         this.server.close()

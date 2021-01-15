@@ -6,7 +6,7 @@
             "enabled": true,
             "timeout": 100
         },
-        "logs": false
+        "logs": true
     },
     "Miner": {
         "miningRewardAddress": "WoGrLA8kjznMcPKBHVJgJjgPoHd",
@@ -35,13 +35,13 @@
     },
     "HTTPApi": {
         "enabled": true,
-        "host": "192.168.0.11",
+        "address": "192.168.0.11",
         "port": 80,
         "autoRetry": 1000
     },
     "TCPApi": {
         "enabled": true,
-        "host": "192.168.0.11",
+        "address": "192.168.0.11",
         "port": 8336,
         "maxConnections": 100,
         "autoReconnect": 1000

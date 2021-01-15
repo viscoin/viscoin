@@ -84,7 +84,7 @@ class HTTPApi extends events.EventEmitter {
         this.server.on('listening', () => this.emit('listening'))
     }
     start() {
-        this.server.listen(config.HTTPApi.port, config.HTTPApi.host)
+        this.server.listen(config.HTTPApi.port, config.HTTPApi.address)
     }
     stop() {
         this.server.close()
@@ -92,7 +92,7 @@ class HTTPApi extends events.EventEmitter {
     static get(path: string) {
         return <any> new Promise((resolve, reject) => {
             const req = http.request({
-                host: config.HTTPApi.host,
+                host: config.HTTPApi.address,
                 port: config.HTTPApi.port,
                 method: 'GET',
                 path
@@ -118,7 +118,7 @@ class HTTPApi extends events.EventEmitter {
     static post(path: string, data: string) {
         return <any> new Promise((resolve, reject) => {
             const req = http.request({
-                host: config.HTTPApi.host,
+                host: config.HTTPApi.address,
                 port: config.HTTPApi.port,
                 method: 'POST',
                 path,
