@@ -3,13 +3,13 @@ import TCPNetworkNode from "./TCPNetworkNode"
 import TCPApi from "./TCPApi"
 import HTTPApi from "./HTTPApi"
 import * as config from '../config.json'
-import * as nodes from '../nodes.json'
 import * as events from 'events'
 import protocol from './protocol'
 import Block from './Block'
 import * as fs from 'fs'
 import Transaction from "./Transaction"
 import beautifyBigInt from "./beautifyBigInt"
+import parseNodes from './parseNodes'
 interface Node {
     node: TCPNetworkNode
     tcpServer: TCPApi['Server']
@@ -23,6 +23,8 @@ class Node extends events.EventEmitter {
         this.blockchain = new Blockchain()
         this.tcpServer = TCPApi.createServer()
         this.httpApi = new HTTPApi()
+        const nodes_blacklisted = parseNodes(fs.readFileSync(config.Node.list, 'binary'))
+        const nodes = parseNodes(fs.readFileSync(config.Node.list, 'binary')).filter(e => nodes_blacklisted.includes(e) === false)
         if (config.Node.hostNode) this.node.start()
         if (config.Node.connectToNodes) this.node.connectToNetwork(nodes)
         if (config.Node.blockchainSynchronization) this.nextSync()

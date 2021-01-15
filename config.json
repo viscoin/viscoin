@@ -6,7 +6,8 @@
             "enabled": true,
             "timeout": 100
         },
-        "logs": true
+        "logs": true,
+        "list": "./nodes.txt"
     },
     "Miner": {
         "miningRewardAddress": "WoGrLA8kjznMcPKBHVJgJjgPoHd",
@@ -29,6 +30,7 @@
             "maxConnections": 500
         }
     },
+    "EOL": "",
     "Wallet": {
         "wordlist": "english.txt",
         "timesToRepeatBroadcastTransaction": 5
