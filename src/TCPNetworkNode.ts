@@ -3,6 +3,8 @@ import * as events from 'events'
 import * as config from '../config.json'
 import * as crypto from 'crypto'
 import protocol from './protocol'
+import parseNodes from './parseNodes'
+import * as fs from 'fs'
 interface Socket extends net.Socket {
     bytesReadLastSecond: number
     data: Buffer
@@ -21,6 +23,7 @@ class TCPNetworkNode extends events.EventEmitter {
         this.hashes = []
         this.sockets = new Set()
         this.blacklisted = []
+        if (config.logs.use && fs.existsSync(`${config.logs.path}/blacklisted.txt`)) this.blacklisted = parseNodes(fs.readFileSync(`${config.logs.path}/blacklisted.txt`, 'binary')).map(e => `${e.address}:${e.port}`)
         this.on('blacklist', (socket: Socket, reason: string) => {
             this.destroySocket(socket)
             this.blacklisted.push(socket.remoteAddress)
@@ -56,7 +59,7 @@ class TCPNetworkNode extends events.EventEmitter {
         if (this.blacklisted.includes(socket.remoteAddress)) return this.destroySocket(socket)
         const add = () => {
             socket.setTimeout(config.TCPNetworkNode.socket.setTimeout)
-            if (this.hasSocket(socket)) return this.destroySocket(socket)
+            if (this.hasSocket(socket) || this.sockets.size >= config.TCPNetworkNode.maxConnections) return this.destroySocket(socket)
             this.sockets.add(socket)
             this.broadcastAndStoreDataHash(protocol.constructDataBuffer('node', {
                 address: socket.remoteAddress,

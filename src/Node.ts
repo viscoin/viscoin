@@ -23,10 +23,16 @@ class Node extends events.EventEmitter {
         this.blockchain = new Blockchain()
         this.tcpServer = TCPApi.createServer()
         this.httpApi = new HTTPApi()
-        const nodes_blacklisted = parseNodes(fs.readFileSync(config.Node.list, 'binary'))
-        const nodes = parseNodes(fs.readFileSync(config.Node.list, 'binary')).filter(e => nodes_blacklisted.includes(e) === false)
+        let a = parseNodes(fs.readFileSync(config.addressList, 'binary'))
+        if (config.logs.use) {
+            if (fs.existsSync(`${config.logs.path}/connections.txt`)) a.push(...parseNodes(fs.readFileSync(`${config.logs.path}/connections.txt`, 'binary')))
+            if (fs.existsSync(`${config.logs.path}/blacklisted.txt`)) {
+                const b = parseNodes(fs.readFileSync(`${config.logs.path}/blacklisted.txt`, 'binary'))
+                a = a.filter(e => b.includes(e) === false)
+            }
+        }
         if (config.Node.hostNode) this.node.start()
-        if (config.Node.connectToNodes) this.node.connectToNetwork(nodes)
+        if (config.Node.connectToNodes) this.node.connectToNetwork(a)
         if (config.Node.blockchainSynchronization) this.nextSync()
         this.node.on('block', async block => {
             const code = await this.blockchain.addBlock(block)
@@ -41,13 +47,13 @@ class Node extends events.EventEmitter {
             this.emit('node', node)
         })
         this.node.on('socket', socket => {
-            if (!fs.existsSync('./logs')) fs.mkdirSync('./logs')
-            if (config.Node.logs) fs.appendFileSync('./logs/nodes.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (!fs.existsSync(config.logs.path)) fs.mkdirSync(config.logs.path)
+            if (config.logs.save) fs.appendFileSync(`${config.logs.path}/connections.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('socket', socket)
         })
         this.node.on('blacklist', (socket, reason) => {
-            if (!fs.existsSync('./logs')) fs.mkdirSync('./logs')
-            if (config.Node.logs) fs.appendFileSync('./logs/blacklisted.txt', `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (!fs.existsSync(config.logs.path)) fs.mkdirSync(config.logs.path)
+            if (config.logs.save) fs.appendFileSync(`${config.logs.path}/blacklisted.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('blacklist', socket, reason)
         })
         if (config.TCPApi.enabled) {

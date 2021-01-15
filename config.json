@@ -1,13 +1,17 @@
 {
+    "logs": {
+        "save": true,
+        "use": true,
+        "path": "./logs"
+    },
+    "addressList": "./addresses.txt",
     "Node": {
         "hostNode": true,
         "connectToNodes": true,
         "blockchainSynchronization": {
             "enabled": true,
             "timeout": 100
-        },
-        "logs": true,
-        "list": "./nodes.txt"
+        }
     },
     "Miner": {
         "miningRewardAddress": "WoGrLA8kjznMcPKBHVJgJjgPoHd",
@@ -27,8 +31,9 @@
         "server": {
             "address": "192.168.0.11",
             "port": 8334,
-            "maxConnections": 500
-        }
+            "maxConnections": 50
+        },
+        "maxConnections": 50
     },
     "EOL": "",
     "Wallet": {
