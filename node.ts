@@ -11,6 +11,7 @@ console.log(`${toLocaleTimeString()} ${chalk.cyanBright('Starting node...')}`)
 node.node.on('listening', () => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('Node (TCP) listening on')} ${chalk.blueBright(`${config.TCPNetworkNode.server.address}:${config.TCPNetworkNode.server.port}`)}`))
 node.tcpServer.on('listening', () => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('API (HTTP) listening on')} ${chalk.blueBright(`${config.HTTPApi.address}:${config.HTTPApi.port}`)}`))
 node.httpApi.on('listening', () => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('API (TCP) listening on')} ${chalk.blueBright(`${config.TCPApi.address}:${config.TCPApi.port}`)}`))
+node.tcpServer.on('connection', (port, address) => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('API (TCP) connection')} ${chalk.blueBright(`${address}:${port}`)}`))
 node.on('socket', socket => console.log(`${toLocaleTimeString()} New TCP connection ${socket.address().address}:${socket.address().port} - ${socket.remoteAddress}:${socket.remotePort}`))
 node.on('blacklist', (socket, reason) => console.log(`${toLocaleTimeString()} Banned ${socket.remoteAddress}:${socket.remotePort} ${reason}`))
 node.on('transaction', (transaction, code) => {
