@@ -51,12 +51,12 @@ class Client extends events.EventEmitter {
         socket.data = Buffer.alloc(0)
         socket.on('connect', () => {
             this.sockets.add(socket)
-            this.emit('connect', socket.remotePort, socket.remoteAddress)
+            this.emit('connect', port, host)
         })
         socket.on('error', () => {})
         socket.on('close', () => {
             this.sockets.delete(socket)
-            if (autoReconnect) setTimeout(() => this.connect(socket.remotePort, socket.remoteAddress, autoReconnect), config.TCPApi.autoReconnect)
+            if (autoReconnect) setTimeout(() => this.connect(port, host, autoReconnect), config.TCPApi.autoReconnect)
         })
         socket.on('data', chunk => {
             socket.data = Buffer.concat([ socket.data, chunk ])
