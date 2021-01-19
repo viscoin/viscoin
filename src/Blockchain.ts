@@ -40,9 +40,22 @@ class Blockchain extends events.EventEmitter {
             new: []
         }
         let block = await this.setLatestBlock()
+        if (block.height === 0) return
+        let height
         while (block) {
             this.hashes.current.unshift(block.hash.toString('binary'))
+            height = block.height
             block = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
+        }
+        if (height !== 1) {
+            const info = await model_block
+                .deleteMany({
+                    [config.mongoose.schema.block.height.name]: {
+                        $gte: height
+                    }
+                })
+                .exec()
+            console.log(info)
         }
     }
     async updateBlockHashes() {
@@ -78,17 +91,21 @@ class Blockchain extends events.EventEmitter {
         this.emit('updated-block-hashes')
         this.updatingBlockHashes = false
     }
-    createGenesisBlock() {
-        return new Block({
+    async createGenesisBlock() {
+        const block = new Block({
             transactions: [],
             previousHash: Buffer.alloc(32, 0x00),
             height: 0,
-            difficulty: 0
+            difficulty: 0,
+            nonce: 0,
+            timestamp: 0
         })
+        block.hash = await Block.calculateHash(block)
+        return block
     }
     async setLatestBlock() {
         let block = await Block.load(null, null, { sort: { [config.mongoose.schema.block.height.name]: -1, [config.mongoose.schema.block.difficulty.name]: -1 }, lean: true })
-        if (block === null) block = this.createGenesisBlock()
+        if (block === null) block = await this.createGenesisBlock()
         this.latestBlock = block
         return block
     }
@@ -148,7 +165,7 @@ class Blockchain extends events.EventEmitter {
             ])
             if (valid === false) return 15
         }
-        else if (block.height !== 0) return 16
+        else if (block.height !== 1 || block.previousHash.equals((await this.createGenesisBlock()).hash) === false) return 16
         if (await Block.exists({ [config.mongoose.schema.block.hash.name]: block.hash.toString('binary') })) {
             if ((await this.getLatestBlock()).hash.equals(block.hash)) {
                 await this.updateBlockHashes()
@@ -391,10 +408,6 @@ class Blockchain extends events.EventEmitter {
             remainder: parseBigInt(config.Blockchain.minByteFee.remainder)
         }
         const previousBlock = await this.getLatestBlock()
-        if (previousBlock.height === 0) {
-            previousBlock.hash = await Block.calculateHash(previousBlock)
-            await this.addBlock(previousBlock)
-        }
         this.pendingTransactions = this.pendingTransactions
             .filter(e => e.timestamp >= previousBlock.timestamp)
             .sort((a, b) => {
