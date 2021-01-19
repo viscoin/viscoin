@@ -91,8 +91,11 @@ class Node extends events.EventEmitter {
                     ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.timestamp.name}
                     ${config.mongoose.schema.block.timestamp.name}
                 `
-                const { transactions } = await this.blockchain.getTransactionsOfAddress(address, projection)
-                res.end(JSON.stringify(transactions.map(e => Transaction.minify(e)), null, 4))
+                const { transactions, unconfirmed_transactions } = await this.blockchain.getTransactionsOfAddress(address, projection)
+                res.end(JSON.stringify([
+                    ...transactions.map(e => Transaction.minify(e)),
+                    ...unconfirmed_transactions.map(e => Transaction.minify(e))
+                ], null, 4))
             })
             this.httpApi.on('get-balance-address', async (res, address) => {
                 const balance = await this.blockchain.getBalanceOfAddress(address)

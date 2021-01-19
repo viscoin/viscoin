@@ -237,10 +237,12 @@ class Blockchain extends events.EventEmitter {
         }
         if (optimization) return {
             transactions: getTransactions(blocks),
-            old_transactions: getTransactions(old_blocks)
+            old_transactions: getTransactions(old_blocks),
+            unconfirmed_transactions: this.pendingTransactions.filter(e => address.equals(e.from) || address.equals(e.to))
         }
         else return {
-            transactions: getTransactions(blocks)
+            transactions: getTransactions(blocks),
+            unconfirmed_transactions: this.pendingTransactions.filter(e => address.equals(e.from) || address.equals(e.to))
         }
     }
     async getBalanceOfAddress(address: Buffer, enableChanceToNotUseOptimization: boolean = false) {
