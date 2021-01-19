@@ -338,12 +338,10 @@ class Blockchain extends events.EventEmitter {
     }
     async isChainValid() {
         let blocks = [ await this.getLatestBlock() ]
-        blocks.unshift(await Block.load({ [config.mongoose.schema.block.hash.name]: blocks[0].previousHash.toString('binary') }, null, { lean: true }))
-        while (blocks[0]) {
+        while (blocks[0] !== null) {
             if (await this.isPartOfChainValid(blocks) === false) return false
             blocks.unshift(await Block.load({ [config.mongoose.schema.block.hash.name]: blocks[0].previousHash.toString('binary') }, null, { lean: true }))
             blocks = blocks.slice(0, 2)
-            if (blocks[0].height === 0) break
         }
         return true
     }
