@@ -1,11 +1,12 @@
 import * as fs from 'fs'
 import * as crypto from 'crypto'
+import * as config from './config.json'
 
 const files = [
     ...fs.readdirSync('./').map(e => e = `./${e}`),
     ...fs.readdirSync('./src').map(e => e = `./src/${e}`)
 ].filter(e => e.endsWith('.js'))
-files.push('./package.json', './package-lock.json')
+files.push('./package.json', './package-lock.json', config.argon2)
 console.log(files)
 let data = Buffer.alloc(0)
 for (const file of files) {

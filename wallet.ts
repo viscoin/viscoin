@@ -13,10 +13,8 @@ import beautifyBigInt from './src/beautifyBigInt'
 import parseBigInt from './src/parseBigInt'
 import HTTPApi from './src/HTTPApi'
 import * as config from './config.json'
-import Transaction from './src/Transaction'
 
 let wallet: Wallet | undefined = undefined
-
 const functions = {
     save_wallet: (privateKey: Buffer, words: Array<string>, name: string, passphrase: string) => {
         const iv = crypto.randomBytes(16)
@@ -40,7 +38,6 @@ const functions = {
         console.log(chalk.redBright('Unable to connect to API'))
     }
 }
-
 const commands = {
     commands: async () => {
         let choices: Array<{ title: string, description: string, value: Function }> = [

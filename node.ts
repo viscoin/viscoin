@@ -1,11 +1,11 @@
 import mongoose from './src/mongoose/mongoose'
+mongoose.init()
 import Node from './src/Node'
 import * as config from './config.json'
 import * as chalk from 'chalk'
 import base58 from './src/base58'
 import toLocaleTimeString from './src/chalk/LocaleTimeString'
 
-mongoose.init()
 const node = new Node()
 console.log(`${toLocaleTimeString()} ${chalk.cyanBright('Starting node...')}`)
 node.node.on('listening', () => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('Node (TCP) listening on')} ${chalk.blueBright(`${config.TCPNetworkNode.server.address}:${config.TCPNetworkNode.server.port}`)}`))
