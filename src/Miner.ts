@@ -24,7 +24,7 @@ class Miner extends events.EventEmitter {
                 this.emitThreadsPause()
                 await this.start()
             })
-            this.tcpClient.on('transaction', async (tsx) => {
+            this.tcpClient.on('transaction', async () => {
                 this.emitThreadsPause()
                 await this.start()
             })
