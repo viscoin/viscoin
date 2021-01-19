@@ -453,26 +453,14 @@ class Blockchain extends events.EventEmitter {
     }
     async getNextSyncBlock() {
         const block = await this.getBlockByHeight(this.syncIndex++)
-        if (this.syncIndex > await this.getHeight()) this.syncIndex = 0
+        if (this.syncIndex > await this.getHeight()) this.syncIndex = 1
         return block
     }
     async getCircumlatingSupply() {
         return BigInt(await this.getHeight()) * parseBigInt(config.Blockchain.blockReward)
     }
-    async getTotalTransactions(timestamp: number | null = null) {
-        let block = await this.getLatestBlock(),
-        transactions = 0
-        while (block && (timestamp === null || timestamp <= block.timestamp)) {
-            transactions += block.transactions.length
-            block = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
-        }
-        return transactions
-    }
     async getHeight() {
         return (await this.getLatestBlock()).height
-    }
-    async getDifficulty() {
-        return Math.pow(2, (await this.getLatestBlock()).difficulty)
     }
 }
 export default Blockchain
