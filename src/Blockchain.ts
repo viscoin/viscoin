@@ -347,17 +347,6 @@ class Blockchain extends events.EventEmitter {
         }
         return true
     }
-    async getWork() {
-        let block = await Block.load(null, null, { sort: { height: -1, difficulty: -1 }, lean: true }),
-        work = 0
-        while (true) {
-            if (!block) break
-            block = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
-            if (!block) break
-            work += Math.pow(2, block.difficulty)
-        }
-        return work
-    }
     static getBlockDifficulty(blocks: Array<Block>) {
         let difficulty = blocks[0].difficulty
         const time = blocks[1].timestamp - blocks[0].timestamp
@@ -366,18 +355,12 @@ class Blockchain extends events.EventEmitter {
         return difficulty
     }
     async deleteAllBlocksNotIncludedInChain() {
-        const hashes = []
-        let block = await this.getLatestBlock()
-        while (block) {
-            hashes.push(block.hash.toString('binary'))
-            block = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
-        }
-        if (!hashes.length) return
+        await this.updateBlockHashes()
         const info = await model_block
             .deleteMany({
                 [config.mongoose.schema.block.hash.name]: {
                     $not: {
-                        $in: hashes
+                        $in: this.hashes.current
                     }
                 }
             })
