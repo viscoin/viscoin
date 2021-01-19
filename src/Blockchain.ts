@@ -79,9 +79,6 @@ class Blockchain extends events.EventEmitter {
             newHashes.unshift(block.hash.toString('binary'))
             block = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         }
-        // !
-        // const oldHashes = this.hashes.current.splice(index + 1, this.hashes.current.length, ...newHashes)
-        // console.log(this.hashes.current[this.hashes.current.length - 1].toString('hex'), this.hashes.current[this.hashes.current.length - 2].toString('hex'), this.hashes.current[this.hashes.current.length - 3].toString('hex'))
         if (index !== null) {
             this.hashes.old = this.hashes.current.slice(index + 1)
             this.hashes.current = this.hashes.current.slice(0, index + 1)
@@ -131,9 +128,6 @@ class Blockchain extends events.EventEmitter {
             }
         }
         if (await this.getBalanceOfAddress(transaction.from) < sum) return 6
-        // !
-        // limit amount of transactions from address to not slow down database when calculating balance
-        // if ((await this.getTransactionsOfAddress(transaction.from)).length >= config.maxTransactions) return 23
         const { bigint, remainder } = transaction.byteFee()
         if (bigint < this.minByteFee.bigint
         || (bigint === this.minByteFee.bigint && remainder <= this.minByteFee.remainder)) return 7
@@ -425,10 +419,9 @@ class Blockchain extends events.EventEmitter {
         while (Buffer.byteLength(JSON.stringify(Block.minify(block))) > config.Blockchain.maxBlockSize) {
             const transaction = block.transactions.pop()
             block.transactions[0].amount = beautifyBigInt(parseBigInt(block.transactions[0].amount) - parseBigInt(transaction.minerFee))
-            // !
             if (block.transactions.length === 1) break
             this.minByteFee = block.transactions[block.transactions.length - 1].byteFee()
-            console.log(this.minByteFee)
+            // console.log(this.minByteFee)
         }
         return block
     }

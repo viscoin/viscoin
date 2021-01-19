@@ -98,18 +98,7 @@ class TCPNetworkNode extends events.EventEmitter {
                     index = protocol.getEndIndex(socket.data)
                 }
             })
-            // !
-            .on('end', () => {})
-            .on('drain', () => {})
-            .on('lookup', () => {})
     }
-    // !
-    // isValidBuffer(buf: Buffer) {
-    //     // + 1 for the protocol byte in the beginning of the buffer
-    //     if (Buffer.byteLength(buf) > 1 + config.Block.blockSize) return false
-    //     if (protocol.parseDataBuffer(buf) === null) return false
-    //     return true
-    // }
     compareAndStoreHash(data: Buffer) {
         const hash = crypto.createHash('sha256').update(data).digest()
         this.addHash(hash)
@@ -149,7 +138,6 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (Buffer.byteLength(Buffer.from(node.address.split('.'))) !== 4
                     && Buffer.byteLength(Buffer.from(node.address.split(':'))) > 16) continue
             }
-            // !
             if (node.port === config.TCPNetworkNode.server.port
                 && node.address === config.TCPNetworkNode.server.address) continue
             const socket = <Socket> net.connect(node.port, node.address)
