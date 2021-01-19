@@ -360,14 +360,13 @@ class Blockchain extends events.EventEmitter {
         return info
     }
     async getBlockByHeight(height: number) {
-        const block = await Block.load({
+        if (height === 0) return await this.createGenesisBlock()
+        return await Block.load({
             [config.mongoose.schema.block.height.name]: height,
             [config.mongoose.schema.block.hash.name]: {
                 $in: this.hashes.current
             }
         }, null, { lean: true })
-        if (block === null) return await this.createGenesisBlock()
-        return block
     }
     async getNewBlock(address: Buffer) {
         this.minByteFee = {
