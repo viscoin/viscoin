@@ -46,8 +46,6 @@ class TCPNetworkNode extends events.EventEmitter {
     interval: Array<Function> = [
         () => {
             for (const socket of this.sockets) {
-                if (!socket) continue
-                // console.info('bytesReadLastSecond', socket.bytesReadLastSecond)
                 socket.bytesReadLastSecond = 0
             }
         },

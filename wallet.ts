@@ -195,7 +195,6 @@ const commands = {
                 name: 'address',
                 message: 'Address',
                 validate: address => {
-                    // if (!address) return true
                     try {
                         if (Buffer.byteLength(base58.decode(address)) === 20) return true
                         else return 'Invalid address'
@@ -472,7 +471,6 @@ const commands = {
                 name: 'address',
                 message: 'Address',
                 validate: address => {
-                    // if (!address) return true
                     try {
                         if (Buffer.byteLength(base58.decode(address)) === 20) return true
                         else return 'Invalid address'
