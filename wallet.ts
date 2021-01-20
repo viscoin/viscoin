@@ -502,10 +502,10 @@ const commands = {
                     for (let i = 0; i < blocks.length; i++) {
                         if (transaction.timestamp >= blocks[i].timestamp) {
                             if (transaction.from !== undefined) {
-                                if (i === 0) str = `${chalk.redBright('UNCONFIRMED')} ${chalk.yellow('→')} ${str}`
-                                else if (config.confirmations > 0) str = `${chalk.blueBright(`${i} Confirmations`)} ${chalk.yellow('→')} ${str}`
+                                if (i === 0) str = `${str} ${chalk.yellow('|')} ${chalk.redBright('UNCONFIRMED')} ${chalk.yellow('|')}`
+                                else if (config.confirmations > 0) str = `${str} ${chalk.yellow('|')} ${chalk.blueBright(`${i} Confirmations`)} ${chalk.yellow('|')}`
                             }
-                            else if (config.confirmations > 0) str = `${chalk.blueBright(`${i + 1} Confirmations`)} ${chalk.yellow('→')} ${str}`
+                            else if (config.confirmations > 0) str = `${str} ${chalk.yellow('|')} ${chalk.blueBright(`${i + 1} Confirmations`)} ${chalk.yellow('|')}`
                             break
                         }
                     }
@@ -530,7 +530,7 @@ const commands = {
                         if (transaction.amount) str = `${str} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}`
                     }
                     if (transaction.data) {
-                        str = `${str}\n ${chalk.yellow('⤷')} ${chalk.grey(transaction.data.toString('hex'))}`
+                        str = `${str} ${chalk.grey(transaction.data.toString('hex'))}`
                     }
                     console.log(str)
                 }
