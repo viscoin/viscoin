@@ -490,10 +490,25 @@ const commands = {
             else {
                 transactions = await HTTPApi.getTransactionsOfAddress(res.address)
             }
+            const latestBlock = await HTTPApi.getLatestBlock()
+            const blocks = [ latestBlock ]
+            for (let i = latestBlock.height - 1; i >= latestBlock.height + 1 - config.confirmations && i >= 0; i--) {
+                blocks.push(await HTTPApi.getBlockByHeight(i))
+            }
             if (transactions.length) {
                 transactions = transactions.sort((a, b) => a.timestamp - b.timestamp)
                 for (const transaction of transactions) {
                     let str = chalk.magentaBright(new Date(transaction.timestamp).toLocaleString())
+                    for (let i = 0; i < blocks.length; i++) {
+                        if (transaction.timestamp >= blocks[i].timestamp) {
+                            if (transaction.from !== undefined) {
+                                if (i === 0) str = `${chalk.redBright('UNCONFIRMED')} ${chalk.yellow('→')} ${str}`
+                                else if (config.confirmations > 0) str = `${chalk.blueBright(`${i} Confirmations`)} ${chalk.yellow('→')} ${str}`
+                            }
+                            else if (config.confirmations > 0) str = `${chalk.blueBright(`${i + 1} Confirmations`)} ${chalk.yellow('→')} ${str}`
+                            break
+                        }
+                    }
                     if (transaction.from) {
                         if (transaction.from.equals(wallet.address)) {
                             str = `${str} ${chalk.blueBright(base58.encode(transaction.from))}`
@@ -505,7 +520,7 @@ const commands = {
                         else str = `${str} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.minerFee))}`)}`
                     }
                     if (transaction.to) {
-                        if (transaction.from) str = `${str} ${chalk.magentaBright('→')}`
+                        if (transaction.from) str = `${str} ${chalk.yellow('→')}`
                         if (transaction.to.equals(wallet.address)) {
                             str = `${str} ${chalk.blueBright(base58.encode(transaction.to))}`
                         }
@@ -515,7 +530,7 @@ const commands = {
                         if (transaction.amount) str = `${str} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}`
                     }
                     if (transaction.data) {
-                        str = `${str}\n ${chalk.magentaBright('⤷')} ${chalk.grey(transaction.data.toString('hex'))}`
+                        str = `${str}\n ${chalk.yellow('⤷')} ${chalk.grey(transaction.data.toString('hex'))}`
                     }
                     console.log(str)
                 }

@@ -5,6 +5,7 @@
         "path": "./logs"
     },
     "addressList": "./addresses.txt",
+    "confirmations": 6,
     "Node": {
         "hostNode": true,
         "connectToNodes": true,
