@@ -502,10 +502,10 @@ const commands = {
                     for (let i = 0; i < blocks.length; i++) {
                         if (transaction.timestamp >= blocks[i].timestamp) {
                             if (transaction.from !== undefined) {
-                                if (i === 0) str = `${str} ${chalk.yellow('|')} ${chalk.redBright('UNCONFIRMED')} ${chalk.yellow('|')}`
-                                else if (config.confirmations > 0) str = `${str} ${chalk.yellow('|')} ${chalk.blueBright(`${i} Confirmations`)} ${chalk.yellow('|')}`
+                                if (i === 0) str = `${str} ${chalk.redBright(0)}`
+                                else if (config.confirmations > 0) str = `${str} ${chalk.yellowBright(i)}`
                             }
-                            else if (config.confirmations > 0) str = `${str} ${chalk.yellow('|')} ${chalk.blueBright(`${i + 1} Confirmations`)} ${chalk.yellow('|')}`
+                            else if (config.confirmations > 0) str = `${str} ${chalk.yellowBright(i + 1)}`
                             break
                         }
                     }
@@ -520,7 +520,7 @@ const commands = {
                         else str = `${str} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.minerFee))}`)}`
                     }
                     if (transaction.to) {
-                        if (transaction.from) str = `${str} ${chalk.yellow('→')}`
+                        if (transaction.from) str = `${str} ${chalk.blueBright('-->')}`
                         if (transaction.to.equals(wallet.address)) {
                             str = `${str} ${chalk.blueBright(base58.encode(transaction.to))}`
                         }
