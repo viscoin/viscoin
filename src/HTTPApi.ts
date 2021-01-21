@@ -13,8 +13,7 @@ class HTTPApi extends events.EventEmitter {
     constructor() {
         super()
         const app = express()
-        app.use(express.urlencoded({ extended: true }))
-        app.use(express.json())
+        app.use(express.json({ limit: '2mb' }))
         app.get('/', (req, res) => {
             res.end(JSON.stringify({
                 get: [

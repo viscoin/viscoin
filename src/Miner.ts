@@ -13,6 +13,7 @@ interface Miner {
     hashrate: number
     miningRewardAddress: Buffer
     tcpClient: TCPApi['Client']
+    restarting: boolean
 }
 class Miner extends events.EventEmitter {
     constructor(miningRewardAddress: Buffer) {
@@ -21,12 +22,10 @@ class Miner extends events.EventEmitter {
         if (config.TCPApi.enabled) {
             this.tcpClient.connect(config.TCPApi.port, config.TCPApi.address, true)
             this.tcpClient.on('block', async () => {
-                this.emitThreadsPause()
-                await this.start()
+                await this.restart()
             })
             this.tcpClient.on('transaction', async () => {
-                this.emitThreadsPause()
-                await this.start()
+                await this.restart()
             })
         }
         this.workers = []
@@ -40,6 +39,20 @@ class Miner extends events.EventEmitter {
         }, 1000)
         this.miningRewardAddress = miningRewardAddress
         this.once('ready', async () => await this.start())
+        this.restarting = false
+        this.setMaxListeners(config.Miner.maxListeners)
+    }
+    async restart() {
+        if (this.restarting === true) {
+            return <void> await new Promise(resolve => this.once('restarted', () => resolve()))
+        }
+        this.restarting = true
+        this.emitThreadsPause()
+        await this.start()
+        setTimeout(() => {
+            this.emit('restarted')
+            this.restarting = false
+        }, config.Miner.restartDelay)
     }
     async start() {
         const block = await this.getNewBlock()

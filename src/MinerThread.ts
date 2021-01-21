@@ -34,6 +34,7 @@ class MinerThread extends events.EventEmitter {
                 block.difficulty = difficulty
                 block.nonce %= this.threads
             }
+            block.setHeader()
         }
         if (await block.recalculateHash(this.threads) === true) {
             this.paused = true

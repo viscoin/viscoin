@@ -1,4 +1,3 @@
-import * as crypto from 'crypto'
 import * as config from '../config.json'
 import * as util from 'util'
 const { hash: _hash, types, version } = require(`../${config.argon2}`)
@@ -13,5 +12,5 @@ options = {
     version
 }
 export default async (data) => {
-    return await hash(crypto.createHash('blake2b512').update(data).digest(), salt, options)
+    return await hash(Buffer.from(data), salt, options)
 }

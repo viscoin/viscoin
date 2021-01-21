@@ -4,6 +4,7 @@ import * as config from '../config.json'
 import customHash from './customHash'
 import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
+import * as crypto from 'crypto'
 interface Block {
     nonce: number
     height: number
@@ -13,6 +14,8 @@ interface Block {
     hash: Buffer
     previousHash: Buffer
     transactions: Array<Transaction>
+    header: string
+    transactionsHash: string
 }
 class Block {
     constructor({ transactions, previousHash, height, nonce = undefined, hash = undefined, difficulty = undefined, timestamp = undefined }) {
@@ -31,15 +34,22 @@ class Block {
         if (difficulty !== undefined) this.difficulty = difficulty
         if (timestamp !== undefined) this.timestamp = timestamp
     }
+    setTransactionsHash() {
+        this.transactionsHash = crypto.createHash('sha256').update(JSON.stringify(this.transactions.map(e => Transaction.minify(e)))).digest().toString('binary')
+    }
+    setHeader() {
+        if (this.transactionsHash === undefined) this.setTransactionsHash()
+        this.header = crypto.createHash('sha256').update(
+            this.previousHash.toString('binary')
+            + this.timestamp
+            + this.transactionsHash
+            + this.height
+            + this.difficulty
+        ).digest().toString('binary')
+    }
     static async calculateHash(block: Block) {
-        return await customHash(
-            block.previousHash.toString('binary')
-            + block.timestamp
-            + JSON.stringify(block.transactions.map(e => Transaction.minify(e)))
-            + block.nonce
-            + block.height
-            + block.difficulty
-        )
+        if (block.header === undefined) block.setHeader()
+        return await customHash(block.header + block.nonce)
     }
     static getDifficultyBuffer(difficulty: number) {
         const index = Math.floor(difficulty / 8),
