@@ -4,6 +4,7 @@ import addressFromPublicKey from './addressFromPublicKey'
 import * as config from '../config.json'
 import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
+const ec = new elliptic.ec('secp256k1')
 interface Transaction {
     from: Buffer
     to: Buffer
@@ -74,7 +75,6 @@ class Transaction {
         ).digest()
     }
     sign(privateKey: Buffer) {
-        const ec = new elliptic.ec('secp256k1')
         const key = ec.keyFromPrivate(privateKey)
         const pubPoint = key.getPublic()
         const publicKey = Buffer.from(pubPoint.encode())
@@ -86,9 +86,8 @@ class Transaction {
     }
     verify() {
         try {
-            if (!this.signature) return false
+            if (this.signature === undefined) return false
             if (typeof this.recoveryParam !== 'number' || this.recoveryParam >> 2) return false
-            const ec = new elliptic.ec('secp256k1')
             const hash = Transaction.calculateHash(this)
             const pubPoint = ec.recoverPubKey(hash, this.signature, this.recoveryParam)
             const publicKey = Buffer.from(pubPoint.encode())

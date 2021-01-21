@@ -3,6 +3,7 @@ import Transaction from './Transaction'
 import addressFromPublicKey from './addressFromPublicKey'
 import base58 from './base58'
 import HTTPApi from './HTTPApi'
+const ec = new elliptic.ec('secp256k1')
 interface Wallet {
     name: string
     privateKey: Buffer
@@ -30,7 +31,6 @@ class Wallet {
         return transaction
     }
     static import(wallet: { name: string, privateKey: Buffer, words: Array<string> }) {
-        const ec = new elliptic.ec('secp256k1')
         const key = ec.keyFromPrivate(wallet.privateKey)
         const pubPoint = key.getPublic()
         const publicKey = Buffer.from(pubPoint.encode())

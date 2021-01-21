@@ -46,13 +46,13 @@
     },
     "HTTPApi": {
         "enabled": true,
-        "address": "192.168.0.11",
+        "address": "localhost",
         "port": 80,
         "autoRetry": 1000
     },
     "TCPApi": {
         "enabled": true,
-        "address": "192.168.0.11",
+        "address": "localhost",
         "port": 8336,
         "maxConnections": 100,
         "autoReconnect": 1000
@@ -60,14 +60,13 @@
     "Blockchain": {
         "optimization": {
             "enabled": true,
-            "chanceToNotUse": 0.001
+            "chanceToNotUse": 0
         },
         "maxDesync": 30000,
-        "maxTransactionSize": 16384,
         "blockReward": "1000",
         "blockTime": 60000,
         "trustedAfterBlocks": 1000,
-        "maxBlockSize": 1048576,
+        "maxBlockSize": 65536,
         "decimalPrecision": 15,
         "minByteFee": {
             "bigint": "0",

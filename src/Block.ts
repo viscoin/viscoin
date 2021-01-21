@@ -71,11 +71,11 @@ class Block {
         if (!this.transactions.length) return false
         const hashes = []
         for (let i = 0; i < this.transactions.length; i++) {
-            const transaction = this.transactions[i]
+            const transaction: Transaction = this.transactions[i]
             if (!transaction) return false
             if (i === 0) continue
             if (transaction.isValid() !== 0) return false
-            if (!transaction.verify()) return false
+            if (transaction.verify() !== true) return false
             const minerFee = parseBigInt(transaction.minerFee)
             if (minerFee === null
                 || beautifyBigInt(minerFee) !== transaction.minerFee) return false
