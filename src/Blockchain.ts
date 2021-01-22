@@ -420,7 +420,7 @@ class Blockchain extends events.EventEmitter {
             if (i === 0) continue
             block.transactions[0].amount = beautifyBigInt(parseBigInt(block.transactions[0].amount) + parseBigInt(block.transactions[i].minerFee))
         }
-        while (Buffer.byteLength(JSON.stringify(Block.minify(block))) > config.Blockchain.maxBlockSize - 1) {
+        while (Buffer.byteLength(JSON.stringify(Block.minify(block))) > config.Blockchain.maxBlockSize - 64) {
             const transaction = block.transactions.pop()
             block.transactions[0].amount = beautifyBigInt(parseBigInt(block.transactions[0].amount) - parseBigInt(transaction.minerFee))
             if (block.transactions.length === 1) break
@@ -428,6 +428,7 @@ class Blockchain extends events.EventEmitter {
             // console.log(this.minByteFee)
         }
         console.log(Buffer.byteLength(JSON.stringify(Block.minify(block))))
+        console.log(block.hasValidTransactions())
         return block
     }
     async getNextSyncBlock() {
