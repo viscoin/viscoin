@@ -10,7 +10,12 @@ import * as fs from 'fs'
 import Transaction from "./Transaction"
 import beautifyBigInt from "./beautifyBigInt"
 import parseNodes from './parseNodes'
+import { Worker } from 'worker_threads'
+import { cpus } from 'os'
 interface Node {
+    workersReady: Set<Worker>
+    workersBusy: Set<Worker>
+    threads: number
     node: TCPNetworkNode
     tcpServer: TCPApi['Server']
     httpApi: HTTPApi
@@ -19,6 +24,10 @@ interface Node {
 class Node extends events.EventEmitter {
     constructor() {
         super()
+        this.workersReady = new Set()
+        this.workersBusy = new Set()
+        this.threads = cpus().length
+        if (config.Node.threads) this.threads = config.Node.threads
         this.node = new TCPNetworkNode()
         this.blockchain = new Blockchain()
         this.tcpServer = TCPApi.createServer()
@@ -38,10 +47,7 @@ class Node extends events.EventEmitter {
             const code = await this.blockchain.addBlock(block)
             this.emit('block', block, code)
         })
-        this.node.on('transaction', async transaction => {
-            const code = await this.blockchain.addTransaction(transaction)
-            this.emit('transaction', transaction, code)
-        })
+        this.node.on('transaction', async transaction => this.emit('transaction', transaction))
         this.node.on('node', node => {
             if (config.Node.connectToNodes) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
             this.emit('node', node)
@@ -60,9 +66,6 @@ class Node extends events.EventEmitter {
             this.tcpServer.start()
             this.on('block', (block, code) => {
                 if (code === 0) this.tcpServer.broadcast(protocol.constructDataBuffer('block', Block.minify(block)))
-            })
-            this.on('transaction', (transaction, code) => {
-                if (code === 0) this.tcpServer.broadcast(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
             })
         }
         if (config.HTTPApi.enabled) {
@@ -103,9 +106,9 @@ class Node extends events.EventEmitter {
                 res.end(JSON.stringify(beautifyBigInt(balance), null, 4))
             })
             this.httpApi.on('post-transaction', async (res, transaction) => {
-                const code = await this.blockchain.addTransaction(transaction)
-                this.emit('transaction', transaction, code)
-                res.end(JSON.stringify(code), null, 4)
+                this.emit('transaction', transaction, code => {
+                    res.end(JSON.stringify(code), null, 4)
+                })
             })
             this.httpApi.on('post-block', async (res, block) => {
                 const code = await this.blockchain.addBlock(block)
@@ -113,6 +116,21 @@ class Node extends events.EventEmitter {
                 res.end(JSON.stringify(code), null, 4)
             })
         }
+        this.on('transaction', async (transaction: Transaction, cb) => {
+            let code = -1
+            try {
+                code = await this.assignJob({
+                    e: 'transaction',
+                    transaction: Transaction.minify(transaction)
+                })
+            }
+            catch {}
+            if (code === 0) code = await this.blockchain.addTransaction(transaction)
+            if (code === 0) {
+                if (config.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
+            }
+            cb(code)
+        })
     }
     async nextSync() {
         const block = await this.blockchain.getNextSyncBlock()
@@ -121,6 +139,40 @@ class Node extends events.EventEmitter {
             this.node.broadcastAndStoreDataHash(buffer)
         }
         setTimeout(this.nextSync.bind(this), config.Node.blockchainSynchronization.timeout)
+    }
+    addWorker(worker: Worker) {
+        this.workersBusy.add(worker)
+        worker.once('message', e => {
+            e = JSON.parse(e)
+            switch (e.e) {
+                case 'ready':
+                    this.workersBusy.delete(worker)
+                    this.workersReady.add(worker)
+                    break
+            }
+        })
+        worker.on('error', () => {})
+        worker.on('exit', () => {})
+        worker.on('message', () => {})
+        worker.on('messageerror', () => {})
+        worker.on('online', () => {})
+    }
+    assignJob(e: object) {
+        return <any> new Promise((resolve, reject) => {
+            for (const worker of this.workersReady) {
+                this.workersReady.delete(worker)
+                this.workersBusy.add(worker)
+                worker.postMessage(JSON.stringify(e))
+                worker.once('message', e => {
+                    e = JSON.parse(e)
+                    this.workersBusy.delete(worker)
+                    this.workersReady.add(worker)
+                    resolve(e)
+                })
+                return
+            }
+            reject()
+        })
     }
 }
 export default Node

@@ -113,13 +113,8 @@ class Blockchain extends events.EventEmitter {
         return this.latestBlock
     }
     async addTransaction(transaction: Transaction) {
-        // sync
-        if (transaction.isValid() !== 0) return 1
-        // verify
-        if (transaction.verify() === false) return 2
-        if (this.pendingTransactions.find(_transaction => Transaction.calculateHash(transaction).equals(Transaction.calculateHash(_transaction)))) return 3
-        // async
-        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 4
+        if (this.pendingTransactions.find(_transaction => Transaction.calculateHash(transaction).equals(Transaction.calculateHash(_transaction)))) return 1
+        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 2
         let sum = parseBigInt(transaction.minerFee)
         if (transaction.amount) sum += parseBigInt(transaction.amount)
         for (const { from, amount, minerFee } of this.pendingTransactions) {
@@ -128,10 +123,10 @@ class Blockchain extends events.EventEmitter {
                 if (amount) sum += parseBigInt(amount)
             }
         }
-        if (await this.getBalanceOfAddress(transaction.from) < sum) return 5
+        if (await this.getBalanceOfAddress(transaction.from) < sum) return 3
         const { bigint, remainder } = transaction.byteFee()
         if (bigint < this.minByteFee.bigint
-        || (bigint === this.minByteFee.bigint && remainder <= this.minByteFee.remainder)) return 6
+        || (bigint === this.minByteFee.bigint && remainder <= this.minByteFee.remainder)) return 4
         this.pendingTransactions.push(transaction)
         return 0
     }

@@ -12,13 +12,14 @@
         "blockchainSynchronization": {
             "enabled": true,
             "timeout": 100
-        }
+        },
+        "threads": 0
     },
     "Miner": {
         "miningRewardAddress": "WoGrLA8kjznMcPKBHVJgJjgPoHd",
-        "threads": 0,
         "restartDelay": 6000,
-        "maxListeners": 100
+        "maxListeners": 100,
+        "threads": 0
     },
     "TCPNetworkNode": {
         "hashes": {
