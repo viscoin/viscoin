@@ -75,7 +75,7 @@ class Block {
             if (!transaction) return false
             if (i === 0) continue
             if (transaction.isValid() !== 0) return false
-            if (transaction.verify() !== true) return false
+            if (transaction.verify() === false) return false
             const minerFee = parseBigInt(transaction.minerFee)
             if (minerFee === null
                 || beautifyBigInt(minerFee) !== transaction.minerFee) return false

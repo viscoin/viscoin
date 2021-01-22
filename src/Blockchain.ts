@@ -20,6 +20,7 @@ interface Blockchain {
         bigint: bigint,
         remainder: bigint
     }
+    addresses: object
 }
 class Blockchain extends events.EventEmitter {
     constructor() {
@@ -32,6 +33,7 @@ class Blockchain extends events.EventEmitter {
             remainder: parseBigInt(config.Blockchain.minByteFee.remainder)
         }
         this.updateBlockHashes()
+        this.addresses = {}
     }
     async setBlockHashes() {
         this.hashes = {
@@ -114,11 +116,10 @@ class Blockchain extends events.EventEmitter {
         // sync
         if (transaction.isValid() !== 0) return 1
         // verify
-        if (Buffer.byteLength(JSON.stringify(Transaction.minify(transaction))) > config.Blockchain.maxTransactionSize) return 2
+        if (transaction.verify() === false) return 2
         if (this.pendingTransactions.find(_transaction => Transaction.calculateHash(transaction).equals(Transaction.calculateHash(_transaction)))) return 3
-        if (!transaction.verify()) return 4
         // async
-        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 5
+        if (transaction.timestamp < (await this.getLatestBlock()).timestamp) return 4
         let sum = parseBigInt(transaction.minerFee)
         if (transaction.amount) sum += parseBigInt(transaction.amount)
         for (const { from, amount, minerFee } of this.pendingTransactions) {
@@ -127,10 +128,10 @@ class Blockchain extends events.EventEmitter {
                 if (amount) sum += parseBigInt(amount)
             }
         }
-        if (await this.getBalanceOfAddress(transaction.from) < sum) return 6
+        if (await this.getBalanceOfAddress(transaction.from) < sum) return 5
         const { bigint, remainder } = transaction.byteFee()
         if (bigint < this.minByteFee.bigint
-        || (bigint === this.minByteFee.bigint && remainder <= this.minByteFee.remainder)) return 7
+        || (bigint === this.minByteFee.bigint && remainder <= this.minByteFee.remainder)) return 6
         this.pendingTransactions.push(transaction)
         return 0
     }
@@ -170,6 +171,7 @@ class Blockchain extends events.EventEmitter {
         await block.save()
         await this.updateBlockHashes()
         if ((await this.getLatestBlock()).hash.equals(block.hash)) {
+            this.addresses = {}
             for (const transaction of block.transactions) {
                 if (transaction.to) await this.getBalanceOfAddress(transaction.to, true)
                 if (transaction.from) await this.getBalanceOfAddress(transaction.from, true)
@@ -246,6 +248,9 @@ class Blockchain extends events.EventEmitter {
         }
     }
     async getBalanceOfAddress(address: Buffer, enableChanceToNotUseOptimization: boolean = false) {
+        if (this.addresses[address.toString('binary')] !== undefined) {
+            return this.addresses[address.toString('binary')]
+        }
         const latestBlock = await this.getLatestBlock()
         const document = await model_address.findOne({ [config.mongoose.schema.address.address.name]: address.toString('binary') })
         let optimization = false
@@ -256,7 +261,9 @@ class Blockchain extends events.EventEmitter {
                 if (enableChanceToNotUseOptimization === false
                 || Math.random() < config.Blockchain.optimization.chanceToNotUse === false) {
                     if (Buffer.from(document[config.mongoose.schema.address.hash.name], 'binary').equals(latestBlock.hash)) {
-                        return parseBigInt(document[config.mongoose.schema.address.balance.name])
+                        const balance = parseBigInt(document[config.mongoose.schema.address.balance.name])
+                        this.addresses[address.toString('binary')] = balance
+                        return balance
                     }
                     if (await this.isBalanceValid(address.toString('binary'), document[config.mongoose.schema.address.hash.name])) optimization = true
                 }
@@ -299,6 +306,7 @@ class Blockchain extends events.EventEmitter {
                 [config.mongoose.schema.address.address.name]: address.toString('binary')
             }).save()
         }
+        this.addresses[address.toString('binary')] = balance
         return balance
     }
     async isPartOfChainValid(chain: Array<Block>) {
