@@ -61,6 +61,8 @@ class Miner extends events.EventEmitter {
         if (block === null
         || previousBlock === null
         || previousBlock.hash.equals(block.previousHash) === false) return setTimeout(async () => {
+        // || previousBlock.hash.equals(block.previousHash) === false
+        // || block.hasValidTransactions() === false) return setTimeout(async () => {
             await this.start()
         }, config.HTTPApi.autoRetry)
         this.emitThreadsMineNewBlock(block, previousBlock)
@@ -95,6 +97,7 @@ class Miner extends events.EventEmitter {
         try {
             const code = await HTTPApi.postBlock(block)
             this.emit('mined', block, code)
+            if (code !== 0) await this.start()
         }
         catch {
             setTimeout(async () => {
