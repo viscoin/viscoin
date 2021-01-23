@@ -140,7 +140,7 @@ class Transaction {
             bigint: 0n,
             remainder: 0n
         }
-        const bigint = bytes / fee
+        const bigint = fee / bytes
         const remainder = fee % bytes
         return {
             bigint,
