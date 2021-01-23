@@ -44,10 +44,7 @@ class Node extends events.EventEmitter {
         if (config.Node.hostNode) this.node.start()
         if (config.Node.connectToNodes) this.node.connectToNetwork(a)
         if (config.Node.blockchainSynchronization) this.nextSync()
-        this.node.on('block', async block => {
-            const code = await this.blockchain.addBlock(block)
-            this.emit('block', block, code)
-        })
+        this.node.on('block', async block => this.emit('block', block))
         this.node.on('transaction', async transaction => this.emit('transaction', transaction))
         this.node.on('node', node => {
             if (config.Node.connectToNodes) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
@@ -65,9 +62,6 @@ class Node extends events.EventEmitter {
         })
         if (config.TCPApi.enabled) {
             this.tcpServer.start()
-            this.on('block', (block, code) => {
-                if (code === 0) this.tcpServer.broadcast(protocol.constructDataBuffer('block', Block.minify(block)))
-            })
         }
         if (config.HTTPApi.enabled) {
             this.httpApi.start()
@@ -112,9 +106,9 @@ class Node extends events.EventEmitter {
                 })
             })
             this.httpApi.on('post-block', async (res, block) => {
-                const code = await this.blockchain.addBlock(block)
-                this.emit('block', block, code)
-                res.end(JSON.stringify(code), null, 4)
+                this.emit('block', block, code => {
+                    res.end(JSON.stringify(code), null, 4)
+                })
             })
         }
         this.on('transaction', async (transaction: Transaction, cb) => {
@@ -130,7 +124,22 @@ class Node extends events.EventEmitter {
             if (code === 0) {
                 if (config.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
             }
-            cb(code)
+            if (cb !== undefined) cb(code)
+        })
+        this.on('block', async (block: Block, cb) => {
+            let code = -1
+            try {
+                code = await this.assignJob({
+                    e: 'block',
+                    block: Block.minify(block)
+                })
+            }
+            catch {}
+            if (code === 0) code = await this.blockchain.addBlock(block)
+            if (code === 0) {
+                if (config.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('block', Block.minify(block)))
+            }
+            if (cb !== undefined) cb(code)
         })
     }
     async nextSync() {

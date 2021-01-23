@@ -68,39 +68,39 @@ class Block {
     }
     hasValidTransactions() {
         let amount = parseBigInt(config.Blockchain.blockReward)
-        if (!this.transactions.length) return false
+        if (!this.transactions.length) return 1
         const hashes = []
         for (let i = 0; i < this.transactions.length; i++) {
             const transaction: Transaction = this.transactions[i]
-            if (!transaction) return false
+            if (!transaction) return 2
             if (i === 0) continue
-            if (transaction.isValid() !== 0) return false
-            if (transaction.verify() === false) return false
+            if (transaction.isValid() !== 0) return 3
+            if (transaction.verify() === false) return 4
             const minerFee = parseBigInt(transaction.minerFee)
             if (minerFee === null
-                || beautifyBigInt(minerFee) !== transaction.minerFee) return false
+                || beautifyBigInt(minerFee) !== transaction.minerFee) return 5
             amount += minerFee
             if (transaction.amount !== undefined) {
                 const _amount = parseBigInt(transaction.amount)
                 if (_amount === null
-                    || beautifyBigInt(_amount) !== transaction.amount) return false
+                    || beautifyBigInt(_amount) !== transaction.amount) return 6
             }
             hashes.push(Transaction.calculateHash(transaction))
         }
         const _amount = parseBigInt(this.transactions[0].amount)
         if (_amount === null
             || _amount !== amount
-            || beautifyBigInt(_amount) !== this.transactions[0].amount) return false
-        if (!this.transactions[0].to) return false
-        if (Buffer.byteLength(this.transactions[0].to) !== 20) return false
-        if (this.transactions[0].timestamp) return false
-        if (this.transactions[0].minerFee) return false
-        if (this.transactions[0].from) return false
-        if (this.transactions[0].data) return false
-        if (this.transactions[0].signature) return false
-        if (this.transactions[0].recoveryParam) return false
-        if (hashes.some((e, i) => hashes.indexOf(e) !== i)) return false
-        return true
+            || beautifyBigInt(_amount) !== this.transactions[0].amount) return 7
+        if (!this.transactions[0].to) return 8
+        if (Buffer.byteLength(this.transactions[0].to) !== 20) return 9
+        if (this.transactions[0].timestamp) return 10
+        if (this.transactions[0].minerFee) return 11
+        if (this.transactions[0].from) return 12
+        if (this.transactions[0].data) return 13
+        if (this.transactions[0].signature) return 14
+        if (this.transactions[0].recoveryParam) return 15
+        if (hashes.some((e, i) => hashes.indexOf(e) !== i)) return 16
+        return 0
     }
     static minify(input: Block) {
         const output: object = {}

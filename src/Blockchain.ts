@@ -152,7 +152,7 @@ class Blockchain extends events.EventEmitter {
             const valid = await this.isPartOfChainValid([
                 previousBlock,
                 block
-            ])
+            ], true)
             if (valid === false) return 15
         }
         else if (block.height !== 1 || block.previousHash.equals((await this.createGenesisBlock()).hash) === false) return 16
@@ -304,14 +304,14 @@ class Blockchain extends events.EventEmitter {
         this.addresses[address.toString('binary')] = balance
         return balance
     }
-    async isPartOfChainValid(chain: Array<Block>) {
+    async isPartOfChainValid(chain: Array<Block>, optimization: boolean) {
         for (let i = 1; i < chain.length; i++) {
             const block = chain[i]
             const previousBlock = chain[i - 1]
             if (previousBlock.height !== block.height - 1) return false
             if (Blockchain.getBlockDifficulty([ previousBlock, block ]) !== block.difficulty) return false
             if (!block.meetsDifficulty()) return false
-            if (!block.hasValidTransactions()) return false
+            if (optimization === false && block.hasValidTransactions() !== 0) return false
             for (let i = 1; i < block.transactions.length; i++) {
                 const transaction = block.transactions[i]
                 let sum = 0n
@@ -338,7 +338,7 @@ class Blockchain extends events.EventEmitter {
     async isChainValid() {
         let blocks = [ await this.getLatestBlock() ]
         while (blocks[0] !== null) {
-            if (await this.isPartOfChainValid(blocks) === false) return false
+            if (await this.isPartOfChainValid(blocks, false) === false) return false
             blocks.unshift(await Block.load({ [config.mongoose.schema.block.hash.name]: blocks[0].previousHash.toString('binary') }, null, { lean: true }))
             blocks = blocks.slice(0, 2)
         }
