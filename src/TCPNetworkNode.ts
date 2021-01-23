@@ -123,7 +123,7 @@ class TCPNetworkNode extends events.EventEmitter {
         for (const _socket of this.sockets) {
             if (!_socket) continue
             if (socket.remotePort === _socket.remotePort
-                && socket.remoteAddress === _socket.remoteAddress) return true
+            && socket.remoteAddress === _socket.remoteAddress) return true
         }
         return false
     }
@@ -134,10 +134,10 @@ class TCPNetworkNode extends events.EventEmitter {
             if (node.port < 0 || node.port > 65535) continue
             if (node.address !== 'localhost') {
                 if (Buffer.byteLength(Buffer.from(node.address.split('.'))) !== 4
-                    && Buffer.byteLength(Buffer.from(node.address.split(':'))) > 16) continue
+                && Buffer.byteLength(Buffer.from(node.address.split(':'))) > 16) continue
             }
             if (node.port === config.TCPNetworkNode.server.port
-                && node.address === config.TCPNetworkNode.server.address) continue
+            && node.address === config.TCPNetworkNode.server.address) continue
             const socket = <Socket> net.connect(node.port, node.address)
             this.addSocket(socket)
         }

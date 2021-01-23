@@ -47,7 +47,7 @@ const commands = {
             { title: 'Import', description: 'Import new wallet', value: commands.import_wallet },
             { title: 'Exit', description: 'Exits', value: commands.exit }
         ]
-        if (wallet) {
+        if (wallet !== undefined) {
             choices = [
                 { title: 'Address', description: 'Show wallet address', value: commands.address },
                 { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
@@ -138,12 +138,9 @@ const commands = {
                 inactive: 'no'
             }
         ])
-        let data = res.data
-        if (data) data = Buffer.from(data, 'hex')
-        else data = undefined
+        const data = res.data === undefined ? undefined : Buffer.from(res.data, 'hex')
         if (res.confirm) {
-            let amount = undefined
-            if (res.amount !== undefined) amount = beautifyBigInt(parseBigInt(res.amount))
+            const amount = res.amount === undefined ? undefined : beautifyBigInt(parseBigInt(res.amount))
             const transaction = wallet.createTransaction({
                 to: base58.decode(res.to),
                 amount,
@@ -202,18 +199,12 @@ const commands = {
                 }
             }
         ])
-        if (!res.this && res.address === undefined) {
+        if (res.this === false && res.address === undefined) {
             console.clear()
             return commands.commands()
         }
         try {
-            let balance = null
-            if (res.address === undefined) {
-                balance = await wallet.balance()
-            }
-            else {
-                balance = await HTTPApi.getBalanceOfAddress(res.address)
-            }
+            const balance = res.address === undefined ? await wallet.balance() : await HTTPApi.getBalanceOfAddress(res.address)
             console.log(chalk.yellowBright(balance))
         }
         catch {
@@ -478,25 +469,19 @@ const commands = {
                 }
             }
         ])
-        if (!res.this && res.address === undefined) {
+        if (res.this === false && res.address === undefined) {
             console.clear()
             return commands.commands()
         }
         try {
-            let transactions = null
-            if (res.address === undefined) {
-                transactions = await wallet.transactions()
-            }
-            else {
-                transactions = await HTTPApi.getTransactionsOfAddress(res.address)
-            }
+            const transactions = (res.address === undefined ? await wallet.transactions : await HTTPApi.getTransactionsOfAddress(res.address))
+                .sort((a, b) => a.timestamp - b.timestamp)
             const latestBlock = await HTTPApi.getLatestBlock()
             const blocks = [ latestBlock ]
             for (let i = latestBlock.height - 1; i >= latestBlock.height + 1 - config.confirmations && i >= 0; i--) {
                 blocks.push(await HTTPApi.getBlockByHeight(i))
             }
             if (transactions.length) {
-                transactions = transactions.sort((a, b) => a.timestamp - b.timestamp)
                 for (const transaction of transactions) {
                     let str = chalk.magentaBright(new Date(transaction.timestamp).toLocaleString())
                     for (let i = 0; i < blocks.length; i++) {

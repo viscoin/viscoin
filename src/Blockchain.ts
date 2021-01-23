@@ -220,8 +220,8 @@ class Blockchain extends events.EventEmitter {
             for (const block of blocks) {
                 if (this.hashes.current.includes(block.hash.toString('binary')) === false) continue
                 for (const transaction of block.transactions) {
-                    if ((transaction.from && address.equals(transaction.from))
-                    || (transaction.to && address.equals(transaction.to))) {
+                    if (transaction.from?.equals(address)
+                    || transaction.to?.equals(address)) {
                         if (transaction.timestamp === undefined) {
                             if (projection === undefined
                             || projection.indexOf(`${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.timestamp.name}`) !== -1) transaction.timestamp = block.timestamp
@@ -235,11 +235,11 @@ class Blockchain extends events.EventEmitter {
         if (optimization) return {
             transactions: getTransactions(blocks),
             old_transactions: getTransactions(old_blocks),
-            unconfirmed_transactions: this.pendingTransactions.filter(e => (e.from && address.equals(e.from)) || (e.to && address.equals(e.to)))
+            unconfirmed_transactions: this.pendingTransactions.filter(e => e.from?.equals(address) || e.to?.equals(address))
         }
         else return {
             transactions: getTransactions(blocks),
-            unconfirmed_transactions: this.pendingTransactions.filter(e => (e.from && address.equals(e.from)) || (e.to && address.equals(e.to)))
+            unconfirmed_transactions: this.pendingTransactions.filter(e => e.from?.equals(address) || e.to?.equals(address))
         }
     }
     async getBalanceOfAddress(address: Buffer, enableChanceToNotUseOptimization: boolean = false) {
@@ -273,11 +273,11 @@ class Blockchain extends events.EventEmitter {
         const getBalance = (transactions: Array<{ from: Buffer | undefined, to: Buffer | undefined, amount: string | undefined, minerFee: string }>) => {
             let balance = 0n
             for (const transaction of transactions) {
-                if (transaction.from && address.equals(transaction.from)) {
+                if (transaction.from?.equals(address)) {
                     if (transaction.amount) balance -= parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee)
                     else balance -= parseBigInt(transaction.minerFee)
                 }
-                if (transaction.to && address.equals(transaction.to)) {
+                if (transaction.to?.equals(address)) {
                     balance += parseBigInt(transaction.amount)
                 }
             }

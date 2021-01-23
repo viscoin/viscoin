@@ -1,9 +1,8 @@
 import * as fs from 'fs'
 import * as config from '../config.json'
-import { EOL } from 'os'
-let _EOL = EOL
-if (config.EOL !== '') _EOL = config.EOL
-const wordlist = fs.readFileSync(`./wordlist/${config.Wallet.wordlist}`).toString().split(_EOL)
+import * as os from 'os'
+const EOL = config.EOL === '' ? os.EOL : config.EOL
+const wordlist = fs.readFileSync(`./wordlist/${config.Wallet.wordlist}`).toString().split(EOL)
 export default () => {
     const words = []
     for (let i = 0; i < 12; i++) {
