@@ -1,6 +1,10 @@
 import * as events from 'events'
 import Block from './Block'
 import Blockchain from './Blockchain'
+import { parentPort, threadId } from 'worker_threads'
+import toLocaleTimeString from './chalk/LocaleTimeString'
+import * as chalk from 'chalk'
+
 interface MinerThread {
     threads: number
     hashrate: number
@@ -12,17 +16,26 @@ class MinerThread extends events.EventEmitter {
         this.hashrate = 0
         this.paused = true
         setInterval(() => {
-            this.emit('hashrate', this.hashrate)
+            parentPort.postMessage(JSON.stringify({ e: 'hashrate', hashrate: this.hashrate }))
             this.hashrate = 0
         }, 1000)
-        this.on('mine', async (block, previousBlock, threads) => {
-            this.threads = threads
-            if (this.paused === true) {
-                this.paused = false
-                await this.mine(new Block(block), new Block(previousBlock))
+        parentPort.on('message', async e => {
+            e = JSON.parse(e)
+            switch (e.e) {
+                case 'mine':
+                    if (this.paused === false) return
+                    this.paused = false
+                    e.block.nonce = threadId
+                    this.threads = e.threads
+                    await this.mine(new Block(e.block), new Block(e.previousBlock))
+                    break
+                case 'pause':
+                    this.paused = true
+                    break
             }
         })
-        this.on('pause', () => this.paused = true)
+        parentPort.postMessage(JSON.stringify({ e: 'ready' }))
+        console.log(`${toLocaleTimeString()} ${chalk.cyanBright('Forking miner')} { threadId: ${chalk.yellowBright(threadId)} }`)
     }
     async mine(block: Block, previousBlock: Block) {
         if (this.paused === true) return
@@ -38,7 +51,7 @@ class MinerThread extends events.EventEmitter {
         }
         if (await block.recalculateHash(this.threads) === true) {
             this.paused = true
-            return this.emit('mined', block)
+            return parentPort.postMessage(JSON.stringify({ e: 'mined', block }))
         }
         await this.mine(block, previousBlock)
     }

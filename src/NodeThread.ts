@@ -1,5 +1,8 @@
 import Transaction from './Transaction'
-import { parentPort } from 'worker_threads'
+import { parentPort, threadId } from 'worker_threads'
+import toLocaleTimeString from './chalk/LocaleTimeString'
+import * as chalk from 'chalk'
+
 interface NodeThread {
 }
 class NodeThread {
@@ -13,6 +16,7 @@ class NodeThread {
             }
         })
         parentPort.postMessage(JSON.stringify({ e: 'ready' }))
+        console.log(`${toLocaleTimeString()} ${chalk.cyanBright('Forking node')} { threadId: ${chalk.yellowBright(threadId)} }`)
     }
 }
 export default NodeThread

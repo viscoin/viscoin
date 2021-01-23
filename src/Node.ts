@@ -12,6 +12,7 @@ import beautifyBigInt from "./beautifyBigInt"
 import parseNodes from './parseNodes'
 import { Worker } from 'worker_threads'
 import { cpus } from 'os'
+
 interface Node {
     workersReady: Set<Worker>
     workersBusy: Set<Worker>

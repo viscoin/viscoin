@@ -6,7 +6,7 @@ import * as chalk from 'chalk'
 import base58 from './src/base58'
 import toLocaleTimeString from './src/chalk/LocaleTimeString'
 import NodeThread from './src/NodeThread'
-import { Worker, isMainThread, threadId } from 'worker_threads'
+import { Worker, isMainThread } from 'worker_threads'
 import { setPriority } from 'os'
 
 if (isMainThread) {
@@ -31,6 +31,5 @@ if (isMainThread) {
     }
 }
 else {
-    console.log(`${toLocaleTimeString()} ${chalk.cyanBright('Forking node')} { threadId: ${chalk.yellowBright(threadId)} }`)
     new NodeThread()
 }

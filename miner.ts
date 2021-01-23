@@ -1,6 +1,6 @@
 import * as config from './config.json'
 import MinerThread from './src/MinerThread'
-import { Worker, isMainThread, parentPort, threadId } from 'worker_threads'
+import { Worker, isMainThread } from 'worker_threads'
 import Miner from './src/Miner'
 import base58 from './src/base58'
 import { setPriority } from 'os'
@@ -19,21 +19,5 @@ if (isMainThread) {
     }
 }
 else {
-    console.log(`${toLocaleTimeString()} ${chalk.cyanBright('Forking miner')} { threadId: ${chalk.yellowBright(threadId)} }`)
-    const minerThread = new MinerThread()
-    minerThread.on('mined', block => parentPort.postMessage(JSON.stringify({ code: 'mined', block })))
-    minerThread.on('hashrate', hashrate => parentPort.postMessage(JSON.stringify({ code: 'hashrate', hashrate })))
-    parentPort.on('message', e => {
-        e = JSON.parse(e)
-        switch (e.code) {
-            case 'mine':
-                e.block.nonce = threadId
-                minerThread.emit('mine', e.block, e.previousBlock, e.threads)
-                break
-            case 'pause':
-                minerThread.emit('pause')
-                break
-        }
-    })
-    parentPort.postMessage(JSON.stringify({ code: 'ready' }))
+    new MinerThread()
 }

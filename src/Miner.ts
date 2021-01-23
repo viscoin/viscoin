@@ -69,12 +69,12 @@ class Miner extends events.EventEmitter {
     }
     emitThreadsMineNewBlock(block: Block, previousBlock: Block) {
         for (const worker of this.workers) {
-            worker.postMessage(JSON.stringify({ code: 'mine', block, previousBlock, threads: this.threads }))
+            worker.postMessage(JSON.stringify({ e: 'mine', block, previousBlock, threads: this.threads }))
         }
     }
     emitThreadsPause() {
         for (const worker of this.workers) {
-            worker.postMessage(JSON.stringify({ code: 'pause' }))
+            worker.postMessage(JSON.stringify({ e: 'pause' }))
         }
     }
     async getNewBlock() {
@@ -109,7 +109,7 @@ class Miner extends events.EventEmitter {
         this.workers.push(worker)
         worker.on('message', async e => {
             e = JSON.parse(e)
-            switch (e.code) {
+            switch (e.e) {
                 case 'ready':
                     if (++this.threadsReady === this.threads) this.emit('ready')
                     break
