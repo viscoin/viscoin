@@ -8,14 +8,14 @@ interface NodeThread {
 }
 class NodeThread {
     constructor() {
-        parentPort.on('message', e => {
+        parentPort.on('message', async e => {
             e = JSON.parse(e)
             switch (e.e) {
                 case 'transaction':
                     parentPort.postMessage(JSON.stringify(new Transaction(Transaction.beautify(e.transaction)).isValid()))
                     break
                 case 'block':
-                    parentPort.postMessage(JSON.stringify(new Block(Block.beautify(e.block)).hasValidTransactions()))
+                    parentPort.postMessage(JSON.stringify(await new Block(Block.beautify(e.block)).isValid()))
                     break
             }
         })

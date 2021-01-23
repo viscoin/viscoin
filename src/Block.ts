@@ -78,28 +78,28 @@ class Block {
             if (transaction.verify() === false) return 4
             const minerFee = parseBigInt(transaction.minerFee)
             if (minerFee === null
-                || beautifyBigInt(minerFee) !== transaction.minerFee) return 5
+            || beautifyBigInt(minerFee) !== transaction.minerFee) return 5
             amount += minerFee
             if (transaction.amount !== undefined) {
                 const _amount = parseBigInt(transaction.amount)
                 if (_amount === null
-                    || beautifyBigInt(_amount) !== transaction.amount) return 6
+                || beautifyBigInt(_amount) !== transaction.amount) return 6
             }
             hashes.push(Transaction.calculateHash(transaction))
         }
         const _amount = parseBigInt(this.transactions[0].amount)
         if (_amount === null
-            || _amount !== amount
-            || beautifyBigInt(_amount) !== this.transactions[0].amount) return 7
-        if (!this.transactions[0].to) return 8
-        if (Buffer.byteLength(this.transactions[0].to) !== 20) return 9
-        if (this.transactions[0].timestamp) return 10
-        if (this.transactions[0].minerFee) return 11
-        if (this.transactions[0].from) return 12
-        if (this.transactions[0].data) return 13
-        if (this.transactions[0].signature) return 14
-        if (this.transactions[0].recoveryParam) return 15
-        if (hashes.some((e, i) => hashes.indexOf(e) !== i)) return 16
+        || _amount !== amount
+        || beautifyBigInt(_amount) !== this.transactions[0].amount) return 8
+        if (!this.transactions[0].to) return 9
+        if (Buffer.byteLength(this.transactions[0].to) !== 20) return 10
+        if (this.transactions[0].timestamp) return 11
+        if (this.transactions[0].minerFee) return 12
+        if (this.transactions[0].from) return 13
+        if (this.transactions[0].data) return 14
+        if (this.transactions[0].signature) return 15
+        if (this.transactions[0].recoveryParam) return 16
+        if (hashes.some((e, i) => hashes.indexOf(e) !== i)) return 17
         return 0
     }
     static minify(input: Block) {
@@ -148,6 +148,23 @@ class Block {
     }
     static async exists(query: object) {
         return await model_block.exists(query)
+    }
+    async isValid() {
+        if (typeof this.nonce !== 'number') return 1
+        if (typeof this.height !== 'number') return 2
+        if (typeof this.timestamp !== 'number') return 3
+        if (typeof this.difficulty !== 'number') return 4
+        if (typeof this.hash !== 'object') return 5
+        if (typeof this.previousHash !== 'object') return 6
+        if (this.hash instanceof Buffer === false) return 7
+        if (this.previousHash instanceof Buffer === false) return 8
+        if (Array.isArray(this.transactions) === false) return 9
+        if (this.timestamp > Date.now() + config.Blockchain.maxDesync) return 10
+        if (Buffer.byteLength(JSON.stringify(Block.minify(this))) > config.Blockchain.maxBlockSize) return 11
+        if (this.hash.equals(await Block.calculateHash(this)) === false) return 12
+        if (this.meetsDifficulty() === false) return 13
+        if (this.hasValidTransactions() !== 0) return 14
+        return 0
     }
 }
 export default Block
