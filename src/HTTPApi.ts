@@ -29,49 +29,57 @@ class HTTPApi extends events.EventEmitter {
             ]
         }))
         app.get('/config', (req, res) => this.emit('get-config', config => HTTPApi.resEndJSON(res, config)))
+        app.get('/block', (req, res) => this.emit('get-block-latest', block => HTTPApi.resEndJSON(res, block)))
+        app.get('/transactions/pending', (req, res) => this.emit('get-transactions-pending', transactions => HTTPApi.resEndJSON(res, transactions)))
         app.get('/block/:height', (req, res) => {
             const height = parseInt(req.params.height)
-            if (isNaN(height)) return
+            if (isNaN(height)) return res.status(400).end()
             this.emit('get-block', height, block => HTTPApi.resEndJSON(res, block))
         })
-        app.get('/block', (req, res) => this.emit('get-block-latest', block => HTTPApi.resEndJSON(res, block)))
         app.get('/block/new/:address', (req, res) => {
             try {
                 const address = base58.decode(req.params.address)
                 this.emit('get-block-new', address, block => HTTPApi.resEndJSON(res, block))
             }
-            catch {}
-        })
-        app.get('/transactions/pending', (req, res) => {
-            this.emit('get-transactions-pending', transactions => HTTPApi.resEndJSON(res, transactions))
+            catch {
+                res.status(400).end()
+            }
         })
         app.get('/transactions/:address', (req, res) => {
             try {
                 const address = base58.decode(req.params.address)
                 this.emit('get-transactions-address', address, transactions => HTTPApi.resEndJSON(res, transactions))
             }
-            catch {}
+            catch {
+                res.status(400).end()
+            }
         })
         app.get('/balance/:address', (req, res) => {
             try {
                 const address = base58.decode(req.params.address)
                 this.emit('get-balance-address', address, balance => HTTPApi.resEndJSON(res, balance))
             }
-            catch {}
+            catch {
+                res.status(400).end()
+            }
         })
         app.post('/transaction', (req, res) => {
             try {
                 const transaction = new Transaction(Transaction.beautify(req.body))
                 this.emit('post-transaction', transaction, code => HTTPApi.resEndJSON(res, code))
             }
-            catch {}
+            catch {
+                res.status(400).end()
+            }
         })
         app.post('/block', (req, res) => {
             try {
                 const block = new Block(Block.beautify(req.body))
                 this.emit('post-block', block, code => HTTPApi.resEndJSON(res, code))
             }
-            catch {}
+            catch {
+                res.status(400).end()
+            }
         })
         this.server = http.createServer(app)
         this.server.on('listening', () => this.emit('listening'))
