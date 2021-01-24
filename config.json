@@ -135,10 +135,6 @@
                 "recoveryParam": {
                     "type": "Number",
                     "name": "g"
-                },
-                "data": {
-                    "type": "String",
-                    "name": "h"
                 }
             },
             "address": {

@@ -86,7 +86,6 @@ class Node extends events.EventEmitter {
                     ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.from.name}
                     ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.amount.name}
                     ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.minerFee.name}
-                    ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.data.name}
                     ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.timestamp.name}
                     ${config.mongoose.schema.block.timestamp.name}
                 `

@@ -13,19 +13,15 @@ interface Transaction {
     minerFee: string
     signature: Buffer,
     recoveryParam: number
-    data: Buffer
 }
 class Transaction {
-    constructor({ from = undefined, to = undefined, amount = undefined, timestamp = undefined, minerFee = undefined, signature = undefined, recoveryParam = undefined, data = undefined }) {
+    constructor({ from = undefined, to = undefined, amount = undefined, timestamp = undefined, minerFee = undefined, signature = undefined, recoveryParam = undefined }) {
         if (timestamp) this.timestamp = timestamp
 
         if (typeof minerFee === 'string') this.minerFee = minerFee
 
         if (from instanceof Buffer) this.from = from
         else if (from) this.from = Buffer.from(from, 'binary')
-
-        if (data instanceof Buffer) this.data = data
-        else if (data) this.data = Buffer.from(data, 'binary')
 
         if (typeof amount === 'string') {
             if (to instanceof Buffer) this.to = to
@@ -66,7 +62,6 @@ class Transaction {
         let buf = Buffer.alloc(0)
         if (transaction.from) buf = Buffer.concat([ buf, transaction.from ])
         if (transaction.to) buf = Buffer.concat([ buf, transaction.to ])
-        if (transaction.data) buf = Buffer.concat([ buf, transaction.data ])
         return crypto.createHash('sha256').update(
             buf.toString('binary')
             + transaction.amount
@@ -115,22 +110,16 @@ class Transaction {
         else if (typeof this.to !== 'undefined') return 7
         if (typeof this.signature !== 'object') return 8
         if (this.signature instanceof Buffer === false) return 9
-        if (typeof this.data === 'object') {
-            if (this.data instanceof Buffer === false) return 10
-            if (Buffer.byteLength(this.data) === 0) return 11
-            if (Buffer.byteLength(this.data) > 32) return 12
-        }
-        else if (typeof this.data !== 'undefined') return 13
-        if (typeof this.timestamp !== 'number') return 14
-        if (this.timestamp > Date.now() + config.Blockchain.maxDesync) return 15
-        if (typeof this.minerFee !== 'string') return 16
+        if (typeof this.timestamp !== 'number') return 10
+        if (this.timestamp > Date.now() + config.Blockchain.maxDesync) return 11
+        if (typeof this.minerFee !== 'string') return 12
         const minerFee = parseBigInt(this.minerFee)
             if (minerFee === null
                 || minerFee < 0
-                || beautifyBigInt(minerFee) !== this.minerFee) return 17
-        if (typeof this.recoveryParam !== 'number') return 18
-        if (this.recoveryParam >> 2) return 19
-        if (this.verify() === false) return 20
+                || beautifyBigInt(minerFee) !== this.minerFee) return 13
+        if (typeof this.recoveryParam !== 'number') return 14
+        if (this.recoveryParam >> 2) return 15
+        if (this.verify() === false) return 16
         return 0
     }
     byteFee() {

@@ -96,10 +96,9 @@ class Block {
         if (this.transactions[0].timestamp) return 11
         if (this.transactions[0].minerFee) return 12
         if (this.transactions[0].from) return 13
-        if (this.transactions[0].data) return 14
-        if (this.transactions[0].signature) return 15
-        if (this.transactions[0].recoveryParam) return 16
-        if (hashes.some((e, i) => hashes.indexOf(e) !== i)) return 17
+        if (this.transactions[0].signature) return 14
+        if (this.transactions[0].recoveryParam) return 15
+        if (hashes.some((e, i) => hashes.indexOf(e) !== i)) return 16
         return 0
     }
     static minify(input: Block) {

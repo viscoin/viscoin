@@ -112,12 +112,6 @@ const commands = {
             },
             {
                 type: 'text',
-                name: 'data',
-                message: 'Hex data (optional)',
-                validate: data => Buffer.from(data, 'hex').toString('hex') === data ? true : 'Invalid hex'
-            },
-            {
-                type: 'text',
                 name: 'minerFee',
                 message: 'Miners fee',
                 validate: minerFee => {
@@ -138,14 +132,12 @@ const commands = {
                 inactive: 'no'
             }
         ])
-        const data = res.data === undefined ? undefined : Buffer.from(res.data, 'hex')
         if (res.confirm) {
             const amount = res.amount === undefined ? undefined : beautifyBigInt(parseBigInt(res.amount))
             const transaction = wallet.createTransaction({
                 to: base58.decode(res.to),
                 amount,
-                minerFee: beautifyBigInt(parseBigInt(res.minerFee)),
-                data
+                minerFee: beautifyBigInt(parseBigInt(res.minerFee))
             })
             let i: number = 0,
             log: boolean = true
@@ -474,7 +466,7 @@ const commands = {
             return commands.commands()
         }
         try {
-            const transactions = (res.address === undefined ? await wallet.transactions : await HTTPApi.getTransactionsOfAddress(res.address))
+            const transactions = (res.address === undefined ? await wallet.transactions() : await HTTPApi.getTransactionsOfAddress(res.address))
                 .sort((a, b) => a.timestamp - b.timestamp)
             const latestBlock = await HTTPApi.getLatestBlock()
             const blocks = [ latestBlock ]
@@ -513,9 +505,6 @@ const commands = {
                             str = `${str} ${base58.encode(transaction.to)}`
                         }
                         if (transaction.amount) str = `${str} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}`
-                    }
-                    if (transaction.data) {
-                        str = `${str} ${chalk.grey(transaction.data.toString('hex'))}`
                     }
                     console.log(str)
                 }

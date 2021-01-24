@@ -19,12 +19,11 @@ class Wallet {
         if (address) this.address = address
         if (words) this.words = words
     }
-    createTransaction({ to, amount, minerFee, data }: { to: Buffer | undefined, amount: string | undefined, minerFee: string, data: Buffer | undefined }) {
+    createTransaction({ to, amount, minerFee }: { to: Buffer | undefined, amount: string | undefined, minerFee: string }) {
         const transaction = new Transaction({
             to,
             amount,
             minerFee,
-            data,
             timestamp: Date.now()
         })
         transaction.sign(this.privateKey)
