@@ -14,73 +14,70 @@ class HTTPApi extends events.EventEmitter {
         super()
         const app = express()
         app.use(express.json({ limit: '2mb' }))
-        app.get('/', (req, res) => {
-            res.end(JSON.stringify({
-                get: [
-                    '/config',
-                    '/block/latest',
-                    '/block/:height',
-                    '/block',
-                    '/transactions/pending',
-                    '/transactions/:address',
-                    '/balance/:address'
-                ],
-                post: [
-                    '/send'
-                ]
-            }, null, 4))
-        })
-        app.get('/config', (req, res) => {
-            this.emit('get-config', res)
-        })
+        app.get('/', (req, res) => HTTPApi.resEndJSON(res, {
+            get: [
+                '/config',
+                '/block/latest',
+                '/block/:height',
+                '/block',
+                '/transactions/pending',
+                '/transactions/:address',
+                '/balance/:address'
+            ],
+            post: [
+                '/send'
+            ]
+        }))
+        app.get('/config', (req, res) => this.emit('get-config', config => HTTPApi.resEndJSON(res, config)))
         app.get('/block/:height', (req, res) => {
             const height = parseInt(req.params.height)
             if (isNaN(height)) return
-            this.emit('get-block', res, height)
+            this.emit('get-block', height, block => HTTPApi.resEndJSON(res, block))
         })
-        app.get('/block', (req, res) => {
-            this.emit('get-block-latest', res)
-        })
+        app.get('/block', (req, res) => this.emit('get-block-latest', block => HTTPApi.resEndJSON(res, block)))
         app.get('/block/new/:address', (req, res) => {
             try {
                 const address = base58.decode(req.params.address)
-                this.emit('get-block-new', res, address)
+                this.emit('get-block-new', address, block => HTTPApi.resEndJSON(res, block))
             }
             catch {}
         })
         app.get('/transactions/pending', (req, res) => {
-            this.emit('get-transactions-pending', res)
+            this.emit('get-transactions-pending', transactions => HTTPApi.resEndJSON(res, transactions))
         })
         app.get('/transactions/:address', (req, res) => {
             try {
                 const address = base58.decode(req.params.address)
-                this.emit('get-transactions-address', res, address)
+                this.emit('get-transactions-address', address, transactions => HTTPApi.resEndJSON(res, transactions))
             }
             catch {}
         })
         app.get('/balance/:address', (req, res) => {
             try {
                 const address = base58.decode(req.params.address)
-                this.emit('get-balance-address', res, address)
+                this.emit('get-balance-address', address, balance => HTTPApi.resEndJSON(res, balance))
             }
             catch {}
         })
         app.post('/transaction', (req, res) => {
             try {
                 const transaction = new Transaction(Transaction.beautify(req.body))
-                this.emit('post-transaction', res, transaction)
+                this.emit('post-transaction', transaction, code => HTTPApi.resEndJSON(res, code))
             }
             catch {}
         })
         app.post('/block', (req, res) => {
             try {
                 const block = new Block(Block.beautify(req.body))
-                this.emit('post-block', res, block)
+                this.emit('post-block', block, code => HTTPApi.resEndJSON(res, code))
             }
             catch {}
         })
         this.server = http.createServer(app)
         this.server.on('listening', () => this.emit('listening'))
+    }
+    static resEndJSON(res, data) {
+        res.end(JSON.stringify(data, null, 4))
     }
     start() {
         this.server.listen(config.HTTPApi.port, config.HTTPApi.address)

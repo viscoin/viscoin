@@ -65,22 +65,15 @@ class Node extends events.EventEmitter {
         }
         if (config.HTTPApi.enabled) {
             this.httpApi.start()
-            this.httpApi.on('get-config', res => {
-                res.end(JSON.stringify(config, null, 4))
-            })
-            this.httpApi.on('get-transactions-pending', res => {
-                res.end(JSON.stringify(this.blockchain.pendingTransactions.map(e => Transaction.minify(e)), null, 4))
-            })
-            this.httpApi.on('get-block', async (res, height) => {
-                res.end(JSON.stringify(Block.minify(await this.blockchain.getBlockByHeight(height)), null, 4))
-            })
-            this.httpApi.on('get-block-latest', async res => {
-                res.end(JSON.stringify(Block.minify(await this.blockchain.getLatestBlock()), null, 4))
-            })
-            this.httpApi.on('get-block-new', async (res, address: Buffer) => {
-                res.end(JSON.stringify(Block.minify(await this.blockchain.getNewBlock(address)), null, 4))
-            })
-            this.httpApi.on('get-transactions-address', async (res, address) => {
+            this.httpApi.on('get-config', cb => cb(config))
+            this.httpApi.on('get-transactions-pending', cb => cb(this.blockchain.pendingTransactions.map(e => Transaction.minify(e))))
+            this.httpApi.on('get-block', async (height, cb) => cb(Block.minify(await this.blockchain.getBlockByHeight(height))))
+            this.httpApi.on('get-block-latest', async cb => cb(Block.minify(await this.blockchain.getLatestBlock())))
+            this.httpApi.on('get-block-new', async (address, cb) => cb(Block.minify(await this.blockchain.getNewBlock(address))))
+            this.httpApi.on('get-balance-address', async (address, cb) => cb(beautifyBigInt(await this.blockchain.getBalanceOfAddress(address))))
+            this.httpApi.on('post-transaction', async (transaction, cb) => this.emit('transaction', transaction, code => cb(code)))
+            this.httpApi.on('post-block', async (block, cb) => this.emit('block', block, code => cb(code)))
+            this.httpApi.on('get-transactions-address', async (address, cb) => {
                 const projection = `
                     ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.to.name}
                     ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.from.name}
@@ -90,24 +83,10 @@ class Node extends events.EventEmitter {
                     ${config.mongoose.schema.block.timestamp.name}
                 `
                 const { transactions, unconfirmed_transactions } = await this.blockchain.getTransactionsOfAddress(address, projection)
-                res.end(JSON.stringify([
+                cb([
                     ...transactions.map(e => Transaction.minify(e)),
                     ...unconfirmed_transactions.map(e => Transaction.minify(e))
-                ], null, 4))
-            })
-            this.httpApi.on('get-balance-address', async (res, address) => {
-                const balance = await this.blockchain.getBalanceOfAddress(address)
-                res.end(JSON.stringify(beautifyBigInt(balance), null, 4))
-            })
-            this.httpApi.on('post-transaction', async (res, transaction) => {
-                this.emit('transaction', transaction, code => {
-                    res.end(JSON.stringify(code), null, 4)
-                })
-            })
-            this.httpApi.on('post-block', async (res, block) => {
-                this.emit('block', block, code => {
-                    res.end(JSON.stringify(code), null, 4)
-                })
+                ])
             })
         }
         this.on('transaction', async (transaction: Transaction, cb) => {
