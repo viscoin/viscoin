@@ -14,20 +14,6 @@ class HTTPApi extends events.EventEmitter {
         super()
         const app = express()
         app.use(express.json({ limit: '2mb' }))
-        app.get('/', (req, res) => HTTPApi.resEndJSON(res, {
-            get: [
-                '/config',
-                '/block/latest',
-                '/block/:height',
-                '/block',
-                '/transactions/pending',
-                '/transactions/:address',
-                '/balance/:address'
-            ],
-            post: [
-                '/send'
-            ]
-        }))
         app.get('/config', (req, res) => this.emit('get-config', config => HTTPApi.resEndJSON(res, config)))
         app.get('/block', (req, res) => this.emit('get-block-latest', block => HTTPApi.resEndJSON(res, block)))
         app.get('/transactions/pending', (req, res) => this.emit('get-transactions-pending', transactions => HTTPApi.resEndJSON(res, transactions)))
