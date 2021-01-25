@@ -32,7 +32,7 @@ class TCPNetworkNode extends events.EventEmitter {
         setInterval(this.interval[1].bind(this), config.TCPNetworkNode.hashes.interval)
         // server
         this.server = new net.Server()
-        this.server.maxConnections = config.TCPNetworkNode.server.maxConnections
+        this.server.maxConnections = config.TCPNetworkNode.server.maxConnectionsIn
         this.server
             .on('connection', (socket: Socket) => {
                 this.addSocket(socket)
@@ -57,7 +57,7 @@ class TCPNetworkNode extends events.EventEmitter {
         if (this.blacklisted.includes(socket.remoteAddress)) return this.destroySocket(socket)
         const add = () => {
             socket.setTimeout(config.TCPNetworkNode.socket.setTimeout)
-            if (this.hasSocket(socket) || this.sockets.size >= config.TCPNetworkNode.maxConnections) return this.destroySocket(socket)
+            if (this.hasSocket(socket) || this.sockets.size >= config.TCPNetworkNode.maxConnectionsOut) return this.destroySocket(socket)
             this.sockets.add(socket)
             this.broadcastAndStoreDataHash(protocol.constructDataBuffer('node', {
                 address: socket.remoteAddress,

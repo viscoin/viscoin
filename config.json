@@ -35,9 +35,9 @@
         "server": {
             "address": "192.168.0.11",
             "port": 8334,
-            "maxConnections": 50
+            "maxConnectionsIn": 50
         },
-        "maxConnections": 50
+        "maxConnectionsOut": 50
     },
     "EOL": "",
     "argon2": "./node_modules/argon2/lib/binding/napi-v3/argon2.node",
