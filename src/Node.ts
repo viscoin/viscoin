@@ -44,8 +44,8 @@ class Node extends events.EventEmitter {
         if (config.Node.hostNode) this.node.start()
         if (config.Node.connectToNodes) this.node.connectToNetwork(a)
         if (config.Node.blockchainSynchronization) this.nextSync()
-        this.node.on('block', async block => this.emit('block', block))
-        this.node.on('transaction', async transaction => this.emit('transaction', transaction))
+        this.node.on('block', async block => this.emit('add-block', block))
+        this.node.on('transaction', async transaction => this.emit('add-transaction', transaction))
         this.node.on('node', node => {
             if (config.Node.connectToNodes) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
             this.emit('node', node)
@@ -71,8 +71,8 @@ class Node extends events.EventEmitter {
             this.httpApi.on('get-block-latest', async cb => cb(Block.minify(await this.blockchain.getLatestBlock())))
             this.httpApi.on('get-block-new', async (address, cb) => cb(Block.minify(await this.blockchain.getNewBlock(address))))
             this.httpApi.on('get-balance-address', async (address, cb) => cb(beautifyBigInt(await this.blockchain.getBalanceOfAddress(address))))
-            this.httpApi.on('post-transaction', async (transaction, cb) => this.emit('transaction', transaction, code => cb(code)))
-            this.httpApi.on('post-block', async (block, cb) => this.emit('block', block, code => cb(code)))
+            this.httpApi.on('post-transaction', async (transaction, cb) => this.emit('add-transaction', transaction, code => cb(code)))
+            this.httpApi.on('post-block', async (block, cb) => this.emit('add-block', block, code => cb(code)))
             this.httpApi.on('get-transactions-address', async (address, cb) => {
                 const projection = `
                     ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.to.name}
@@ -89,7 +89,7 @@ class Node extends events.EventEmitter {
                 ])
             })
         }
-        this.on('transaction', async (transaction: Transaction, cb) => {
+        this.on('add-transaction', async (transaction: Transaction, cb) => {
             let code = -1
             try {
                 code = await this.assignJob({
@@ -101,10 +101,11 @@ class Node extends events.EventEmitter {
             if (code === 0) code = await this.blockchain.addTransaction(transaction)
             if (code === 0) {
                 if (config.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
+                this.emit('transaction', transaction, code)
             }
             if (cb !== undefined) cb(code)
         })
-        this.on('block', async (block: Block, cb) => {
+        this.on('add-block', async (block: Block, cb) => {
             let code = -1
             try {
                 code = await this.assignJob({
@@ -116,6 +117,7 @@ class Node extends events.EventEmitter {
             if (code === 0) code = await this.blockchain.addBlock(block)
             if (code === 0) {
                 if (config.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('block', Block.minify(block)))
+                this.emit('block', block, code)
             }
             if (cb !== undefined) cb(code)
         })
