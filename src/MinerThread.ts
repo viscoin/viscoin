@@ -13,8 +13,8 @@ interface MinerThread {
 class MinerThread extends events.EventEmitter {
     constructor() {
         super()
-        this.hashrate = 0
         this.paused = true
+        this.hashrate = 0
         setInterval(() => {
             parentPort.postMessage(JSON.stringify({ e: 'hashrate', hashrate: this.hashrate }))
             this.hashrate = 0

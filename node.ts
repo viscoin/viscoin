@@ -25,6 +25,7 @@ if (isMainThread) {
         if (code === 0) console.log(`${toLocaleTimeString()} ${chalk.green('new')} ${chalk.yellow('Block')} { height: ${chalk.yellowBright(block.height)} }`)
     })
     node.on('node', node => console.log(`${toLocaleTimeString()} Received new node ${node.address}:${node.port}`))
+    node.on('verifyrate', ({ transaction, block }) => console.log(`${toLocaleTimeString()} ${chalk.yellowBright(block)} ${chalk.redBright('B/s')} ${chalk.yellowBright(transaction)} ${chalk.redBright('T/s')}`))
     setPriority(19)
     for (let i = 0; i < node.threads; i++) {
         node.addWorker(new Worker(__filename))

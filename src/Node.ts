@@ -21,6 +21,10 @@ interface Node {
     tcpServer: TCPApi['Server']
     httpApi: HTTPApi
     blockchain: Blockchain
+    verifyrate: {
+        transaction: number
+        block: number
+    }
 }
 class Node extends events.EventEmitter {
     constructor() {
@@ -121,6 +125,17 @@ class Node extends events.EventEmitter {
             }
             if (cb !== undefined) cb(code)
         })
+        this.verifyrate = {
+            transaction: 0,
+            block: 0
+        }
+        setInterval(() => {
+            this.emit('verifyrate', this.verifyrate)
+            this.verifyrate = {
+                transaction: 0,
+                block: 0
+            }
+        }, 1000)
     }
     async nextSync() {
         const block = await this.blockchain.getNextSyncBlock()
@@ -143,7 +158,15 @@ class Node extends events.EventEmitter {
         })
         worker.on('error', () => {})
         worker.on('exit', () => {})
-        worker.on('message', () => {})
+        worker.on('message', e => {
+            e = JSON.parse(e)
+            switch (e.e) {
+                case 'verifyrate':
+                    this.verifyrate.transaction += e.verifyrate.transaction
+                    this.verifyrate.block += e.verifyrate.block
+                    break
+            }
+        })
         worker.on('messageerror', () => {})
         worker.on('online', () => {})
     }
