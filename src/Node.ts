@@ -45,13 +45,13 @@ class Node extends events.EventEmitter {
                 a = a.filter(e => b.includes(e) === false)
             }
         }
-        if (config.Node.hostNode) this.node.start()
-        if (config.Node.connectToNodes) this.node.connectToNetwork(a)
-        if (config.Node.syncNode) this.nextSync()
+        if (config.Node.hostNode === true) this.node.start()
+        if (config.Node.connectToNetwork === true) this.node.connectToNetwork(a)
+        if (config.Node.syncNode.enabled === true) this.nextSync()
         this.node.on('block', async block => this.emit('add-block', block))
         this.node.on('transaction', async transaction => this.emit('add-transaction', transaction))
         this.node.on('node', node => {
-            if (config.Node.connectToNodes) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
+            if (config.Node.connectToNetwork) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
             this.emit('node', node)
         })
         this.node.on('socket', socket => {
