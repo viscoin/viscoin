@@ -8,7 +8,7 @@
     "confirmations": 6,
     "Node": {
         "hostNode": true,
-        "connectToNodes": true,
+        "connectToNetwork": true,
         "syncNode": {
             "enabled": true,
             "nextSyncTimeout": 1000
