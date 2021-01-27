@@ -13,13 +13,14 @@ import beautifyBigInt from './src/beautifyBigInt'
 import parseBigInt from './src/parseBigInt'
 import HTTPApi from './src/HTTPApi'
 import * as config from './config.json'
+import customHash from './src/customHash'
 
 let wallet: Wallet | undefined = undefined
 const functions = {
-    save_wallet: (privateKey: Buffer, words: Array<string>, name: string, passphrase: string) => {
+    save_wallet: async (privateKey: Buffer, words: Array<string>, name: string, passphrase: string) => {
         const iv = crypto.randomBytes(16)
-        const cipher = crypto.createCipheriv('aes-256-cbc', crypto.createHash('sha256').update(passphrase).digest(), iv)
-        if (fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
+        const cipher = crypto.createCipheriv('aes-256-cbc', await customHash(passphrase), iv)
+        if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
         fs.writeFileSync(`./wallets/${name}.wallet`, Buffer.concat([
             iv,
             cipher.update(JSON.stringify({
@@ -252,10 +253,7 @@ const commands = {
                 type: 'text',
                 name: 'name',
                 message: 'Name wallet',
-                validate: name => {
-                    const exists = fs.existsSync(`./wallets/${name}.wallet`)
-                    return exists ? 'Wallet already exists' : true
-                }
+                validate: name => fs.existsSync(`./wallets/${name}.wallet`) ? 'Wallet already exists' : true
             },
             {
                 type: 'password',
@@ -291,10 +289,7 @@ const commands = {
                 type: 'text',
                 name: 'name',
                 message: 'Name wallet',
-                validate: name => {
-                    const exists = fs.existsSync(`./wallets/${name}.wallet`)
-                    return exists ? 'Wallet already exists' : true
-                }
+                validate: name => fs.existsSync(`./wallets/${name}.wallet`) ? 'Wallet already exists' : true
             },
             {
                 type: 'password',
@@ -332,9 +327,9 @@ const commands = {
             type: 'password',
             name: 'passphrase',
             message: 'Enter passphrase',
-            validate: passphrase => {
+            validate: async passphrase => {
                 try {
-                    const decipher = crypto.createDecipheriv('aes-256-cbc', crypto.createHash('sha256').update(passphrase).digest(), data.slice(0, 16))
+                    const decipher = crypto.createDecipheriv('aes-256-cbc', await customHash(passphrase), data.slice(0, 16))
                     const decrypted = JSON.parse(String(Buffer.concat([
                         decipher.update(data.slice(16)),
                         decipher.final()
@@ -417,10 +412,7 @@ const commands = {
                 type: 'text',
                 name: 'name',
                 message: 'Name wallet',
-                validate: name => {
-                    const exists = fs.existsSync(`./wallets/${name}.wallet`)
-                    return exists ? 'Wallet already exists' : true
-                }
+                validate: name => fs.existsSync(`./wallets/${name}.wallet`) ? 'Wallet already exists' : true
             },
             {
                 type: 'password',

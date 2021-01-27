@@ -16,7 +16,7 @@
         "threads": 0
     },
     "Miner": {
-        "miningRewardAddress": "WoGrLA8kjznMcPKBHVJgJjgPoHd",
+        "miningRewardAddress": "RmdVQThCJqy5uSfziQRdek3y9bE",
         "restartDelay": 6000,
         "maxListeners": 100,
         "threads": 0
