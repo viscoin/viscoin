@@ -9,9 +9,9 @@
     "Node": {
         "hostNode": true,
         "connectToNodes": true,
-        "blockchainSynchronization": {
+        "syncNode": {
             "enabled": true,
-            "timeout": 100
+            "nextSyncTimeout": 1000
         },
         "threads": 0
     },

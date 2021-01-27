@@ -47,7 +47,7 @@ class Node extends events.EventEmitter {
         }
         if (config.Node.hostNode) this.node.start()
         if (config.Node.connectToNodes) this.node.connectToNetwork(a)
-        if (config.Node.blockchainSynchronization) this.nextSync()
+        if (config.Node.syncNode) this.nextSync()
         this.node.on('block', async block => this.emit('add-block', block))
         this.node.on('transaction', async transaction => this.emit('add-transaction', transaction))
         this.node.on('node', node => {
@@ -143,7 +143,7 @@ class Node extends events.EventEmitter {
             const buffer = protocol.constructDataBuffer('block', Block.minify(block))
             this.node.broadcastAndStoreDataHash(buffer)
         }
-        setTimeout(this.nextSync.bind(this), config.Node.blockchainSynchronization.timeout)
+        setTimeout(this.nextSync.bind(this), config.Node.syncNode.nextSyncTimeout)
     }
     addWorker(worker: Worker) {
         this.workersBusy.add(worker)
