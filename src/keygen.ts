@@ -1,13 +1,8 @@
 import * as crypto from 'crypto'
 import publicKeyFromPrivateKey from './publicKeyFromPrivateKey'
 import addressFromPublicKey from './addressFromPublicKey'
-import { setPriority } from 'os'
-import customHash from './customHash'
 export default async (seed: Buffer | undefined = undefined) => {
-    if (seed) {
-        setPriority(19)
-        seed = await customHash(seed)
-    }
+    if (seed) seed = crypto.createHash('sha256').update(seed).digest()
     else seed = crypto.randomBytes(32)
     const privateKey = seed
     const publicKey = publicKeyFromPrivateKey(privateKey)

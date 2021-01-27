@@ -1,7 +1,7 @@
 import Transaction from './Transaction'
 import model_block from './mongoose/model/block'
 import * as config from '../config.json'
-import customHash from './customHash'
+import proofOfWorkHash from './proofOfWorkHash'
 import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
 import * as crypto from 'crypto'
@@ -44,7 +44,7 @@ class Block {
     }
     static async calculateHash(block: Block) {
         if (block.header === undefined) block.setHeader()
-        return await customHash(block.header + block.nonce)
+        return await proofOfWorkHash(block.header + block.nonce)
     }
     static getDifficultyBuffer(difficulty: number) {
         const index = Math.floor(difficulty / 8),

@@ -13,18 +13,18 @@ import beautifyBigInt from './src/beautifyBigInt'
 import parseBigInt from './src/parseBigInt'
 import HTTPApi from './src/HTTPApi'
 import * as config from './config.json'
-import customHash from './src/customHash'
+import walletPassphraseHash from './src/walletPassphraseHash'
 
 let wallet: Wallet | undefined = undefined
 const functions = {
     save_wallet: async (privateKey: Buffer, words: Array<string>, name: string, passphrase: string) => {
         const iv = crypto.randomBytes(16)
-        const cipher = crypto.createCipheriv('aes-256-cbc', await customHash(passphrase), iv)
+        const cipher = crypto.createCipheriv('aes-256-cbc', await walletPassphraseHash(passphrase), iv)
         if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
         fs.writeFileSync(`./wallets/${name}.wallet`, Buffer.concat([
             iv,
             cipher.update(JSON.stringify({
-                privateKey,
+                privateKey: privateKey.toString('binary'),
                 words
             })),
             cipher.final()
@@ -329,7 +329,7 @@ const commands = {
             message: 'Enter passphrase',
             validate: async passphrase => {
                 try {
-                    const decipher = crypto.createDecipheriv('aes-256-cbc', await customHash(passphrase), data.slice(0, 16))
+                    const decipher = crypto.createDecipheriv('aes-256-cbc', await walletPassphraseHash(passphrase), data.slice(0, 16))
                     const decrypted = JSON.parse(String(Buffer.concat([
                         decipher.update(data.slice(16)),
                         decipher.final()
