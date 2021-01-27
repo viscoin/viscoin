@@ -19,7 +19,7 @@ const functions = {
     save_wallet: (privateKey: Buffer, words: Array<string>, name: string, passphrase: string) => {
         const iv = crypto.randomBytes(16)
         const cipher = crypto.createCipheriv('aes-256-cbc', crypto.createHash('sha256').update(passphrase).digest(), iv)
-        if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
+        if (fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
         fs.writeFileSync(`./wallets/${name}.wallet`, Buffer.concat([
             iv,
             cipher.update(JSON.stringify({
@@ -56,8 +56,8 @@ const commands = {
                 { title: 'Info', description: `View sensitive details about wallet (${chalk.redBright('Make sure no one is looking')})`, value: commands.info },
                 ...choices
             ]
-            if (wallet.name) console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${wallet.name}.wallet`))))
-            else if (wallet.address && wallet.privateKey) {
+            if (wallet.name !== undefined) console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${wallet.name}.wallet`))))
+            else if (wallet.address !== undefined && wallet.privateKey !== undefined) {
                 console.log(chalk.grey(`${chalk.redBright('Temporarily')} loaded wallet ${chalk.white('(not saved)')}`))
                 choices = [
                     { title: 'Save', description: 'Save wallet', value: commands.save },
@@ -90,7 +90,7 @@ const commands = {
                 name: 'to',
                 message: 'Address',
                 validate: to => {
-                    if (!to) return true
+                    if (to === '') return true
                     try {
                         if (Buffer.byteLength(base58.decode(to)) === 20) return true
                         else return 'Invalid address'
@@ -124,7 +124,7 @@ const commands = {
                 type: 'toggle',
                 name: 'confirm',
                 message: (prev, values) => {
-                    if (values.amount) return `Sum: ${beautifyBigInt(parseBigInt(values.amount))} + ${beautifyBigInt(parseBigInt(values.minerFee))} = ${beautifyBigInt(parseBigInt(values.amount) + parseBigInt(values.minerFee))}\nSign and broadcast?`
+                    if (values.amount !== undefined) return `Sum: ${beautifyBigInt(parseBigInt(values.amount))} + ${beautifyBigInt(parseBigInt(values.minerFee))} = ${beautifyBigInt(parseBigInt(values.amount) + parseBigInt(values.minerFee))}\nSign and broadcast?`
                     else return `Sum: ${values.minerFee}\nSign and broadcast?`
                 },
                 initial: false,
@@ -132,10 +132,11 @@ const commands = {
                 inactive: 'no'
             }
         ])
-        if (res.confirm) {
+        if (res.confirm === true) {
             const amount = res.amount === undefined ? undefined : beautifyBigInt(parseBigInt(res.amount))
+            const to = res.to === undefined ? undefined : base58.decode(res.to)
             const transaction = wallet.createTransaction({
-                to: base58.decode(res.to),
+                to,
                 amount,
                 minerFee: beautifyBigInt(parseBigInt(res.minerFee))
             })
@@ -144,7 +145,7 @@ const commands = {
             setTimeout(async function loop() {
                 try {
                     const code = await HTTPApi.send(transaction)
-                    if (log) {
+                    if (log === true) {
                         if (code === 0) console.log(chalk.greenBright('Transaction accepted'))
                         else console.log(chalk.redBright(`Transaction not accepted, code ${code}`))
                     }
@@ -242,7 +243,7 @@ const commands = {
             active: 'yes',
             inactive: 'no'
         })
-        if (!save) {
+        if (save === false) {
             console.clear()
             return commands.commands()
         }
@@ -281,7 +282,7 @@ const commands = {
             active: 'yes',
             inactive: 'no'
         })
-        if (!save) {
+        if (save === false) {
             console.clear()
             return commands.commands()
         }
@@ -407,7 +408,7 @@ const commands = {
             active: 'yes',
             inactive: 'no'
         })
-        if (!save) {
+        if (save === false) {
             console.clear()
             return commands.commands()
         }
@@ -486,7 +487,7 @@ const commands = {
                             break
                         }
                     }
-                    if (transaction.from) {
+                    if (transaction.from !== undefined) {
                         if (transaction.from.equals(wallet.address)) {
                             str = `${str} ${chalk.blueBright(base58.encode(transaction.from))}`
                         }
@@ -496,15 +497,15 @@ const commands = {
                         if (transaction.amount) str = `${str} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee))}`)}`
                         else str = `${str} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.minerFee))}`)}`
                     }
-                    if (transaction.to) {
-                        if (transaction.from) str = `${str} ${chalk.blueBright('-->')}`
+                    if (transaction.to !== undefined) {
+                        if (transaction.from !== undefined) str = `${str} ${chalk.blueBright('-->')}`
                         if (transaction.to.equals(wallet.address)) {
                             str = `${str} ${chalk.blueBright(base58.encode(transaction.to))}`
                         }
                         else {
                             str = `${str} ${base58.encode(transaction.to)}`
                         }
-                        if (transaction.amount) str = `${str} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}`
+                        if (transaction.amount !== undefined) str = `${str} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}`
                     }
                     console.log(str)
                 }

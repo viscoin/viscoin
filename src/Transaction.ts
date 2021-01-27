@@ -17,30 +17,24 @@ interface Transaction {
 class Transaction {
     constructor({ from = undefined, to = undefined, amount = undefined, timestamp = undefined, minerFee = undefined, signature = undefined, recoveryParam = undefined }) {
         if (timestamp) this.timestamp = timestamp
-
         if (typeof minerFee === 'string') this.minerFee = minerFee
-
         if (from instanceof Buffer) this.from = from
         else if (from) this.from = Buffer.from(from, 'binary')
-
         if (typeof amount === 'string') {
             if (to instanceof Buffer) this.to = to
             else if (to) this.to = Buffer.from(to, 'binary')
-
             this.amount = amount
         }
-
         if (typeof recoveryParam === 'number') {
             if (signature instanceof Buffer) this.signature = signature
             else if (signature) this.signature = Buffer.from(signature, 'binary')
-
             this.recoveryParam = recoveryParam
         }
     }
     static minify(input: Transaction) {
         const output: object = {}
         for (const property in input) {
-            if (config.mongoose.schema.transaction[property]) {
+            if (config.mongoose.schema.transaction[property] !== undefined) {
                 if (input[property] instanceof Buffer) output[config.mongoose.schema.transaction[property].name] = input[property].toString('binary')
                 else output[config.mongoose.schema.transaction[property].name] = input[property]
             }

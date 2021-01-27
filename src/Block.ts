@@ -20,15 +20,10 @@ interface Block {
 class Block {
     constructor({ transactions, previousHash, height, nonce = undefined, hash = undefined, difficulty = undefined, timestamp = undefined }) {
         if (hash instanceof Buffer) this.hash = hash
-        else if (hash) this.hash = Buffer.from(hash, 'binary')
+        else if (hash !== undefined) this.hash = Buffer.from(hash, 'binary')
         if (previousHash instanceof Buffer) this.previousHash = previousHash
-        else if (previousHash) this.previousHash = Buffer.from(previousHash, 'binary')
-        const _transactions = []
-        for (const transaction of transactions) {
-            if (transaction instanceof Transaction) _transactions.push(transaction)
-            else _transactions.push(new Transaction(transaction))
-        }
-        this.transactions = _transactions
+        else if (previousHash !== undefined) this.previousHash = Buffer.from(previousHash, 'binary')
+        this.transactions = transactions.map(e => e instanceof Transaction ? e : new Transaction(e))
         this.height = height
         if (nonce !== undefined) this.nonce = nonce
         if (difficulty !== undefined) this.difficulty = difficulty
@@ -72,7 +67,7 @@ class Block {
         const hashes = []
         for (let i = 0; i < this.transactions.length; i++) {
             const transaction: Transaction = this.transactions[i]
-            if (!transaction) return 2
+            if (typeof transaction !== 'object') return 2
             if (i === 0) continue
             if (transaction.isValid() !== 0) return 3
             if (transaction.verify() === false) return 4
@@ -91,20 +86,20 @@ class Block {
         if (_amount === null
         || _amount !== amount
         || beautifyBigInt(_amount) !== this.transactions[0].amount) return 8
-        if (!this.transactions[0].to) return 9
+        if (this.transactions[0].to === undefined) return 9
         if (Buffer.byteLength(this.transactions[0].to) !== 20) return 10
-        if (this.transactions[0].timestamp) return 11
-        if (this.transactions[0].minerFee) return 12
-        if (this.transactions[0].from) return 13
-        if (this.transactions[0].signature) return 14
-        if (this.transactions[0].recoveryParam) return 15
+        if (this.transactions[0].timestamp !== undefined) return 11
+        if (this.transactions[0].minerFee !== undefined) return 12
+        if (this.transactions[0].from !== undefined) return 13
+        if (this.transactions[0].signature !== undefined) return 14
+        if (this.transactions[0].recoveryParam !== undefined) return 15
         if (hashes.some((e, i) => hashes.indexOf(e) !== i)) return 16
         return 0
     }
     static minify(input: Block) {
         const output: object = {}
         for (const property in input) {
-            if (config.mongoose.schema.block[property]) {
+            if (config.mongoose.schema.block[property] !== undefined) {
                 if (input[property] instanceof Buffer) output[config.mongoose.schema.block[property].name] = input[property].toString('binary')
                 else if (property === 'transactions') output[config.mongoose.schema.block[property].name] = <Array<Transaction>> input[property].map(e => Transaction.minify(e))
                 else output[config.mongoose.schema.block[property].name] = input[property]
