@@ -334,7 +334,7 @@ const commands = {
                         decipher.update(data.slice(16)),
                         decipher.final()
                     ])))
-                    const privateKey = Buffer.from(decrypted.privateKey)
+                    const privateKey = Buffer.from(decrypted.privateKey, 'binary')
                     const words = decrypted.words
                     wallet = new Wallet(Wallet.import({ name, privateKey, words }))
                     return true
