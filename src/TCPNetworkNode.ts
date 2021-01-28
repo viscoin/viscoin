@@ -127,7 +127,18 @@ class TCPNetworkNode extends events.EventEmitter {
         }
         return false
     }
+    static shuffle(arr: Array<any>) {
+        let j, x
+        for (let i = arr.length - 1; i > 0; i--) {
+            j = Math.floor(Math.random() * (i + 1))
+            x = arr[i]
+            arr[i] = arr[j]
+            arr[j] = x
+        }
+        return arr
+    }
     connectToNetwork(nodes: Array<{ port: number, address: string }>) {
+        nodes = TCPNetworkNode.shuffle(nodes)
         for (const node of nodes) {
             if (typeof node.port !== 'number') continue
             if (typeof node.address !== 'string') continue
