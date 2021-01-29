@@ -1,5 +1,3 @@
-import mongoose from './src/mongoose/mongoose'
-mongoose.init()
 import * as crypto from 'crypto'
 import * as prompts from 'prompts'
 import * as chalk from 'chalk'

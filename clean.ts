@@ -1,5 +1,5 @@
-import mongoose from './src/mongoose/mongoose'
-mongoose.init()
+import init from './src/mongoose/init'
+init()
 import Blockchain from './src/Blockchain'
 
 (async () => {

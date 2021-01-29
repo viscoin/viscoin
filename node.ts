@@ -1,5 +1,5 @@
-import mongoose from './src/mongoose/mongoose'
-mongoose.init()
+import init from './src/mongoose/init'
+init()
 import Node from './src/Node'
 import * as config from './config.json'
 import * as chalk from 'chalk'
