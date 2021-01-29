@@ -4,6 +4,11 @@
         "use": true,
         "path": "./logs"
     },
+    "consoleLog": {
+        "hardware": true,
+        "hashrate": true,
+        "verifyrate": false
+    },
     "addressList": "./addresses.txt",
     "confirmations": 6,
     "Node": {

@@ -5,6 +5,9 @@ import { cpus } from 'os'
 import * as events from 'events'
 import HTTPApi from './HTTPApi'
 import TCPApi from './TCPApi'
+import logHardware from './logHardware'
+import toLocaleTimeString from './chalk/LocaleTimeString'
+import * as chalk from 'chalk'
 
 interface Miner {
     workers: Array<Worker>
@@ -42,6 +45,8 @@ class Miner extends events.EventEmitter {
         this.once('ready', async () => await this.start())
         this.restarting = false
         this.setMaxListeners(config.Miner.maxListeners)
+        if (config.consoleLog.hardware === true) logHardware()
+        if (config.consoleLog.hashrate === true) this.on('hashrate', hashrate => console.log(`${toLocaleTimeString()} ${chalk.yellowBright(hashrate)} ${chalk.redBright('H/s')}`))
     }
     async restart() {
         if (this.restarting === true) {

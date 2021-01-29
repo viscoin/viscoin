@@ -12,6 +12,9 @@ import beautifyBigInt from "./beautifyBigInt"
 import parseNodes from './parseNodes'
 import { Worker } from 'worker_threads'
 import { cpus } from 'os'
+import logHardware from './logHardware'
+import toLocaleTimeString from './chalk/LocaleTimeString'
+import * as chalk from 'chalk'
 
 interface Node {
     workersReady: Set<Worker>
@@ -136,6 +139,8 @@ class Node extends events.EventEmitter {
                 block: 0
             }
         }, 1000)
+        if (config.consoleLog.hardware === true) logHardware()
+        if (config.consoleLog.verifyrate === true) this.on('verifyrate', ({ transaction, block }) => console.log(`${toLocaleTimeString()} ${chalk.yellowBright(block)} ${chalk.redBright('B/s')} ${chalk.yellowBright(transaction)} ${chalk.redBright('T/s')}`))
     }
     async nextSync() {
         const block = await this.blockchain.getNextSyncBlock()
