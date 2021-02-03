@@ -41,10 +41,7 @@ class Node extends events.EventEmitter {
         this.tcpServer = TCPApi.createServer()
         this.httpApi = new HTTPApi()
         if (config.Node.hostNode === true) this.node.start()
-        if (config.Node.connectToNetwork === true) {
-            this.node.connectToNetwork(this.getNodes())
-            this.reconnectLoop(true)
-        }
+        if (config.Node.connectToNetwork === true) this.reconnect()
         if (config.Node.syncNode.enabled === true) this.nextSync()
         this.node.on('block', async block => this.emit('add-block', block))
         this.node.on('transaction', async transaction => this.emit('add-transaction', transaction))
@@ -148,12 +145,10 @@ class Node extends events.EventEmitter {
         }
         return arr
     }
-    reconnectLoop(skip: boolean) {
-        console.log('reconnectLoop')
-        if (config.Node.autoReconnect) {
-            if (skip !== true) this.node.connectToNetwork(this.getNodes())
-            setTimeout(this.reconnectLoop.bind(this), config.Node.autoReconnect)
-        }
+    reconnect() {
+        console.log('reconnect')
+        this.node.connectToNetwork(this.getNodes())
+        if (config.Node.autoReconnect) setTimeout(this.reconnect.bind(this), config.Node.autoReconnect)
     }
     async nextSync() {
         const block = await this.blockchain.getNextSyncBlock()
