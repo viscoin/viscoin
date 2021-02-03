@@ -14,6 +14,7 @@
     "Node": {
         "hostNode": true,
         "connectToNetwork": true,
+        "autoReconnect": 600000,
         "syncNode": {
             "enabled": true,
             "nextSyncTimeout": 1000

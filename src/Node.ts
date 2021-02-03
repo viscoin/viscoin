@@ -40,16 +40,11 @@ class Node extends events.EventEmitter {
         this.blockchain = new Blockchain()
         this.tcpServer = TCPApi.createServer()
         this.httpApi = new HTTPApi()
-        let a = parseNodes(fs.readFileSync(config.addressList, 'binary'))
-        if (config.logs.use) {
-            if (fs.existsSync(`${config.logs.path}/connections.txt`)) a.push(...parseNodes(fs.readFileSync(`${config.logs.path}/connections.txt`, 'binary')))
-            if (fs.existsSync(`${config.logs.path}/blacklisted.txt`)) {
-                const b = parseNodes(fs.readFileSync(`${config.logs.path}/blacklisted.txt`, 'binary'))
-                a = a.filter(e => b.includes(e) === false)
-            }
-        }
         if (config.Node.hostNode === true) this.node.start()
-        if (config.Node.connectToNetwork === true) this.node.connectToNetwork(a)
+        if (config.Node.connectToNetwork === true) {
+            this.node.connectToNetwork(this.getNodes())
+            this.reconnectLoop(true)
+        }
         if (config.Node.syncNode.enabled === true) this.nextSync()
         this.node.on('block', async block => this.emit('add-block', block))
         this.node.on('transaction', async transaction => this.emit('add-transaction', transaction))
@@ -59,12 +54,12 @@ class Node extends events.EventEmitter {
         })
         this.node.on('socket', socket => {
             if (!fs.existsSync(config.logs.path)) fs.mkdirSync(config.logs.path)
-            if (config.logs.save) fs.appendFileSync(`${config.logs.path}/connections.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (config.logs.save === true) fs.appendFileSync(`${config.logs.path}/connections.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('socket', socket)
         })
         this.node.on('blacklist', (socket, reason) => {
             if (!fs.existsSync(config.logs.path)) fs.mkdirSync(config.logs.path)
-            if (config.logs.save) fs.appendFileSync(`${config.logs.path}/blacklisted.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (config.logs.save === true) fs.appendFileSync(`${config.logs.path}/blacklisted.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('blacklist', socket, reason)
         })
         if (config.TCPApi.enabled) {
@@ -141,6 +136,24 @@ class Node extends events.EventEmitter {
         }, 1000)
         if (config.consoleLog.hardware === true) logHardware()
         if (config.consoleLog.verifyrate === true) this.on('verifyrate', ({ transaction, block }) => console.log(`${toLocaleTimeString()} ${chalk.yellowBright(block)} ${chalk.redBright('B/s')} ${chalk.yellowBright(transaction)} ${chalk.redBright('T/s')}`))
+    }
+    getNodes() {
+        let arr = parseNodes(fs.readFileSync(config.addressList, 'binary'))
+        if (config.logs.use === true) {
+            if (fs.existsSync(`${config.logs.path}/connections.txt`)) arr.push(...parseNodes(fs.readFileSync(`${config.logs.path}/connections.txt`, 'binary')))
+            if (fs.existsSync(`${config.logs.path}/blacklisted.txt`)) {
+                const _arr = parseNodes(fs.readFileSync(`${config.logs.path}/blacklisted.txt`, 'binary'))
+                arr = arr.filter(e => _arr.includes(e) === false)
+            }
+        }
+        return arr
+    }
+    reconnectLoop(skip: boolean) {
+        console.log('reconnectLoop')
+        if (config.Node.autoReconnect) {
+            if (skip !== true) this.node.connectToNetwork(this.getNodes())
+            setTimeout(this.reconnectLoop.bind(this), config.Node.autoReconnect)
+        }
     }
     async nextSync() {
         const block = await this.blockchain.getNextSyncBlock()
