@@ -23,7 +23,7 @@
     "Miner": {
         "miningRewardAddress": "visC6571qoyNNzepeCLpy4EmhqD",
         "restartDelay": 6000,
-        "maxListeners": 100,
+        "maxListeners": 500,
         "threads": 0
     },
     "TCPNetworkNode": {
@@ -33,16 +33,16 @@
             "interval": 100
         },
         "socket": {
-            "maxBytesPerSecond": 10485760,
+            "maxBytesPerSecond": 1048576,
             "setTimeout": 60000,
-            "maxBytesInMemory": 2097152
+            "maxBytesInMemory": 131072
         },
         "server": {
             "address": "192.168.0.11",
             "port": 8334,
-            "maxConnectionsIn": 50
+            "maxConnectionsIn": 10
         },
-        "maxConnectionsOut": 50
+        "maxConnectionsOut": 10
     },
     "EOL": "",
     "argon2": "./node_modules/argon2/lib/binding/napi-v3/argon2.node",
@@ -65,7 +65,7 @@
         "enabled": true,
         "address": "localhost",
         "port": 8336,
-        "maxConnections": 100,
+        "maxConnections": 20,
         "autoReconnect": 1000
     },
     "Blockchain": {
@@ -85,7 +85,7 @@
         }
     },
     "mongoose": {
-        "connectionString": "mongodb://localhost:27017/milk",
+        "connectionString": "mongodb://localhost:27017/viscoin",
         "schema": {
             "block": {
                 "previousHash": {
