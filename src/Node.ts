@@ -98,11 +98,14 @@ class Node extends events.EventEmitter {
             }
             catch {}
             if (code === 0) code = await this.blockchain.addTransaction(transaction)
-            if (code === 0) {
-                if (config.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
-                this.emit('transaction', transaction, code)
-            }
+            this.emit('transaction', transaction, code)
             if (cb !== undefined) cb(code)
+        })
+        this.on('transaction', (transaction, code) => {
+            if (code === 0) {
+                this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
+                if (config.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
+            }
         })
         this.on('add-block', async (block: Block, cb) => {
             let code = -1
@@ -114,11 +117,14 @@ class Node extends events.EventEmitter {
             }
             catch {}
             if (code === 0) code = await this.blockchain.addBlock(block)
-            if (code === 0) {
-                if (config.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('block', Block.minify(block)))
-                this.emit('block', block, code)
-            }
+            this.emit('block', block, code)
             if (cb !== undefined) cb(code)
+        })
+        this.on('block', (block, code) => {
+            if (code === 0) {
+                this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('block', Block.minify(block)))
+                if (config.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('block', Block.minify(block)))
+            }
         })
         this.verifyrate = {
             transaction: 0,
