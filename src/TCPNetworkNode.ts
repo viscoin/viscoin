@@ -57,7 +57,7 @@ class TCPNetworkNode extends events.EventEmitter {
         if (this.blacklisted.includes(socket.remoteAddress)) return this.destroySocket(socket)
         const add = () => {
             socket.setTimeout(config.TCPNetworkNode.socket.setTimeout)
-            if (this.hasSocket(socket) || this.sockets.size >= config.TCPNetworkNode.maxConnectionsOut) return this.destroySocket(socket)
+            if (this.hasSocketWithRemoteAddress(socket) || this.sockets.size >= config.TCPNetworkNode.maxConnectionsOut) return this.destroySocket(socket)
             this.sockets.add(socket)
             this.broadcastAndStoreDataHash(protocol.constructDataBuffer('node', {
                 address: socket.remoteAddress,
@@ -110,7 +110,6 @@ class TCPNetworkNode extends events.EventEmitter {
     }
     broadcast(data: Buffer) {
         for (const socket of this.sockets) {
-            if (!socket) continue
             socket.write(data)
             socket.write(protocol.end)
         }
@@ -119,11 +118,9 @@ class TCPNetworkNode extends events.EventEmitter {
         this.addHash(data)
         this.broadcast(data)
     }
-    hasSocket(socket) {
+    hasSocketWithRemoteAddress(socket) {
         for (const _socket of this.sockets) {
-            if (!_socket) continue
-            if (socket.remotePort === _socket.remotePort
-            && socket.remoteAddress === _socket.remoteAddress) return true
+            if (socket.remoteAddress === _socket.remoteAddress) return true
         }
         return false
     }
