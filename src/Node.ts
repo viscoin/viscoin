@@ -152,7 +152,7 @@ class Node extends events.EventEmitter {
     }
     async nextSync() {
         const block = await this.blockchain.getNextSyncBlock()
-        if (block) {
+        if (block !== null) {
             const buffer = protocol.constructDataBuffer('block', Block.minify(block))
             this.node.broadcastAndStoreDataHash(buffer)
         }
