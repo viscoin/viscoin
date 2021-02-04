@@ -417,9 +417,8 @@ class Blockchain extends events.EventEmitter {
         return block
     }
     async getNextSyncBlock() {
-        const block = await this.getBlockByHeight(this.syncIndex++)
-        if (this.syncIndex > await this.getHeight()) this.syncIndex = 1
-        return block
+        if (++this.syncIndex > await this.getHeight()) this.syncIndex = 1
+        return await this.getBlockByHeight(this.syncIndex)
     }
     async getCircumlatingSupply() {
         return BigInt(await this.getHeight()) * parseBigInt(config.Blockchain.blockReward)
