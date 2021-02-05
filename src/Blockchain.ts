@@ -90,7 +90,7 @@ class Blockchain extends events.EventEmitter {
         this.emit('updated-block-hashes')
         this.updatingBlockHashes = false
     }
-    async createGenesisBlock() {
+    static async createGenesisBlock() {
         const block = new Block({
             transactions: [],
             previousHash: Buffer.alloc(32, 0x00),
@@ -104,7 +104,7 @@ class Blockchain extends events.EventEmitter {
     }
     async setLatestBlock() {
         let block = await Block.load(null, null, { sort: { [config.mongoose.schema.block.height.name]: -1, [config.mongoose.schema.block.difficulty.name]: -1 }, lean: true })
-        if (block === null) block = await this.createGenesisBlock()
+        if (block === null) block = await Blockchain.createGenesisBlock()
         this.latestBlock = block
         return block
     }
@@ -140,7 +140,7 @@ class Blockchain extends events.EventEmitter {
                 block
             ], true) !== 0) return 3
         }
-        else if (block.height !== 1 || block.previousHash.equals((await this.createGenesisBlock()).hash) === false) return 4
+        else if (block.height !== 1 || block.previousHash.equals((await Blockchain.createGenesisBlock()).hash) === false) return 4
         if (await Block.exists({ [config.mongoose.schema.block.hash.name]: block.hash.toString('binary') })) {
             if ((await this.getLatestBlock()).hash.equals(block.hash)) {
                 await this.updateBlockHashes()
@@ -292,14 +292,14 @@ class Blockchain extends events.EventEmitter {
     async isPartOfChainValid(chain: Array<Block>, optimization: boolean) {
         for (let i = 1; i < chain.length; i++) {
             const block = chain[i]
-            const _block = chain[i - 1]
-            if (_block.height !== block.height - 1) return 1
-            if (Blockchain.getBlockDifficulty([ _block, block ]) !== block.difficulty) return 2
-            if (block.previousHash.equals(_block.hash) === false) return 3
+            const previousBlock = chain[i - 1]
+            if (previousBlock.height !== block.height - 1) return 1
+            if (Blockchain.getBlockDifficulty([ previousBlock, block ]) !== block.difficulty) return 2
+            if (block.previousHash.equals(previousBlock.hash) === false) return 3
             for (const transaction of block.transactions) {
-                if (transaction.timestamp < _block.timestamp) return 4
+                if (transaction.timestamp < previousBlock.timestamp) return 4
             }
-            for (const transaction of _block.transactions) {
+            for (const transaction of previousBlock.transactions) {
                 if (transaction.timestamp >= block.timestamp) return 5
             }
             if (optimization === false) {
@@ -350,7 +350,7 @@ class Blockchain extends events.EventEmitter {
         return info
     }
     async getBlockByHeight(height: number) {
-        if (height === 0) return await this.createGenesisBlock()
+        if (height === 0) return await Blockchain.createGenesisBlock()
         return await Block.load({
             [config.mongoose.schema.block.height.name]: height,
             [config.mongoose.schema.block.hash.name]: {
