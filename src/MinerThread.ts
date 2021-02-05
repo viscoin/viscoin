@@ -42,11 +42,10 @@ class MinerThread extends events.EventEmitter {
         this.hashrate++
         if (block.timestamp !== Date.now()) {
             block.timestamp = Date.now()
-            // block.nonce %= this.threads
+            block.nonce %= this.threads
             const difficulty = Blockchain.getBlockDifficulty([ previousBlock, block ])
             if (block.difficulty !== difficulty) {
                 block.difficulty = difficulty
-                block.nonce %= this.threads
             }
             block.setHeader()
         }
