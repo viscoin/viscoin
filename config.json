@@ -77,8 +77,8 @@
         "maxDesync": 30000,
         "blockReward": "1000",
         "blockTime": 60000,
-        "smoothness": 6,
-        "trustedAfterBlocks": 4096,
+        "smoothness": 2,
+        "trustedAfterBlocks": 256,
         "maxBlockSize": 65536,
         "decimalPrecision": 15,
         "minByteFee": {
