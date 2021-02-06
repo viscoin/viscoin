@@ -39,8 +39,8 @@ class TCPNetworkNode extends events.EventEmitter {
                 this.emit('connection', socket)
             })
             .on('listening', () => this.emit('listening'))
+            .on('error', e => this.emit('error', e))
             .on('close', () => {})
-            .on('error', () => {})
         // client
     }
     interval: Array<Function> = [

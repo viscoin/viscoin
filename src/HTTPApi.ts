@@ -68,7 +68,10 @@ class HTTPApi extends events.EventEmitter {
             }
         })
         this.server = http.createServer(app)
-        this.server.on('listening', () => this.emit('listening'))
+        this.server
+            .on('listening', () => this.emit('listening'))
+            .on('error', e => this.emit('error', e))
+            .on('close', () => {})
     }
     static resEndJSON(res, data) {
         res.end(JSON.stringify(data, null, 4))

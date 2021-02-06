@@ -152,7 +152,6 @@ class Node extends events.EventEmitter {
         return arr
     }
     reconnect() {
-        console.log('reconnect')
         this.node.connectToNetwork(this.getNodes())
         if (config.Node.autoReconnect) setTimeout(this.reconnect.bind(this), config.Node.autoReconnect)
     }

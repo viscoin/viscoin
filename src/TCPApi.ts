@@ -24,6 +24,8 @@ class Server extends events.EventEmitter {
                 this.emit('connection', socket.remotePort, socket.remoteAddress)
             })
             .on('listening', () => this.emit('listening'))
+            .on('error', e => this.emit('error', e))
+            .on('close', () => {})
     }
     start() {
         this.server.listen(config.TCPApi.port, config.TCPApi.address)
