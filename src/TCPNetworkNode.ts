@@ -142,7 +142,7 @@ class TCPNetworkNode extends events.EventEmitter {
             if (node.port < 0 || node.port > 65535) continue
             if (node.address !== 'localhost') {
                 if (Buffer.byteLength(Buffer.from(node.address.split('.'))) !== 4
-                && Buffer.byteLength(Buffer.from(node.address.split(':'))) > 16) continue
+                && Buffer.byteLength(Buffer.from(node.address.split(':'))) > 8) continue
             }
             if (node.port === config.TCPNetworkNode.server.port
             && node.address === config.TCPNetworkNode.server.address) continue
