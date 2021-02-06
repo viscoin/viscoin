@@ -78,7 +78,7 @@
         "blockReward": "1000",
         "blockTime": 60000,
         "smoothness": 6,
-        "trustedAfterBlocks": 1000,
+        "trustedAfterBlocks": 4096,
         "maxBlockSize": 65536,
         "decimalPrecision": 15,
         "minByteFee": {
