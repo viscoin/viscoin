@@ -95,7 +95,7 @@ class Blockchain extends events.EventEmitter {
             transactions: [],
             previousHash: Buffer.alloc(32, 0x00),
             height: 0,
-            difficulty: 0,
+            difficulty: 1 << config.Blockchain.smoothness,
             nonce: 0,
             timestamp: 0
         })
@@ -331,9 +331,10 @@ class Blockchain extends events.EventEmitter {
     }
     static getBlockDifficulty(blocks: Array<Block>) {
         let difficulty = blocks[0].difficulty
-        const time = blocks[1].timestamp - blocks[0].timestamp
-        if (time < config.Blockchain.blockTime && difficulty < 64) difficulty++
-        else if (time >= config.Blockchain.blockTime && difficulty > 0) difficulty--
+        const time = blocks[1].timestamp - blocks[0].timestamp,
+        _time = config.Blockchain.blockTime / 1.5
+        if (time < _time && difficulty < 64 << config.Blockchain.smoothness) difficulty++
+        else if (time >= _time && difficulty > 1 << config.Blockchain.smoothness) difficulty--
         return difficulty
     }
     async deleteAllBlocksNotIncludedInChain() {

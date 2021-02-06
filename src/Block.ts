@@ -47,6 +47,7 @@ class Block {
         return await proofOfWorkHash(block.header + block.nonce)
     }
     static getDifficultyBuffer(difficulty: number) {
+        difficulty = difficulty >> config.Blockchain.smoothness
         const index = Math.floor(difficulty / 8),
         remainder = difficulty % 8
         return Buffer.alloc(32).fill(Math.pow(2, 7 - remainder), index, index + 1)
