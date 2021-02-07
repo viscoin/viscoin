@@ -54,10 +54,10 @@ class Node extends events.EventEmitter {
             if (config.logs.save === true) fs.appendFileSync(`${config.logs.path}/connections.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('socket', socket)
         })
-        this.node.on('blacklist', (socket, reason) => {
+        this.node.on('ban', (socket) => {
             if (!fs.existsSync(config.logs.path)) fs.mkdirSync(config.logs.path)
-            if (config.logs.save === true) fs.appendFileSync(`${config.logs.path}/blacklisted.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
-            this.emit('blacklist', socket, reason)
+            if (config.logs.save === true) fs.appendFileSync(`${config.logs.path}/banned.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
+            this.emit('ban', socket)
         })
         if (config.TCPApi.enabled) {
             this.tcpServer.start()
@@ -144,8 +144,8 @@ class Node extends events.EventEmitter {
         let arr = parseNodes(fs.readFileSync(config.addressList, 'binary'))
         if (config.logs.use === true) {
             if (fs.existsSync(`${config.logs.path}/connections.txt`)) arr.push(...parseNodes(fs.readFileSync(`${config.logs.path}/connections.txt`, 'binary')))
-            if (fs.existsSync(`${config.logs.path}/blacklisted.txt`)) {
-                const _arr = parseNodes(fs.readFileSync(`${config.logs.path}/blacklisted.txt`, 'binary'))
+            if (fs.existsSync(`${config.logs.path}/banned.txt`)) {
+                const _arr = parseNodes(fs.readFileSync(`${config.logs.path}/banned.txt`, 'binary'))
                 arr = arr.filter(e => _arr.includes(e) === false)
             }
         }

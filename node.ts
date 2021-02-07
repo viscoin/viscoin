@@ -20,7 +20,7 @@ if (isMainThread) {
     node.httpApi.on('error', e => console.log(`${toLocaleTimeString()} ${chalk.redBright('API (TCP) error')} ${chalk.blueBright(`${config.TCPApi.address}:${config.TCPApi.port}`)} ${chalk.redBright(e?.code)}`))
     node.tcpServer.on('connection', (port, address) => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('API (TCP) connection')} ${chalk.blueBright(`${address}:${port}`)}`))
     node.on('socket', socket => console.log(`${toLocaleTimeString()} ${chalk.green('new')} ${chalk.yellow('Socket')} ${socket.remoteAddress}:${socket.remotePort}`))
-    node.on('blacklist', (socket, reason) => console.log(`${toLocaleTimeString()} Banned ${socket.remoteAddress}:${socket.remotePort} ${reason}`))
+    node.on('ban', socket => console.log(`${toLocaleTimeString()} ${chalk.redBright('Banned')} ${socket.remoteAddress}:${socket.remotePort}`))
     node.on('transaction', (transaction, code) => {
         if (code === 0) console.log(`${toLocaleTimeString()} ${chalk.green('new')} ${chalk.yellow('Transaction')} { from: ${chalk.yellowBright(base58.encode(transaction.from))} }`)
     })

@@ -12,7 +12,7 @@ interface Socket extends net.Socket {
 interface TCPNetworkNode {
     hashes: Array<{ hash: Buffer, timestamp: number }>
     sockets: Set<Socket>
-    blacklisted: Array<String>
+    banned: Array<String>
     // server
     server: net.Server
     // client
@@ -22,11 +22,11 @@ class TCPNetworkNode extends events.EventEmitter {
         super()
         this.hashes = []
         this.sockets = new Set()
-        this.blacklisted = []
-        if (config.logs.use && fs.existsSync(`${config.logs.path}/blacklisted.txt`)) this.blacklisted = parseNodes(fs.readFileSync(`${config.logs.path}/blacklisted.txt`, 'binary')).map(e => `${e.address}:${e.port}`)
-        this.on('blacklist', (socket: Socket, reason: string) => {
+        this.banned = []
+        if (config.logs.use && fs.existsSync(`${config.logs.path}/banned.txt`)) this.banned = parseNodes(fs.readFileSync(`${config.logs.path}/banned.txt`, 'binary')).map(e => `${e.address}:${e.port}`)
+        this.on('ban', (socket: Socket) => {
             this.destroySocket(socket)
-            this.blacklisted.push(socket.remoteAddress)
+            this.banned.push(socket.remoteAddress)
         })
         setInterval(this.interval[0].bind(this), 1000)
         setInterval(this.interval[1].bind(this), config.TCPNetworkNode.hashes.interval)
@@ -54,7 +54,7 @@ class TCPNetworkNode extends events.EventEmitter {
         }
     ]
     addSocket(socket: Socket) {
-        if (this.blacklisted.includes(socket.remoteAddress)) return this.destroySocket(socket)
+        if (this.banned.includes(socket.remoteAddress)) return this.destroySocket(socket)
         const add = () => {
             socket.setTimeout(config.TCPNetworkNode.socket.setTimeout)
             if (this.hasSocketWithRemoteAddress(socket) || this.sockets.size >= config.TCPNetworkNode.maxConnectionsOut) return this.destroySocket(socket)
@@ -73,13 +73,13 @@ class TCPNetworkNode extends events.EventEmitter {
             .on('connect', () => add())
             .on('error', () => {})
             .on('close', () => this.destroySocket(socket))
-            .on('timeout', () => this.emit('blacklist', socket, 'idle'))
+            .on('timeout', () => this.emit('ban', socket))
             .on('data', chunk => {
                 const byteLength = Buffer.byteLength(chunk)
                 socket.bytesReadLastSecond += byteLength
-                if (socket.bytesReadLastSecond > config.TCPNetworkNode.socket.maxBytesPerSecond) return this.emit('blacklist', socket, 'sending data too fast')
+                if (socket.bytesReadLastSecond > config.TCPNetworkNode.socket.maxBytesPerSecond) return this.emit('ban', socket)
                 socket.data = Buffer.concat([socket.data, chunk])
-                if (Buffer.byteLength(socket.data) > config.TCPNetworkNode.socket.maxBytesInMemory) return this.emit('blacklist', socket, 'sending too much data without end')
+                if (Buffer.byteLength(socket.data) > config.TCPNetworkNode.socket.maxBytesInMemory) return this.emit('ban', socket)
                 let index = protocol.getEndIndex(socket.data)
                 while (index !== -1 && !socket.destroyed) {
                     const buffer = socket.data.slice(0, index)
@@ -87,7 +87,7 @@ class TCPNetworkNode extends events.EventEmitter {
                     if (Buffer.byteLength(buffer) !== 0) {
                         if (this.compareAndStoreHash(buffer)) continue
                         const parsed = protocol.parse(buffer)
-                        // if (parsed === null) return this.emit('blacklist', socket, 'parsed === null')
+                        // if (parsed === null) return this.emit('ban', socket)
                         if (parsed === null) continue
                         const { type, data } = parsed
                         this.emit(type, data)

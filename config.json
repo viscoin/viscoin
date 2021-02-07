@@ -77,10 +77,10 @@
         "maxDesync": 30000,
         "blockReward": "1000",
         "blockTime": 60000,
-        "smoothness": 2,
+        "smoothness": 4,
         "trustedAfterBlocks": 1440,
         "maxBlockSize": 65536,
-        "decimalPrecision": 15,
+        "decimalPrecision": 18,
         "genesisBlockTimestamp": -1,
         "minByteFee": {
             "bigint": "0",
