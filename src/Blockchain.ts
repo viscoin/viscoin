@@ -65,7 +65,7 @@ class Blockchain extends events.EventEmitter {
             return <void> await new Promise(resolve => this.once('updated-block-hashes', () => resolve()))
         }
         this.updatingBlockHashes = true
-        if (!this.hashes || this.hashes.current.length === 1) await this.setBlockHashes()
+        if (this.hashes === undefined || this.hashes.current.length === 0) await this.setBlockHashes()
         let block = await this.setLatestBlock(),
         index: number = null
         const newHashes: Array<string> = []
