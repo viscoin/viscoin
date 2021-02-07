@@ -15,7 +15,7 @@ export default (str: string) => {
         }
         str = str.replace(sign, '')
     }
-    else str += '000000000000000'
+    else str += new Array(config.Blockchain.decimalPrecision).fill('0').join('')
     try {
         return BigInt(str)
     }
