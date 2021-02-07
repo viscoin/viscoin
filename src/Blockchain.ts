@@ -91,13 +91,14 @@ class Blockchain extends events.EventEmitter {
         this.updatingBlockHashes = false
     }
     static async createGenesisBlock() {
+        if (config.Blockchain.genesisBlockTimestamp === -1) config.Blockchain.genesisBlockTimestamp = Date.now()
         const block = new Block({
             transactions: [],
             previousHash: Buffer.alloc(32, 0x00),
             height: 0,
             difficulty: 1 << config.Blockchain.smoothness,
             nonce: 0,
-            timestamp: 0
+            timestamp: config.Blockchain.genesisBlockTimestamp
         })
         block.hash = await Block.calculateHash(block)
         return block
