@@ -81,7 +81,7 @@
         "trustedAfterBlocks": 1440,
         "maxBlockSize": 65536,
         "decimalPrecision": 18,
-        "genesisBlockTimestamp": -1,
+        "genesisBlockTimestamp": 1612705573224,
         "minByteFee": {
             "bigint": "0",
             "remainder": "0"
