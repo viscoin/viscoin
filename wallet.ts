@@ -41,7 +41,6 @@ const commands = {
     commands: async () => {
         let choices: Array<{ title: string, description: string, value: Function }> = [
             { title: 'Wallet', description: 'Select wallet', value: commands.select_wallet },
-            { title: 'API', description: 'API node status', value: commands.check_status },
             { title: 'Generate', description: 'Generate new wallet', value: commands.generate },
             { title: 'Import', description: 'Import new wallet', value: commands.import_wallet },
             { title: 'Exit', description: 'Exits', value: commands.exit }
@@ -301,17 +300,6 @@ const commands = {
         }
         functions.save_wallet(wallet.privateKey, wallet.words, name, passphrase)
         wallet.name = name
-        console.clear()
-        commands.commands()
-    },
-    check_status: async () => {
-        try {
-            if (await HTTPApi.index()) console.log(chalk.greenBright('Online'))
-        }
-        catch {
-            console.log(chalk.redBright('Offline'))
-        }
-        await commands.pause()
         console.clear()
         commands.commands()
     },
