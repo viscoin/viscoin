@@ -100,7 +100,7 @@ class Blockchain extends events.EventEmitter {
             const oldHashes = this.hashes.current.slice(index + 1)
             const oldWork = await this.getWorkSumHashes(oldHashes)
             const newWork = await this.getWorkSumHashes(newHashes)
-            if (newWork > oldWork) {
+            if (newWork >= oldWork) {
                 this.hashes.old = oldHashes
                 this.hashes.current = this.hashes.current.slice(0, index + 1)
                 this.hashes.current.push(...newHashes)
