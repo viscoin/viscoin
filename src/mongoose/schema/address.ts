@@ -1,7 +1,7 @@
 import * as mongoose from 'mongoose'
-import * as config from '../../../config.json'
+import * as configMongoose from '../../../config/mongoose.json'
 const options = {}
-for (const property in config.mongoose.schema.address) {
-    options[config.mongoose.schema.address[property].name] = config.mongoose.schema.address[property].type
+for (const property in configMongoose.schema.address) {
+    options[configMongoose.schema.address[property].name] = configMongoose.schema.address[property].type
 }
 export default mongoose.Schema(options, { collection: 'addresses', versionKey: false })

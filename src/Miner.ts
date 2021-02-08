@@ -1,4 +1,5 @@
-import * as config from '../config.json'
+import * as configSettings from '../config/settings.json'
+import * as configNetwork from '../config/network.json'
 import Block from './Block'
 import { Worker } from 'worker_threads'
 import { cpus } from 'os'
@@ -22,8 +23,8 @@ class Miner extends events.EventEmitter {
     constructor(miningRewardAddress: Buffer) {
         super()
         this.tcpClient = TCPApi.createClient()
-        if (config.TCPApi.enabled) {
-            this.tcpClient.connect(config.TCPApi.port, config.TCPApi.address, true)
+        if (configSettings.TCPApi.enabled) {
+            this.tcpClient.connect(configNetwork.TCPApi.port, configNetwork.TCPApi.address, true)
             this.tcpClient.on('block', async () => {
                 this.emitThreadsPause()
                 await this.start()
@@ -34,7 +35,7 @@ class Miner extends events.EventEmitter {
         }
         this.workers = []
         this.threads = cpus().length
-        if (config.Miner.threads) this.threads = config.Miner.threads
+        if (configSettings.Miner.threads) this.threads = configSettings.Miner.threads
         this.threadsReady = 0
         this.hashrate = 0
         setInterval(() => {
@@ -44,9 +45,9 @@ class Miner extends events.EventEmitter {
         this.miningRewardAddress = miningRewardAddress
         this.once('ready', async () => await this.start())
         this.restarting = false
-        this.setMaxListeners(config.Miner.maxListeners)
-        if (config.consoleLog.hardware === true) logHardware()
-        if (config.consoleLog.hashrate === true) this.on('hashrate', hashrate => console.log(`${toLocaleTimeString()} ${chalk.yellowBright(hashrate)} ${chalk.redBright('H/s')}`))
+        this.setMaxListeners(configSettings.Miner.maxListeners)
+        if (configSettings.consoleLog.hardware === true) logHardware()
+        if (configSettings.consoleLog.hashrate === true) this.on('hashrate', hashrate => console.log(`${toLocaleTimeString()} ${chalk.yellowBright(hashrate)} ${chalk.redBright('H/s')}`))
     }
     async restart() {
         if (this.restarting === true) {
@@ -58,7 +59,7 @@ class Miner extends events.EventEmitter {
         setTimeout(() => {
             this.emit('restarted')
             this.restarting = false
-        }, config.Miner.restartDelay)
+        }, configSettings.Miner.restartDelay)
     }
     async start() {
         const block = await this.getNewBlock()
@@ -69,7 +70,7 @@ class Miner extends events.EventEmitter {
         // || previousBlock.hash.equals(block.previousHash) === false
         // || block.hasValidTransactions() === false) return setTimeout(async () => {
             await this.start()
-        }, config.HTTPApi.autoRetry)
+        }, configSettings.HTTPApi.autoRetry)
         this.emitThreadsMineNewBlock(block, previousBlock)
     }
     emitThreadsMineNewBlock(block: Block, previousBlock: Block) {
@@ -107,7 +108,7 @@ class Miner extends events.EventEmitter {
         catch {
             setTimeout(async () => {
                 await this.postBlock(block)
-            }, config.HTTPApi.autoRetry)
+            }, configSettings.HTTPApi.autoRetry)
         }
     }
     addWorker(worker: Worker) {

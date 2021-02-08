@@ -1,13 +1,13 @@
-import * as config from '../config.json'
+import * as configSettings from '../config/settings.json'
 import * as util from 'util'
-const { hash: _hash, types, version } = require(`../${config.argon2}`)
+const { hash: _hash, types, version } = require(`../${configSettings.argon2}`)
 const hash = util.promisify(_hash),
 salt = Buffer.alloc(8),
 options = {
     hashLength: 32,
-    timeCost: config.Wallet.argon2.timeCost,
-    memoryCost: config.Wallet.argon2.memoryCost,
-    parallelism: config.Wallet.argon2.parallelism,
+    timeCost: configSettings.Wallet.argon2.timeCost,
+    memoryCost: configSettings.Wallet.argon2.memoryCost,
+    parallelism: configSettings.Wallet.argon2.parallelism,
     type: types.argon2id,
     version
 }

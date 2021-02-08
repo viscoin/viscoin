@@ -1,6 +1,6 @@
 import * as net from 'net'
 import * as events from 'events'
-import * as config from '../config.json'
+import * as configNetwork from '../config/network.json'
 import * as http from 'http'
 import * as express from 'express'
 import Transaction from './Transaction'
@@ -77,7 +77,7 @@ class HTTPApi extends events.EventEmitter {
         res.end(JSON.stringify(data, null, 4))
     }
     start() {
-        this.server.listen(config.HTTPApi.port, config.HTTPApi.address)
+        this.server.listen(configNetwork.HTTPApi.port, configNetwork.HTTPApi.address)
     }
     stop() {
         this.server.close()
@@ -85,8 +85,8 @@ class HTTPApi extends events.EventEmitter {
     static get(path: string) {
         return <any> new Promise((resolve, reject) => {
             const req = http.request({
-                host: config.HTTPApi.address,
-                port: config.HTTPApi.port,
+                host: configNetwork.HTTPApi.address,
+                port: configNetwork.HTTPApi.port,
                 method: 'GET',
                 path
             }, res => {
@@ -111,8 +111,8 @@ class HTTPApi extends events.EventEmitter {
     static post(path: string, data: string) {
         return <any> new Promise((resolve, reject) => {
             const req = http.request({
-                host: config.HTTPApi.address,
-                port: config.HTTPApi.port,
+                host: configNetwork.HTTPApi.address,
+                port: configNetwork.HTTPApi.port,
                 method: 'POST',
                 path,
                 headers: {

@@ -1,4 +1,4 @@
-import * as config from '../config.json'
+import * as configCore from '../config/core.json'
 export default (str: string) => {
     const signs = []
     for (const sign of [ '.', ',' ]) {
@@ -10,12 +10,12 @@ export default (str: string) => {
     if (sign) {
         if (str.replace(sign, '').includes(sign)) return null
         const index = str.indexOf(sign)
-        while (str.slice(index).length <= config.Blockchain.decimalPrecision) {
+        while (str.slice(index).length <= configCore.decimalPrecision) {
             str += '0'
         }
         str = str.replace(sign, '')
     }
-    else str += new Array(config.Blockchain.decimalPrecision).fill('0').join('')
+    else str += new Array(configCore.decimalPrecision).fill('0').join('')
     try {
         return BigInt(str)
     }

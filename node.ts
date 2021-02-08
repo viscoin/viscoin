@@ -1,7 +1,7 @@
 import init from './src/mongoose/init'
 init()
 import Node from './src/Node'
-import * as config from './config.json'
+import * as configNetwork from './config/network.json'
 import * as chalk from 'chalk'
 import base58 from './src/base58'
 import toLocaleTimeString from './src/chalk/LocaleTimeString'
@@ -12,12 +12,12 @@ import { setPriority } from 'os'
 if (isMainThread) {
     const node = new Node()
     console.log(`${toLocaleTimeString()} ${chalk.cyanBright('Starting node...')}`)
-    node.node.on('listening', () => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('Node (TCP) listening on')} ${chalk.blueBright(`${config.TCPNetworkNode.server.address}:${config.TCPNetworkNode.server.port}`)}`))
-    node.node.on('error', e => console.log(`${toLocaleTimeString()} ${chalk.redBright('Node (TCP) error')} ${chalk.blueBright(`${config.TCPNetworkNode.server.address}:${config.TCPNetworkNode.server.port}`)} ${chalk.redBright(e?.code)}`))
-    node.tcpServer.on('listening', () => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('API (HTTP) listening on')} ${chalk.blueBright(`${config.HTTPApi.address}:${config.HTTPApi.port}`)}`))
-    node.tcpServer.on('error', e => console.log(`${toLocaleTimeString()} ${chalk.redBright('API (HTTP) error')} ${chalk.blueBright(`${config.HTTPApi.address}:${config.HTTPApi.port}`)} ${chalk.redBright(e?.code)}`))
-    node.httpApi.on('listening', () => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('API (TCP) listening on')} ${chalk.blueBright(`${config.TCPApi.address}:${config.TCPApi.port}`)}`))
-    node.httpApi.on('error', e => console.log(`${toLocaleTimeString()} ${chalk.redBright('API (TCP) error')} ${chalk.blueBright(`${config.TCPApi.address}:${config.TCPApi.port}`)} ${chalk.redBright(e?.code)}`))
+    node.node.on('listening', () => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('Node (TCP) listening on')} ${chalk.blueBright(`${configNetwork.TCPNetworkNode.address}:${configNetwork.TCPNetworkNode.port}`)}`))
+    node.node.on('error', e => console.log(`${toLocaleTimeString()} ${chalk.redBright('Node (TCP) error')} ${chalk.blueBright(`${configNetwork.TCPNetworkNode.address}:${configNetwork.TCPNetworkNode.port}`)} ${chalk.redBright(e?.code)}`))
+    node.tcpServer.on('listening', () => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('API (HTTP) listening on')} ${chalk.blueBright(`${configNetwork.HTTPApi.address}:${configNetwork.HTTPApi.port}`)}`))
+    node.tcpServer.on('error', e => console.log(`${toLocaleTimeString()} ${chalk.redBright('API (HTTP) error')} ${chalk.blueBright(`${configNetwork.HTTPApi.address}:${configNetwork.HTTPApi.port}`)} ${chalk.redBright(e?.code)}`))
+    node.httpApi.on('listening', () => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('API (TCP) listening on')} ${chalk.blueBright(`${configNetwork.TCPApi.address}:${configNetwork.TCPApi.port}`)}`))
+    node.httpApi.on('error', e => console.log(`${toLocaleTimeString()} ${chalk.redBright('API (TCP) error')} ${chalk.blueBright(`${configNetwork.TCPApi.address}:${configNetwork.TCPApi.port}`)} ${chalk.redBright(e?.code)}`))
     node.tcpServer.on('connection', (port, address) => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('API (TCP) connection')} ${chalk.blueBright(`${address}:${port}`)}`))
     node.on('socket', socket => console.log(`${toLocaleTimeString()} ${chalk.green('new')} ${chalk.yellow('Socket')} ${socket.remoteAddress}:${socket.remotePort}`))
     node.on('ban', socket => console.log(`${toLocaleTimeString()} ${chalk.redBright('Banned')} ${socket.remoteAddress}:${socket.remotePort}`))

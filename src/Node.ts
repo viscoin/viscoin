@@ -2,7 +2,8 @@ import Blockchain from "./Blockchain"
 import TCPNetworkNode from "./TCPNetworkNode"
 import TCPApi from "./TCPApi"
 import HTTPApi from "./HTTPApi"
-import * as config from '../config.json'
+import * as configSettings from '../config/settings.json'
+import * as configMongoose from '../config/mongoose.json'
 import * as events from 'events'
 import protocol from './protocol'
 import Block from './Block'
@@ -35,36 +36,36 @@ class Node extends events.EventEmitter {
         this.workersReady = new Set()
         this.workersBusy = new Set()
         this.threads = cpus().length
-        if (config.Node.threads) this.threads = config.Node.threads
+        if (configSettings.Node.threads) this.threads = configSettings.Node.threads
         this.node = new TCPNetworkNode()
         this.blockchain = new Blockchain()
         this.tcpServer = TCPApi.createServer()
         this.httpApi = new HTTPApi()
-        if (config.Node.hostNode === true) this.node.start()
-        if (config.Node.connectToNetwork === true) this.reconnect()
-        if (config.Node.syncNode.enabled === true) this.nextSync()
+        if (configSettings.Node.hostNode === true) this.node.start()
+        if (configSettings.Node.connectToNetwork === true) this.reconnect()
+        if (configSettings.Node.syncNode.enabled === true) this.nextSync()
         this.node.on('block', async block => this.emit('add-block', block))
         this.node.on('transaction', async transaction => this.emit('add-transaction', transaction))
         this.node.on('node', node => {
-            if (config.Node.connectToNetwork) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
+            if (configSettings.Node.connectToNetwork) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
             this.emit('node', node)
         })
         this.node.on('socket', socket => {
-            if (!fs.existsSync(config.logs.path)) fs.mkdirSync(config.logs.path)
-            if (config.logs.save === true) fs.appendFileSync(`${config.logs.path}/connections.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
+            if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/connections.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('socket', socket)
         })
         this.node.on('ban', (socket) => {
-            if (!fs.existsSync(config.logs.path)) fs.mkdirSync(config.logs.path)
-            if (config.logs.save === true) fs.appendFileSync(`${config.logs.path}/banned.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
+            if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
+            if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/banned.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('ban', socket)
         })
-        if (config.TCPApi.enabled) {
+        if (configSettings.TCPApi.enabled) {
             this.tcpServer.start()
         }
-        if (config.HTTPApi.enabled) {
+        if (configSettings.HTTPApi.enabled) {
             this.httpApi.start()
-            this.httpApi.on('get-config', cb => cb(config))
+            this.httpApi.on('get-config', cb => cb(configSettings))
             this.httpApi.on('get-transactions-pending', cb => cb(this.blockchain.pendingTransactions.map(e => Transaction.minify(e))))
             this.httpApi.on('get-block', async (height, cb) => cb(Block.minify(await this.blockchain.getBlockByHeight(height))))
             this.httpApi.on('get-block-latest', async cb => cb(Block.minify(await this.blockchain.getLatestBlock())))
@@ -74,12 +75,12 @@ class Node extends events.EventEmitter {
             this.httpApi.on('post-block', async (block, cb) => this.emit('add-block', block, code => cb(code)))
             this.httpApi.on('get-transactions-address', async (address, cb) => {
                 const projection = `
-                    ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.to.name}
-                    ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.from.name}
-                    ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.amount.name}
-                    ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.minerFee.name}
-                    ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.timestamp.name}
-                    ${config.mongoose.schema.block.timestamp.name}
+                    ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.to.name}
+                    ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.from.name}
+                    ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.amount.name}
+                    ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.minerFee.name}
+                    ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.timestamp.name}
+                    ${configMongoose.schema.block.timestamp.name}
                 `
                 const { transactions, unconfirmed_transactions } = await this.blockchain.getTransactionsOfAddress(address, projection)
                 cb([
@@ -104,7 +105,7 @@ class Node extends events.EventEmitter {
         this.on('transaction', (transaction, code) => {
             if (code === 0) {
                 this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
-                if (config.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
+                if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
             }
         })
         this.on('add-block', async (block: Block, cb) => {
@@ -123,7 +124,7 @@ class Node extends events.EventEmitter {
         this.on('block', (block, code) => {
             if (code === 0) {
                 this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('block', Block.minify(block)))
-                if (config.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('block', Block.minify(block)))
+                if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('block', Block.minify(block)))
             }
         })
         this.verifyrate = {
@@ -137,15 +138,15 @@ class Node extends events.EventEmitter {
                 block: 0
             }
         }, 1000)
-        if (config.consoleLog.hardware === true) logHardware()
-        if (config.consoleLog.verifyrate === true) this.on('verifyrate', ({ transaction, block }) => console.log(`${toLocaleTimeString()} ${chalk.yellowBright(block)} ${chalk.redBright('B/s')} ${chalk.yellowBright(transaction)} ${chalk.redBright('T/s')}`))
+        if (configSettings.consoleLog.hardware === true) logHardware()
+        if (configSettings.consoleLog.verifyrate === true) this.on('verifyrate', ({ transaction, block }) => console.log(`${toLocaleTimeString()} ${chalk.yellowBright(block)} ${chalk.redBright('B/s')} ${chalk.yellowBright(transaction)} ${chalk.redBright('T/s')}`))
     }
     getNodes() {
-        let arr = parseNodes(fs.readFileSync(config.addressList, 'binary'))
-        if (config.logs.use === true) {
-            if (fs.existsSync(`${config.logs.path}/connections.txt`)) arr.push(...parseNodes(fs.readFileSync(`${config.logs.path}/connections.txt`, 'binary')))
-            if (fs.existsSync(`${config.logs.path}/banned.txt`)) {
-                const _arr = parseNodes(fs.readFileSync(`${config.logs.path}/banned.txt`, 'binary'))
+        let arr = parseNodes(fs.readFileSync(configSettings.addressList, 'binary'))
+        if (configSettings.logs.use === true) {
+            if (fs.existsSync(`${configSettings.logs.path}/connections.txt`)) arr.push(...parseNodes(fs.readFileSync(`${configSettings.logs.path}/connections.txt`, 'binary')))
+            if (fs.existsSync(`${configSettings.logs.path}/banned.txt`)) {
+                const _arr = parseNodes(fs.readFileSync(`${configSettings.logs.path}/banned.txt`, 'binary'))
                 arr = arr.filter(e => _arr.includes(e) === false)
             }
         }
@@ -153,7 +154,7 @@ class Node extends events.EventEmitter {
     }
     reconnect() {
         this.node.connectToNetwork(this.getNodes())
-        if (config.Node.autoReconnect) setTimeout(this.reconnect.bind(this), config.Node.autoReconnect)
+        if (configSettings.Node.autoReconnect) setTimeout(this.reconnect.bind(this), configSettings.Node.autoReconnect)
     }
     async nextSync() {
         const block = await this.blockchain.getNextSyncBlock()
@@ -161,7 +162,7 @@ class Node extends events.EventEmitter {
             const buffer = protocol.constructDataBuffer('block', Block.minify(block))
             this.node.broadcastAndStoreDataHash(buffer)
         }
-        setTimeout(this.nextSync.bind(this), config.Node.syncNode.nextSyncTimeout)
+        setTimeout(this.nextSync.bind(this), configSettings.Node.syncNode.nextSyncTimeout)
     }
     addWorker(worker: Worker) {
         this.workersBusy.add(worker)

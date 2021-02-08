@@ -1,6 +1,7 @@
 import * as net from 'net'
 import * as events from 'events'
-import * as config from '../config.json'
+import * as configSettings from '../config/settings.json'
+import * as configNetwork from '../config/network.json'
 import * as crypto from 'crypto'
 import protocol from './protocol'
 import parseNodes from './parseNodes'
@@ -23,16 +24,16 @@ class TCPNetworkNode extends events.EventEmitter {
         this.hashes = []
         this.sockets = new Set()
         this.banned = []
-        if (config.logs.use && fs.existsSync(`${config.logs.path}/banned.txt`)) this.banned = parseNodes(fs.readFileSync(`${config.logs.path}/banned.txt`, 'binary')).map(e => `${e.address}:${e.port}`)
+        if (configSettings.logs.use && fs.existsSync(`${configSettings.logs.path}/banned.txt`)) this.banned = parseNodes(fs.readFileSync(`${configSettings.logs.path}/banned.txt`, 'binary')).map(e => `${e.address}:${e.port}`)
         this.on('ban', (socket: Socket) => {
             this.destroySocket(socket)
             this.banned.push(socket.remoteAddress)
         })
         setInterval(this.interval[0].bind(this), 1000)
-        setInterval(this.interval[1].bind(this), config.TCPNetworkNode.hashes.interval)
+        setInterval(this.interval[1].bind(this), configSettings.TCPNetworkNode.hashes.interval)
         // server
         this.server = new net.Server()
-        this.server.maxConnections = config.TCPNetworkNode.server.maxConnectionsIn
+        this.server.maxConnections = configSettings.TCPNetworkNode.server.maxConnectionsIn
         this.server
             .on('connection', (socket: Socket) => {
                 this.addSocket(socket)
@@ -50,14 +51,14 @@ class TCPNetworkNode extends events.EventEmitter {
             }
         },
         () => {
-            this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - config.TCPNetworkNode.hashes.timeToLive)
+            this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - configSettings.TCPNetworkNode.hashes.timeToLive)
         }
     ]
     addSocket(socket: Socket) {
         if (this.banned.includes(socket.remoteAddress)) return this.destroySocket(socket)
         const add = () => {
-            socket.setTimeout(config.TCPNetworkNode.socket.setTimeout)
-            if (this.hasSocketWithRemoteAddress(socket) || this.sockets.size >= config.TCPNetworkNode.maxConnectionsOut) return this.destroySocket(socket)
+            socket.setTimeout(configSettings.TCPNetworkNode.socket.setTimeout)
+            if (this.hasSocketWithRemoteAddress(socket) || this.sockets.size >= configSettings.TCPNetworkNode.maxConnectionsOut) return this.destroySocket(socket)
             this.sockets.add(socket)
             this.broadcastAndStoreDataHash(protocol.constructDataBuffer('node', {
                 address: socket.remoteAddress,
@@ -77,9 +78,9 @@ class TCPNetworkNode extends events.EventEmitter {
             .on('data', chunk => {
                 const byteLength = Buffer.byteLength(chunk)
                 socket.bytesReadLastSecond += byteLength
-                if (socket.bytesReadLastSecond > config.TCPNetworkNode.socket.maxBytesPerSecond) return this.emit('ban', socket)
+                if (socket.bytesReadLastSecond > configSettings.TCPNetworkNode.socket.maxBytesPerSecond) return this.emit('ban', socket)
                 socket.data = Buffer.concat([socket.data, chunk])
-                if (Buffer.byteLength(socket.data) > config.TCPNetworkNode.socket.maxBytesInMemory) return this.emit('ban', socket)
+                if (Buffer.byteLength(socket.data) > configSettings.TCPNetworkNode.socket.maxBytesInMemory) return this.emit('ban', socket)
                 let index = protocol.getEndIndex(socket.data)
                 while (index !== -1 && !socket.destroyed) {
                     const buffer = socket.data.slice(0, index)
@@ -106,7 +107,7 @@ class TCPNetworkNode extends events.EventEmitter {
     addHash(data: Buffer) {
         const hash = crypto.createHash('sha256').update(data).digest()
         this.hashes.push({ hash, timestamp: Date.now() })
-        if (this.hashes.length > config.TCPNetworkNode.hashes.length) this.hashes.shift()
+        if (this.hashes.length > configSettings.TCPNetworkNode.hashes.length) this.hashes.shift()
     }
     broadcast(data: Buffer) {
         for (const socket of this.sockets) {
@@ -144,8 +145,8 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (Buffer.byteLength(Buffer.from(node.address.split('.'))) !== 4
                 && Buffer.byteLength(Buffer.from(node.address.split(':'))) > 8) continue
             }
-            if (node.port === config.TCPNetworkNode.server.port
-            && node.address === config.TCPNetworkNode.server.address) continue
+            if (node.port === configNetwork.TCPNetworkNode.port
+            && node.address === configNetwork.TCPNetworkNode.address) continue
             const socket = <Socket> net.connect(node.port, node.address)
             this.addSocket(socket)
         }
@@ -162,7 +163,7 @@ class TCPNetworkNode extends events.EventEmitter {
     }
     // server
     start() {
-        this.server.listen(config.TCPNetworkNode.server.port, config.TCPNetworkNode.server.address)
+        this.server.listen(configNetwork.TCPNetworkNode.port, configNetwork.TCPNetworkNode.address)
     }
     stop() {
         this.server.close()

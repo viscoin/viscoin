@@ -1,0 +1,76 @@
+{
+    "EOL": "",
+    "HTTPApi": {
+        "enabled": true,
+        "autoRetry": 1000
+    },
+    "Miner": {
+        "miningRewardAddress": "DFUu7jLQ1vgqcNP3xF75i8ZBmXP",
+        "restartDelay": 6000,
+        "maxListeners": 500,
+        "threads": 0
+    },
+    "Node": {
+        "hostNode": true,
+        "connectToNetwork": true,
+        "autoReconnect": 60000,
+        "syncNode": {
+            "enabled": true,
+            "nextSyncTimeout": 100
+        },
+        "threads": 0
+    },
+    "TCPApi": {
+        "enabled": true,
+        "maxConnections": 20,
+        "autoReconnect": 1000
+    },
+    "TCPNetworkNode": {
+        "hashes": {
+            "length": 10000,
+            "timeToLive": 1000,
+            "interval": 100
+        },
+        "socket": {
+            "maxBytesPerSecond": 1048576,
+            "setTimeout": 60000,
+            "maxBytesInMemory": 131072
+        },
+        "server": {
+            "maxConnectionsIn": 10
+        },
+        "maxConnectionsOut": 10
+    },
+    "Wallet": {
+        "wordlist": "english.txt",
+        "timesToRepeatBroadcastTransaction": 5,
+        "argon2": {
+            "timeCost": 2,
+            "memoryCost": 1048576,
+            "parallelism": 1
+        }
+    },
+    "addressList": "./addresses.txt",
+    "argon2": "./node_modules/argon2/lib/binding/napi-v3/argon2.node",
+    "confirmations": 6,
+    "consoleLog": {
+        "hardware": true,
+        "hashrate": true,
+        "verifyrate": false
+    },
+    "logs": {
+        "save": true,
+        "use": true,
+        "path": "./logs"
+    },
+    "maxDesync": 30000,
+    "minByteFee": {
+        "bigint": "0",
+        "remainder": "0"
+    },
+    "optimization": {
+        "enabled": true,
+        "chanceToNotUse": 0
+    },
+    "trustedAfterBlocks": 1440
+}

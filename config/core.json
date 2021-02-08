@@ -1,0 +1,8 @@
+{
+    "blockReward": "1000",
+    "blockTime": 60000,
+    "decimalPrecision": 18,
+    "genesisBlockTimestamp": 1612705573224,
+    "maxBlockSize": 65536,
+    "smoothness": 4
+}

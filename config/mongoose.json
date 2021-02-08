@@ -1,0 +1,79 @@
+{
+    "connectionString": "mongodb://localhost:27017/viscoin",
+    "schema": {
+        "block": {
+            "previousHash": {
+                "type": "String",
+                "name": 0
+            },
+            "height": {
+                "type": "Number",
+                "name": 1
+            },
+            "difficulty": {
+                "type": "Number",
+                "name": 2
+            },
+            "nonce": {
+                "type": "Number",
+                "name": 3
+            },
+            "timestamp": {
+                "type": "Number",
+                "name": 4
+            },
+            "transactions": {
+                "type": "[transaction]",
+                "name": 5
+            },
+            "hash": {
+                "type": "String",
+                "name": "_id"
+            }
+        },
+        "transaction": {
+            "to": {
+                "type": "String",
+                "name": "a"
+            },
+            "from": {
+                "type": "String",
+                "name": "b"
+            },
+            "amount": {
+                "type": "String",
+                "name": "c"
+            },
+            "timestamp": {
+                "type": "Number",
+                "name": "d"
+            },
+            "minerFee": {
+                "type": "String",
+                "name": "e"
+            },
+            "signature": {
+                "type": "String",
+                "name": "f"
+            },
+            "recoveryParam": {
+                "type": "Number",
+                "name": "g"
+            }
+        },
+        "address": {
+            "address": {
+                "type": "String",
+                "name": "_id"
+            },
+            "balance": {
+                "type": "String",
+                "name": 0
+            },
+            "hash": {
+                "type": "String",
+                "name": 1
+            }
+        }
+    }
+}

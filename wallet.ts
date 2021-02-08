@@ -10,7 +10,7 @@ import wordsToKey from './src/wordsToKey'
 import beautifyBigInt from './src/beautifyBigInt'
 import parseBigInt from './src/parseBigInt'
 import HTTPApi from './src/HTTPApi'
-import * as config from './config.json'
+import * as configSettings from './config/settings.json'
 import walletPassphraseHash from './src/walletPassphraseHash'
 
 let wallet: Wallet | undefined = undefined
@@ -147,7 +147,7 @@ const commands = {
                         if (code === 0) console.log(chalk.greenBright('Transaction accepted'))
                         else console.log(chalk.redBright(`Transaction not accepted, code ${code}`))
                     }
-                    if (++i < config.Wallet.timesToRepeatBroadcastTransaction) setTimeout(loop, Math.pow(i, 2) * 1000)
+                    if (++i < configSettings.Wallet.timesToRepeatBroadcastTransaction) setTimeout(loop, Math.pow(i, 2) * 1000)
                 }
                 catch {
                     functions.log_unable_to_connect_to_api()
@@ -449,7 +449,7 @@ const commands = {
                 .sort((a, b) => a.timestamp - b.timestamp)
             const latestBlock = await HTTPApi.getLatestBlock()
             const blocks = [ latestBlock ]
-            for (let i = latestBlock.height - 1; i >= latestBlock.height + 1 - config.confirmations && i >= 0; i--) {
+            for (let i = latestBlock.height - 1; i >= latestBlock.height + 1 - configSettings.confirmations && i >= 0; i--) {
                 blocks.push(await HTTPApi.getBlockByHeight(i))
             }
             if (transactions.length) {
@@ -459,9 +459,9 @@ const commands = {
                         if (transaction.timestamp >= blocks[i].timestamp) {
                             if (transaction.from !== undefined) {
                                 if (i === 0) str = `${str} ${chalk.redBright(0)}`
-                                else if (config.confirmations > 0) str = `${str} ${chalk.yellowBright(i)}`
+                                else if (configSettings.confirmations > 0) str = `${str} ${chalk.yellowBright(i)}`
                             }
-                            else if (config.confirmations > 0) str = `${str} ${chalk.yellowBright(i + 1)}`
+                            else if (configSettings.confirmations > 0) str = `${str} ${chalk.yellowBright(i + 1)}`
                             break
                         }
                     }

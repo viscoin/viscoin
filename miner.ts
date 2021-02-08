@@ -1,4 +1,4 @@
-import * as config from './config.json'
+import * as settings from './config/settings.json'
 import MinerThread from './src/MinerThread'
 import { Worker, isMainThread } from 'worker_threads'
 import Miner from './src/Miner'
@@ -8,7 +8,7 @@ import * as chalk from 'chalk'
 import toLocaleTimeString from './src/chalk/LocaleTimeString'
 
 if (isMainThread) {
-    const miner = new Miner(base58.decode(config.Miner.miningRewardAddress))
+    const miner = new Miner(base58.decode(settings.Miner.miningRewardAddress))
     console.log(`${toLocaleTimeString()} ${chalk.cyanBright('Starting miner with')} ${chalk.yellowBright(miner.threads)} ${chalk.cyanBright('threads...')}`)
     miner.tcpClient.on('connect', (port, address) => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('API (TCP) connected')} ${chalk.blueBright(`${address}:${port}`)}`))
     miner.on('mined', (block, code) => console.log(`${toLocaleTimeString()} ${chalk.blueBright('Mined')} ${chalk.green('new')} ${chalk.yellow('Block')} { height: ${chalk.yellowBright(block.height)} } { code: ${chalk.yellowBright(code)} }`))

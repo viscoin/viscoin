@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose'
-import * as config from '../../config.json'
+import * as configMongoose from '../../config/mongoose.json'
 export default () => {
     const dbOptions = {
         useNewUrlParser: true,
@@ -20,5 +20,5 @@ export default () => {
     mongoose.connection.on("disconnected", () => {
         console.log("Mongoose connection disconnected")
     })
-    mongoose.connect(config.mongoose.connectionString, dbOptions)
+    mongoose.connect(configMongoose.connectionString, dbOptions)
 }

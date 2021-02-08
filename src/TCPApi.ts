@@ -1,6 +1,7 @@
 import * as net from 'net'
 import * as events from 'events'
-import * as config from '../config.json'
+import * as configSettings from '../config/settings.json'
+import * as configNetwork from '../config/network.json'
 import protocol from './protocol'
 interface Socket extends net.Socket {
     data: Buffer
@@ -14,7 +15,7 @@ class Server extends events.EventEmitter {
         super()
         this.sockets = new Set()
         this.server = new net.Server()
-        this.server.maxConnections = config.TCPApi.maxConnections
+        this.server.maxConnections = configSettings.TCPApi.maxConnections
         this.server
             .on('connection', (socket: net.Socket) => {
                 this.sockets.add(socket)
@@ -28,7 +29,7 @@ class Server extends events.EventEmitter {
             .on('close', () => {})
     }
     start() {
-        this.server.listen(config.TCPApi.port, config.TCPApi.address)
+        this.server.listen(configNetwork.TCPApi.port, configNetwork.TCPApi.address)
     }
     stop() {
         this.server.close()
@@ -58,7 +59,7 @@ class Client extends events.EventEmitter {
         socket.on('error', () => {})
         socket.on('close', () => {
             this.sockets.delete(socket)
-            if (autoReconnect) setTimeout(() => this.connect(port, host, autoReconnect), config.TCPApi.autoReconnect)
+            if (autoReconnect) setTimeout(() => this.connect(port, host, autoReconnect), configSettings.TCPApi.autoReconnect)
         })
         socket.on('data', chunk => {
             socket.data = Buffer.concat([ socket.data, chunk ])

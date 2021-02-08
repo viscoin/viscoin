@@ -1,4 +1,6 @@
-import * as config from '../config.json'
+import * as configSettings from '../config/settings.json'
+import * as configCore from '../config/core.json'
+import * as configMongoose from '../config/mongoose.json'
 import Transaction from './Transaction'
 import Block from './Block'
 import model_block from './mongoose/model/block'
@@ -21,6 +23,7 @@ interface Blockchain {
         remainder: bigint
     }
     addresses: object
+    genesisBlockTimestamp: number
 }
 class Blockchain extends events.EventEmitter {
     constructor() {
@@ -29,19 +32,20 @@ class Blockchain extends events.EventEmitter {
         this.syncIndex = 0
         this.updatingBlockHashes = false
         this.minByteFee = {
-            bigint: parseBigInt(config.Blockchain.minByteFee.bigint),
-            remainder: parseBigInt(config.Blockchain.minByteFee.remainder)
+            bigint: parseBigInt(configSettings.minByteFee.bigint),
+            remainder: parseBigInt(configSettings.minByteFee.remainder)
         }
         this.updateBlockHashes()
         this.addresses = {}
+        this.genesisBlockTimestamp = configCore.genesisBlockTimestamp === -1 ? Date.now() : configCore.genesisBlockTimestamp
     }
     static difficultyToWork(difficulty: number) {
-        return 2n ** BigInt(difficulty >> config.Blockchain.smoothness)
+        return 2n ** BigInt(difficulty >> configCore.smoothness)
     }
     async getWorkSumHashes(hashes: Array<string>) {
         let sum = 0n
         for (const hash of hashes) {
-            const { difficulty } = await Block.load({ [config.mongoose.schema.block.hash.name]: hash }, null, { lean: true })
+            const { difficulty } = await Block.load({ [configMongoose.schema.block.hash.name]: hash }, null, { lean: true })
             sum += Blockchain.difficultyToWork(difficulty)
         }
         return sum
@@ -58,12 +62,12 @@ class Blockchain extends events.EventEmitter {
         while (block) {
             this.hashes.current.unshift(block.hash.toString('binary'))
             height = block.height
-            block = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
+            block = await Block.load({ [configMongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         }
         if (height !== 1) {
             const info = await model_block
                 .deleteMany({
-                    [config.mongoose.schema.block.height.name]: {
+                    [configMongoose.schema.block.height.name]: {
                         $gte: height
                     }
                 })
@@ -86,11 +90,11 @@ class Blockchain extends events.EventEmitter {
                     index = i
                     break
                 }
-                if (i < this.hashes.current.length - 1 - config.Blockchain.trustedAfterBlocks) break
+                if (i < this.hashes.current.length - 1 - configSettings.trustedAfterBlocks) break
             }
             if (index !== null) break
             newHashes.unshift(block.hash.toString('binary'))
-            block = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
+            block = await Block.load({ [configMongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         }
         if (index !== null) {
             const oldHashes = this.hashes.current.slice(index + 1)
@@ -106,22 +110,21 @@ class Blockchain extends events.EventEmitter {
         this.emit('updated-block-hashes')
         this.updatingBlockHashes = false
     }
-    static async createGenesisBlock() {
-        if (config.Blockchain.genesisBlockTimestamp === -1) config.Blockchain.genesisBlockTimestamp = Date.now()
+    async createGenesisBlock() {
         const block = new Block({
             transactions: [],
             previousHash: Buffer.alloc(32, 0x00),
             height: 0,
-            difficulty: 1 << config.Blockchain.smoothness,
+            difficulty: 1 << configCore.smoothness,
             nonce: 0,
-            timestamp: config.Blockchain.genesisBlockTimestamp
+            timestamp: this.genesisBlockTimestamp
         })
         block.hash = await Block.calculateHash(block)
         return block
     }
     async setLatestBlock() {
-        let block = await Block.load(null, null, { sort: { [config.mongoose.schema.block.height.name]: -1, [config.mongoose.schema.block.difficulty.name]: -1 }, lean: true })
-        if (block === null) block = await Blockchain.createGenesisBlock()
+        let block = await Block.load(null, null, { sort: { [configMongoose.schema.block.height.name]: -1, [configMongoose.schema.block.difficulty.name]: -1 }, lean: true })
+        if (block === null) block = await this.createGenesisBlock()
         this.latestBlock = block
         return block
     }
@@ -148,8 +151,8 @@ class Blockchain extends events.EventEmitter {
         return 0
     }
     async addBlock(block: Block) {
-        if (block.height < await this.getHeight() - config.Blockchain.trustedAfterBlocks) return 1
-        const previousBlock = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
+        if (block.height < await this.getHeight() - configSettings.trustedAfterBlocks) return 1
+        const previousBlock = await Block.load({ [configMongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         if (previousBlock) {
             if (block.timestamp <= previousBlock.timestamp) return 2
             if (await this.isPartOfChainValid([
@@ -157,8 +160,8 @@ class Blockchain extends events.EventEmitter {
                 block
             ], true) !== 0) return 3
         }
-        else if (block.height !== 1 || block.previousHash.equals((await Blockchain.createGenesisBlock()).hash) === false) return 4
-        if (await Block.exists({ [config.mongoose.schema.block.hash.name]: block.hash.toString('binary') })) {
+        else if (block.height !== 1 || block.previousHash.equals((await this.createGenesisBlock()).hash) === false) return 4
+        if (await Block.exists({ [configMongoose.schema.block.hash.name]: block.hash.toString('binary') })) {
             if ((await this.getLatestBlock()).hash.equals(block.hash)) {
                 await this.updateBlockHashes()
                 return 5
@@ -181,10 +184,10 @@ class Blockchain extends events.EventEmitter {
         if (height === -1) return false
         const blocks = await model_address.find({
             $or: [
-                { [`${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.to.name}`]: address },
-                { [`${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.from.name}`]: address }
+                { [`${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.to.name}`]: address },
+                { [`${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.from.name}`]: address }
             ],
-            [config.mongoose.schema.block.height.name]: {
+            [configMongoose.schema.block.height.name]: {
                 $gte: height
             }
         })
@@ -196,20 +199,20 @@ class Blockchain extends events.EventEmitter {
         old_blocks = []
         const baseQuery = {
             $or: [
-                { [`${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.to.name}`]: address.toString('binary') },
-                { [`${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.from.name}`]: address.toString('binary') }
+                { [`${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.to.name}`]: address.toString('binary') },
+                { [`${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.from.name}`]: address.toString('binary') }
             ]
         }
         if (optimization) {
             old_blocks = await Block.loadMany({
                 ...baseQuery,
-                [config.mongoose.schema.block.hash.name]: {
+                [configMongoose.schema.block.hash.name]: {
                     $in: this.hashes.old
                 }
             }, projection, { lean: true })
             blocks = await Block.loadMany({
                 ...baseQuery,
-                [config.mongoose.schema.block.hash.name]: {
+                [configMongoose.schema.block.hash.name]: {
                     $in: this.hashes.new
                 }
             }, projection, { lean: true })
@@ -226,7 +229,7 @@ class Blockchain extends events.EventEmitter {
                     || transaction.to?.equals(address)) {
                         if (transaction.timestamp === undefined) {
                             if (projection === undefined
-                            || projection.indexOf(`${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.timestamp.name}`) !== -1) transaction.timestamp = block.timestamp
+                            || projection.indexOf(`${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.timestamp.name}`) !== -1) transaction.timestamp = block.timestamp
                         }
                         transactions.push(transaction)
                     }
@@ -249,28 +252,28 @@ class Blockchain extends events.EventEmitter {
             return this.addresses[address.toString('binary')]
         }
         const latestBlock = await this.getLatestBlock()
-        const document = await model_address.findOne({ [config.mongoose.schema.address.address.name]: address.toString('binary') })
+        const document = await model_address.findOne({ [configMongoose.schema.address.address.name]: address.toString('binary') })
         let optimization = false
         if (document
-        && document[config.mongoose.schema.address.balance.name] !== undefined
-        && document[config.mongoose.schema.address.hash.name] !== undefined) {
-            if (config.Blockchain.optimization.enabled) {
+        && document[configMongoose.schema.address.balance.name] !== undefined
+        && document[configMongoose.schema.address.hash.name] !== undefined) {
+            if (configSettings.optimization.enabled) {
                 if (enableChanceToNotUseOptimization === false
-                || Math.random() < config.Blockchain.optimization.chanceToNotUse === false) {
-                    if (Buffer.from(document[config.mongoose.schema.address.hash.name], 'binary').equals(latestBlock.hash)) {
-                        const balance = parseBigInt(document[config.mongoose.schema.address.balance.name])
+                || Math.random() < configSettings.optimization.chanceToNotUse === false) {
+                    if (Buffer.from(document[configMongoose.schema.address.hash.name], 'binary').equals(latestBlock.hash)) {
+                        const balance = parseBigInt(document[configMongoose.schema.address.balance.name])
                         this.addresses[address.toString('binary')] = balance
                         return balance
                     }
-                    if (await this.isBalanceValid(address.toString('binary'), document[config.mongoose.schema.address.hash.name])) optimization = true
+                    if (await this.isBalanceValid(address.toString('binary'), document[configMongoose.schema.address.hash.name])) optimization = true
                 }
             }
         }
         const { transactions, old_transactions } = <any> await this.getTransactionsOfAddress(address, `
-            ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.to.name}
-            ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.from.name}
-            ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.amount.name}
-            ${config.mongoose.schema.block.transactions.name}.${config.mongoose.schema.transaction.minerFee.name}
+            ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.to.name}
+            ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.from.name}
+            ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.amount.name}
+            ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.minerFee.name}
         `, optimization)
         const getBalance = (transactions: Array<{ from: Buffer | undefined, to: Buffer | undefined, amount: string | undefined, minerFee: string }>) => {
             let balance = 0n
@@ -287,20 +290,20 @@ class Blockchain extends events.EventEmitter {
         }
         let balance = 0n
         if (optimization) {
-            balance = parseBigInt(document[config.mongoose.schema.address.balance.name])
+            balance = parseBigInt(document[configMongoose.schema.address.balance.name])
             balance -= getBalance(old_transactions)
         }
         balance += getBalance(transactions)
         if (document) {
-            document[config.mongoose.schema.address.hash.name] = latestBlock.hash.toString('binary')
-            document[config.mongoose.schema.address.balance.name] = beautifyBigInt(balance)
+            document[configMongoose.schema.address.hash.name] = latestBlock.hash.toString('binary')
+            document[configMongoose.schema.address.balance.name] = beautifyBigInt(balance)
             await document.save()
         }
-        else if (!(await model_address.exists({ [config.mongoose.schema.address.address.name]: address.toString('binary') }))) {
+        else if (!(await model_address.exists({ [configMongoose.schema.address.address.name]: address.toString('binary') }))) {
             await new model_address({
-                [config.mongoose.schema.address.hash.name]: latestBlock.hash.toString('binary'),
-                [config.mongoose.schema.address.balance.name]: beautifyBigInt(balance),
-                [config.mongoose.schema.address.address.name]: address.toString('binary')
+                [configMongoose.schema.address.hash.name]: latestBlock.hash.toString('binary'),
+                [configMongoose.schema.address.balance.name]: beautifyBigInt(balance),
+                [configMongoose.schema.address.address.name]: address.toString('binary')
             }).save()
         }
         this.addresses[address.toString('binary')] = balance
@@ -341,7 +344,7 @@ class Blockchain extends events.EventEmitter {
         let blocks = [ await this.getLatestBlock() ]
         while (blocks[0] !== null) {
             if (await this.isPartOfChainValid(blocks, false) !== 0) return false
-            blocks.unshift(await Block.load({ [config.mongoose.schema.block.hash.name]: blocks[0].previousHash.toString('binary') }, null, { lean: true }))
+            blocks.unshift(await Block.load({ [configMongoose.schema.block.hash.name]: blocks[0].previousHash.toString('binary') }, null, { lean: true }))
             blocks = blocks.slice(0, 2)
         }
         return true
@@ -349,16 +352,16 @@ class Blockchain extends events.EventEmitter {
     static getBlockDifficulty(blocks: Array<Block>) {
         let difficulty = blocks[0].difficulty
         const time = blocks[1].timestamp - blocks[0].timestamp,
-        _time = config.Blockchain.blockTime / 1.5
-        if (time < _time && difficulty < 64 << config.Blockchain.smoothness) difficulty++
-        else if (time >= _time && difficulty > 1 << config.Blockchain.smoothness) difficulty--
+        _time = configCore.blockTime / 1.5
+        if (time < _time && difficulty < 64 << configCore.smoothness) difficulty++
+        else if (time >= _time && difficulty > 1 << configCore.smoothness) difficulty--
         return difficulty
     }
     async deleteAllBlocksNotIncludedInChain() {
         await this.updateBlockHashes()
         const info = await model_block
             .deleteMany({
-                [config.mongoose.schema.block.hash.name]: {
+                [configMongoose.schema.block.hash.name]: {
                     $not: {
                         $in: this.hashes.current
                     }
@@ -368,18 +371,18 @@ class Blockchain extends events.EventEmitter {
         return info
     }
     async getBlockByHeight(height: number) {
-        if (height === 0) return await Blockchain.createGenesisBlock()
+        if (height === 0) return await this.createGenesisBlock()
         return await Block.load({
-            [config.mongoose.schema.block.height.name]: height,
-            [config.mongoose.schema.block.hash.name]: {
+            [configMongoose.schema.block.height.name]: height,
+            [configMongoose.schema.block.hash.name]: {
                 $in: this.hashes.current
             }
         }, null, { lean: true })
     }
     async getNewBlock(address: Buffer) {
         this.minByteFee = {
-            bigint: parseBigInt(config.Blockchain.minByteFee.bigint),
-            remainder: parseBigInt(config.Blockchain.minByteFee.remainder)
+            bigint: parseBigInt(configSettings.minByteFee.bigint),
+            remainder: parseBigInt(configSettings.minByteFee.remainder)
         }
         const previousBlock = await this.getLatestBlock()
         this.pendingTransactions = this.pendingTransactions
@@ -410,7 +413,7 @@ class Blockchain extends events.EventEmitter {
         const transactions = [
             new Transaction({
                 to: address,
-                amount: beautifyBigInt(parseBigInt(config.Blockchain.blockReward))
+                amount: beautifyBigInt(parseBigInt(configCore.blockReward))
             }),
             ...this.pendingTransactions
         ]
@@ -423,7 +426,7 @@ class Blockchain extends events.EventEmitter {
             if (i === 0) continue
             block.transactions[0].amount = beautifyBigInt(parseBigInt(block.transactions[0].amount) + parseBigInt(block.transactions[i].minerFee))
         }
-        while (Buffer.byteLength(JSON.stringify(Block.minify(block))) > config.Blockchain.maxBlockSize - 2**8) {
+        while (Buffer.byteLength(JSON.stringify(Block.minify(block))) > configCore.maxBlockSize - 2**8) {
             const transaction = block.transactions.pop()
             block.transactions[0].amount = beautifyBigInt(parseBigInt(block.transactions[0].amount) - parseBigInt(transaction.minerFee))
             if (block.transactions.length === 1) break
@@ -439,7 +442,7 @@ class Blockchain extends events.EventEmitter {
         return await this.getBlockByHeight(this.syncIndex)
     }
     async getCircumlatingSupply() {
-        return BigInt(await this.getHeight()) * parseBigInt(config.Blockchain.blockReward)
+        return BigInt(await this.getHeight()) * parseBigInt(configCore.blockReward)
     }
     async getHeight() {
         return (await this.getLatestBlock()).height
