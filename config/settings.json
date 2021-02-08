@@ -72,5 +72,5 @@
         "enabled": true,
         "chanceToNotUse": 0
     },
-    "trustedAfterBlocks": 1440
+    "trustedAfterBlocks": 10080
 }
