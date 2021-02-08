@@ -35,6 +35,17 @@ class Blockchain extends events.EventEmitter {
         this.updateBlockHashes()
         this.addresses = {}
     }
+    static difficultyToWork(difficulty: number) {
+        return 2n ** BigInt(difficulty >> config.Blockchain.smoothness)
+    }
+    async getWorkSumHashes(hashes: Array<string>) {
+        let sum = 0n
+        for (const hash of hashes) {
+            const { difficulty } = await Block.load({ [config.mongoose.schema.block.hash.name]: hash }, null, { lean: true })
+            sum += Blockchain.difficultyToWork(difficulty)
+        }
+        return sum
+    }
     async setBlockHashes() {
         this.hashes = {
             old: [],
@@ -69,7 +80,7 @@ class Blockchain extends events.EventEmitter {
         let block = await this.setLatestBlock(),
         index: number = null
         const newHashes: Array<string> = []
-        while (block && !index) {
+        while (block !== null && index === null) {
             for (let i = this.hashes.current.length - 1; i >= 0; i--) {
                 if (this.hashes.current[i] === block.hash.toString('binary')) {
                     index = i
@@ -82,10 +93,15 @@ class Blockchain extends events.EventEmitter {
             block = await Block.load({ [config.mongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         }
         if (index !== null) {
-            this.hashes.old = this.hashes.current.slice(index + 1)
-            this.hashes.current = this.hashes.current.slice(0, index + 1)
-            this.hashes.current.push(...newHashes)
-            this.hashes.new = newHashes
+            const oldHashes = this.hashes.current.slice(index + 1)
+            const oldWork = await this.getWorkSumHashes(oldHashes)
+            const newWork = await this.getWorkSumHashes(newHashes)
+            if (newWork > oldWork) {
+                this.hashes.old = oldHashes
+                this.hashes.current = this.hashes.current.slice(0, index + 1)
+                this.hashes.current.push(...newHashes)
+                this.hashes.new = newHashes
+            }
         }
         this.emit('updated-block-hashes')
         this.updatingBlockHashes = false
