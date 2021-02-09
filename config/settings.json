@@ -5,7 +5,7 @@
         "autoRetry": 1000
     },
     "Miner": {
-        "miningRewardAddress": "DFUu7jLQ1vgqcNP3xF75i8ZBmXP",
+        "miningRewardAddress": "visC6571qoyNNzepeCLpy4EmhqD",
         "restartDelay": 6000,
         "maxListeners": 500,
         "threads": 0
