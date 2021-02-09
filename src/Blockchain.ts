@@ -11,6 +11,7 @@ import * as events from 'events'
 interface Blockchain {
     pendingTransactions: Array<Transaction>
     syncIndex: number
+    syncLoops: number
     hashes: {
         old: Array<string>
         current: Array<string>
@@ -30,6 +31,7 @@ class Blockchain extends events.EventEmitter {
         super()
         this.pendingTransactions = []
         this.syncIndex = 0
+        this.syncLoops = 0
         this.updatingBlockHashes = false
         this.minByteFee = {
             bigint: parseBigInt(configSettings.minByteFee.bigint),
@@ -438,7 +440,14 @@ class Blockchain extends events.EventEmitter {
         return block
     }
     async getNextSyncBlock() {
-        if (++this.syncIndex > await this.getHeight()) this.syncIndex = 1
+        const height = await this.getHeight()
+        if (++this.syncIndex > height) {
+            if (++this.syncLoops >= height / configSettings.trustedAfterBlocks) {
+                this.syncIndex = 1
+                this.syncLoops = 0
+            }
+            else this.syncIndex = height - configSettings.trustedAfterBlocks
+        }
         return await this.getBlockByHeight(this.syncIndex)
     }
     async getCircumlatingSupply() {
