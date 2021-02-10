@@ -164,7 +164,7 @@ class Node extends events.EventEmitter {
             this.node.broadcastAndStoreDataHash(buffer)
             this.emit('sync', block)
         }
-        const buffer = protocol.constructDataBuffer('get-block', await this.blockchain.getHeight())
+        const buffer = protocol.constructDataBuffer('get-block', await this.blockchain.getHeight() + 1)
         this.node.broadcastAndStoreDataHash(buffer)
         setTimeout(this.nextSync.bind(this), configSettings.Node.syncNode.nextSyncTimeout)
     }
