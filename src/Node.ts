@@ -50,6 +50,7 @@ class Node extends events.EventEmitter {
             if (configSettings.Node.connectToNetwork) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
             this.emit('node', node)
         })
+        this.node.on('get-block', async (height, cb) => cb(Block.minify(await this.blockchain.getBlockByHeight(height))))
         this.node.on('socket', socket => {
             if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
             if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/connections.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
@@ -163,6 +164,8 @@ class Node extends events.EventEmitter {
             this.node.broadcastAndStoreDataHash(buffer)
             this.emit('sync', block)
         }
+        const buffer = protocol.constructDataBuffer('get-block', await this.blockchain.getHeight())
+        this.node.broadcastAndStoreDataHash(buffer)
         setTimeout(this.nextSync.bind(this), configSettings.Node.syncNode.nextSyncTimeout)
     }
     addWorker(worker: Worker) {

@@ -54,6 +54,19 @@ class TCPNetworkNode extends events.EventEmitter {
             this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - configSettings.TCPNetworkNode.hashes.timeToLive)
         }
     ]
+    async get(type, data, socket) {
+        if (typeof type !== 'string') return this.destroySocket(socket)
+        switch (type) {
+            case 'get-block':
+                if (typeof data !== 'number') return this.destroySocket(socket)
+                this.emit('get-block', data, block => {
+                    const buffer = protocol.constructDataBuffer('block', block)
+                    socket.write(buffer)
+                    socket.write(protocol.end)
+                })
+                break
+        }
+    }
     addSocket(socket: Socket) {
         if (this.banned.includes(socket.remoteAddress)) return this.destroySocket(socket)
         const add = () => {
@@ -91,6 +104,7 @@ class TCPNetworkNode extends events.EventEmitter {
                         // if (parsed === null) return this.emit('ban', socket)
                         if (parsed === null) continue
                         const { type, data } = parsed
+                        if (type.startsWith('get')) return this.get(type, data, socket)
                         this.emit(type, data)
                         this.broadcastAndStoreDataHash(buffer)
                     }
