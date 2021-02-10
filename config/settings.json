@@ -18,6 +18,7 @@
             "enabled": true,
             "nextSyncTimeout": 100
         },
+        "maxQueueLength": 100,
         "threads": 0
     },
     "TCPApi": {
@@ -74,5 +75,5 @@
         "enabled": true,
         "chanceToNotUse": 0
     },
-    "trustedAfterBlocks": 10080
+    "trustedAfterBlocks": 1440
 }

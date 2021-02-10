@@ -91,13 +91,19 @@ class Node extends events.EventEmitter {
         }
         this.on('add-transaction', async (transaction: Transaction, cb) => {
             let code = -1
-            try {
-                code = await this.assignJob({
-                    e: 'transaction',
-                    transaction: Transaction.minify(transaction)
-                })
+            if (this.workersReady.size === 0) {
+                if (this.listeners('worker').length < configSettings.Node.maxQueueLength) return this.once('worker', () => this.emit('add-transaction', transaction, cb))
             }
-            catch {}
+            else code = 0
+            if (code === 0) {
+                try {
+                    code = await this.assignJob({
+                        e: 'transaction',
+                        transaction: Transaction.minify(transaction)
+                    })
+                }
+                catch {}
+            }
             if (code === 0) code = await this.blockchain.addTransaction(transaction)
             this.emit('transaction', transaction, code)
             if (cb !== undefined) cb(code)
@@ -108,15 +114,22 @@ class Node extends events.EventEmitter {
                 if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
             }
         })
+        this.setMaxListeners(configSettings.Node.maxQueueLength)
         this.on('add-block', async (block: Block, cb) => {
             let code = -1
-            try {
-                code = await this.assignJob({
-                    e: 'block',
-                    block: Block.minify(block)
-                })
+            if (this.workersReady.size === 0) {
+                if (this.listeners('worker').length < configSettings.Node.maxQueueLength) return this.once('worker', () => this.emit('add-block', block, cb))
             }
-            catch {}
+            else code = 0
+            if (code === 0) {
+                try {
+                    code = await this.assignJob({
+                        e: 'block',
+                        block: Block.minify(block)
+                    })
+                }
+                catch {}
+            }
             if (code === 0) code = await this.blockchain.addBlock(block)
             this.emit('block', block, code)
             if (cb !== undefined) cb(code)
@@ -200,6 +213,7 @@ class Node extends events.EventEmitter {
                     e = JSON.parse(e)
                     this.workersBusy.delete(worker)
                     this.workersReady.add(worker)
+                    this.emit('worker')
                     resolve(e)
                 })
                 return
