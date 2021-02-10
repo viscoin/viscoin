@@ -4,8 +4,7 @@ import Transaction from "./Transaction"
 const types = [
     'block',
     'transaction',
-    'node',
-    'get-block'
+    'node'
 ] as const
 type types_string = typeof types[number]
 export default {
@@ -21,7 +20,7 @@ export default {
         }
         return null
     },
-    constructDataBuffer(type: types_string | number, data: object | number) {
+    constructDataBuffer(type: types_string | number, data: object) {
         return Buffer.concat([ Buffer.alloc(1, this.getType(type)), Buffer.from(JSON.stringify(data), 'binary') ])
     },
     parse(buffer: Buffer) {
@@ -41,9 +40,6 @@ export default {
                         port: data.port,
                         address: data.address
                     }
-                    break
-                case 'get-block':
-                    data = parseInt(data)
                     break
                 default:
                     return null
