@@ -56,7 +56,9 @@
     "consoleLog": {
         "hardware": true,
         "hashrate": true,
-        "verifyrate": false
+        "verifyrate": false,
+        "sync": false,
+        "syncModulu": 100
     },
     "logs": {
         "save": true,

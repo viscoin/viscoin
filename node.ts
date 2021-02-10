@@ -2,6 +2,7 @@ import init from './src/mongoose/init'
 init()
 import Node from './src/Node'
 import * as configNetwork from './config/network.json'
+import * as configSettings from './config/settings.json'
 import * as chalk from 'chalk'
 import base58 from './src/base58'
 import toLocaleTimeString from './src/chalk/LocaleTimeString'
@@ -20,7 +21,7 @@ if (isMainThread) {
     node.httpApi.on('error', e => console.log(`${toLocaleTimeString()} ${chalk.redBright('API (TCP) error')} ${chalk.blueBright(`${configNetwork.TCPApi.address}:${configNetwork.TCPApi.port}`)} ${chalk.redBright(e?.code)}`))
     node.tcpServer.on('connection', (port, address) => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('API (TCP) connection')} ${chalk.blueBright(`${address}:${port}`)}`))
     node.on('sync', block => {
-        if (block.height % 100 === 0) console.log(`${toLocaleTimeString()} ${chalk.yellow('sync')} { height: ${chalk.yellowBright(block.height)} }`)
+        if (configSettings.consoleLog.sync === true && block.height % configSettings.consoleLog.syncModulu === 0) console.log(`${toLocaleTimeString()} ${chalk.yellow('sync')} { height: ${chalk.yellowBright(block.height)} }`)
     })
     node.on('socket', socket => console.log(`${toLocaleTimeString()} ${chalk.green('new')} ${chalk.yellow('Socket')} ${socket.remoteAddress}:${socket.remotePort}`))
     node.on('ban', socket => console.log(`${toLocaleTimeString()} ${chalk.redBright('Banned')} ${socket.remoteAddress}:${socket.remotePort}`))
