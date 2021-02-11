@@ -73,7 +73,6 @@ class TCPNetworkNode extends events.EventEmitter {
         socket
             .on('connect', () => add())
             .on('error', () => {})
-            .on('drain', () => console.log('drain'))
             .on('close', () => this.destroySocket(socket))
             .on('timeout', () => this.emit('ban', socket))
             .on('data', async chunk => {
@@ -86,19 +85,22 @@ class TCPNetworkNode extends events.EventEmitter {
                 while (index !== -1 && !socket.destroyed) {
                     if (index >= 32) {
                         const buffer = socket.data.slice(0, index - 32)
-                        const checksum = socket.data.slice(index - 32, index)
-                        socket.data = socket.data.slice(index + 32 + Buffer.byteLength(protocol.end))
-                        if (crypto.createHash('sha256').update(buffer).digest().equals(checksum) === false) {
-                            console.log('error occured')
-                            continue
+                        if (Buffer.byteLength(buffer) > 0) {
+                            const checksum = socket.data.slice(index - 32, index)
+                            socket.data = socket.data.slice(index + 32 + Buffer.byteLength(protocol.end))
+                            console.log(buffer)
+                            if (crypto.createHash('sha256').update(buffer).digest().equals(checksum) === false) {
+                                console.log('checksum error')
+                                continue
+                            }
+                            if (this.compareAndStoreHash(buffer)) continue
+                            const parsed = protocol.parse(buffer)
+                            // if (parsed === null) return this.emit('ban', socket)
+                            if (parsed === null) continue
+                            const { type, data } = parsed
+                            this.emit(type, data)
+                            await this.broadcastAndStoreDataHash(buffer)
                         }
-                        if (this.compareAndStoreHash(buffer)) continue
-                        const parsed = protocol.parse(buffer)
-                        // if (parsed === null) return this.emit('ban', socket)
-                        if (parsed === null) continue
-                        const { type, data } = parsed
-                        this.emit(type, data)
-                        await this.broadcastAndStoreDataHash(buffer)
                     }
                     index = protocol.getEndIndex(socket.data)
                 }
