@@ -83,16 +83,23 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (Buffer.byteLength(socket.data) > configSettings.TCPNetworkNode.socket.maxBytesInMemory) return this.emit('ban', socket)
                 let index = protocol.getEndIndex(socket.data)
                 while (index !== -1 && !socket.destroyed) {
-                    const buffer = socket.data.slice(0, index)
-                    socket.data = socket.data.slice(index + Buffer.byteLength(protocol.end))
-                    if (Buffer.byteLength(buffer) !== 0) {
-                        if (this.compareAndStoreHash(buffer)) continue
-                        const parsed = protocol.parse(buffer)
-                        // if (parsed === null) return this.emit('ban', socket)
-                        if (parsed === null) continue
-                        const { type, data } = parsed
-                        this.emit(type, data)
-                        this.broadcastAndStoreDataHash(buffer)
+                    if (index >= 32) {
+                        const buffer = socket.data.slice(0, index - 32)
+                        const checksum = socket.data.slice(0, 32)
+                        socket.data = socket.data.slice(index + 32 + Buffer.byteLength(protocol.end))
+                        if (Buffer.byteLength(buffer) !== 0) {
+                            if (crypto.createHash('sha256').update(buffer).digest().equals(checksum) === false) {
+                                console.log('error occured')
+                                continue
+                            }
+                            if (this.compareAndStoreHash(buffer)) continue
+                            const parsed = protocol.parse(buffer)
+                            // if (parsed === null) return this.emit('ban', socket)
+                            if (parsed === null) continue
+                            const { type, data } = parsed
+                            this.emit(type, data)
+                            this.broadcastAndStoreDataHash(buffer)
+                        }
                     }
                     index = protocol.getEndIndex(socket.data)
                 }
@@ -112,6 +119,7 @@ class TCPNetworkNode extends events.EventEmitter {
     broadcast(data: Buffer) {
         for (const socket of this.sockets) {
             socket.write(data)
+            socket.write(crypto.createHash('sha256').update(data).digest())
             socket.write(protocol.end)
         }
     }
