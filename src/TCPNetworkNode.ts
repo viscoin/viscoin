@@ -127,9 +127,7 @@ class TCPNetworkNode extends events.EventEmitter {
             let i = 0
             for (const socket of this.sockets) {
                 socket.write(data, () => {
-                    setImmediate(() => {
-                        if (++i === this.sockets.size) resolve(true)
-                    })
+                    if (++i === this.sockets.size) resolve(true)
                 })
             }
         })
