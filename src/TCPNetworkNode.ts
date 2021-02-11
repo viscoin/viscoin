@@ -84,10 +84,11 @@ class TCPNetworkNode extends events.EventEmitter {
                 let index = protocol.getEndIndex(socket.data)
                 while (index !== -1 && !socket.destroyed) {
                     if (index >= 32) {
-                        const buffer = socket.data.slice(0, index - 32)
-                        if (Buffer.byteLength(buffer) > 0) {
-                            const checksum = socket.data.slice(index - 32, index)
-                            socket.data = socket.data.slice(index + 32 + Buffer.byteLength(protocol.end))
+                        const checksum = socket.data.slice(0, 32)
+                        const buffer = socket.data.slice(32, index)
+                        if (Buffer.byteLength(checksum) > 0
+                        && Buffer.byteLength(buffer) > 0) {
+                            socket.data = socket.data.slice(index + Buffer.byteLength(protocol.end))
                             console.log(buffer)
                             if (crypto.createHash('sha256').update(buffer).digest().equals(checksum) === false) {
                                 console.log('checksum error')
@@ -120,8 +121,8 @@ class TCPNetworkNode extends events.EventEmitter {
     broadcast(data: Buffer) {
         return <any> new Promise(resolve => {
             data = Buffer.concat([
-                data,
                 crypto.createHash('sha256').update(data).digest(),
+                data,
                 protocol.end
             ])
             let i = 0
