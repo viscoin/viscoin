@@ -73,9 +73,10 @@ class TCPNetworkNode extends events.EventEmitter {
         socket
             .on('connect', () => add())
             .on('error', () => {})
+            .on('drain', () => console.log('drain'))
             .on('close', () => this.destroySocket(socket))
             .on('timeout', () => this.emit('ban', socket))
-            .on('data', chunk => {
+            .on('data', async chunk => {
                 const byteLength = Buffer.byteLength(chunk)
                 socket.bytesReadLastSecond += byteLength
                 if (socket.bytesReadLastSecond > configSettings.TCPNetworkNode.socket.maxBytesPerSecond) return this.emit('ban', socket)
@@ -87,19 +88,17 @@ class TCPNetworkNode extends events.EventEmitter {
                         const buffer = socket.data.slice(0, index - 32)
                         const checksum = socket.data.slice(index - 32, index)
                         socket.data = socket.data.slice(index + 32 + Buffer.byteLength(protocol.end))
-                        if (Buffer.byteLength(buffer) !== 0) {
-                            if (crypto.createHash('sha256').update(buffer).digest().equals(checksum) === false) {
-                                console.log('error occured')
-                                continue
-                            }
-                            if (this.compareAndStoreHash(buffer)) continue
-                            const parsed = protocol.parse(buffer)
-                            // if (parsed === null) return this.emit('ban', socket)
-                            if (parsed === null) continue
-                            const { type, data } = parsed
-                            this.emit(type, data)
-                            this.broadcastAndStoreDataHash(buffer)
+                        if (crypto.createHash('sha256').update(buffer).digest().equals(checksum) === false) {
+                            console.log('error occured')
+                            continue
                         }
+                        if (this.compareAndStoreHash(buffer)) continue
+                        const parsed = protocol.parse(buffer)
+                        // if (parsed === null) return this.emit('ban', socket)
+                        if (parsed === null) continue
+                        const { type, data } = parsed
+                        this.emit(type, data)
+                        await this.broadcastAndStoreDataHash(buffer)
                     }
                     index = protocol.getEndIndex(socket.data)
                 }
@@ -117,15 +116,24 @@ class TCPNetworkNode extends events.EventEmitter {
         if (this.hashes.length > configSettings.TCPNetworkNode.hashes.length) this.hashes.shift()
     }
     broadcast(data: Buffer) {
-        for (const socket of this.sockets) {
-            socket.write(data)
-            socket.write(crypto.createHash('sha256').update(data).digest())
-            socket.write(protocol.end)
-        }
+        return <any> new Promise(resolve => {
+            data = Buffer.concat([
+                data,
+                crypto.createHash('sha256').update(data).digest(),
+                protocol.end
+            ])
+            let i = 0
+            for (const socket of this.sockets) {
+                socket.write(data, (err) => {
+                    if (err) throw err
+                    if (++i === this.sockets.size) resolve(true)
+                })
+            }
+        })
     }
-    broadcastAndStoreDataHash(data: Buffer) {
+    async broadcastAndStoreDataHash(data: Buffer) {
         this.addHash(data)
-        this.broadcast(data)
+        await this.broadcast(data)
     }
     hasSocketWithRemoteAddress(socket) {
         for (const _socket of this.sockets) {

@@ -182,7 +182,7 @@ class Node extends events.EventEmitter {
         const block = await this.blockchain.getNextSyncBlock()
         if (block !== null) {
             const buffer = protocol.constructDataBuffer('block', Block.minify(block))
-            this.node.broadcastAndStoreDataHash(buffer)
+            await this.node.broadcastAndStoreDataHash(buffer)
             this.emit('sync', block)
         }
         setTimeout(this.nextSync.bind(this), configSettings.Node.syncNode.nextSyncTimeout)
