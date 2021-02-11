@@ -115,10 +115,13 @@ class Node extends events.EventEmitter {
             }
         })
         this.setMaxListeners(configSettings.Node.maxQueueLength)
-        this.on('add-block', async (block: Block, cb) => {
+        this.on('add-block', async (block: Block, cb: Function, retry: boolean = false) => {
             let code = -1
             if (this.workersReady.size === 0) {
-                if (this.listeners('worker').length < configSettings.Node.maxQueueLength) return this.once('worker', () => this.emit('add-block', block, cb))
+                if (this.listeners('worker').length < configSettings.Node.maxQueueLength) {
+                    if (retry === false) return this.once('worker', () => this.emit('add-block', block, cb))
+                    else return this.prependOnceListener('worker', () => this.emit('add-block', block, cb))
+                }
             }
             else code = 0
             if (code === 0) {
@@ -131,6 +134,12 @@ class Node extends events.EventEmitter {
                 catch {}
             }
             if (code === 0) code = await this.blockchain.addBlock(block)
+            else if (retry === false) {
+                this.once('block', async (_block, code) => {
+                    if (code === 0
+                    && _block.height === await this.blockchain.getHeight()) this.emit('add-block', block, cb, true)
+                })
+            }
             this.emit('block', block, code)
             if (cb !== undefined) cb(code)
         })
