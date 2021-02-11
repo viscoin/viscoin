@@ -85,7 +85,7 @@ class TCPNetworkNode extends events.EventEmitter {
                 while (index !== -1 && !socket.destroyed) {
                     if (index >= 32) {
                         const buffer = socket.data.slice(0, index - 32)
-                        const checksum = socket.data.slice(0, 32)
+                        const checksum = socket.data.slice(index - 32, index)
                         socket.data = socket.data.slice(index + 32 + Buffer.byteLength(protocol.end))
                         if (Buffer.byteLength(buffer) !== 0) {
                             if (crypto.createHash('sha256').update(buffer).digest().equals(checksum) === false) {
