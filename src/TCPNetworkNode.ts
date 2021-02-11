@@ -31,6 +31,7 @@ class TCPNetworkNode extends events.EventEmitter {
         })
         setInterval(this.interval[0].bind(this), 1000)
         setInterval(this.interval[1].bind(this), configSettings.TCPNetworkNode.hashes.interval)
+        setInterval(this.interval[2].bind(this), 1000)
         // server
         this.server = new net.Server()
         this.server.maxConnections = configSettings.TCPNetworkNode.server.maxConnectionsIn
@@ -52,6 +53,11 @@ class TCPNetworkNode extends events.EventEmitter {
         },
         () => {
             this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - configSettings.TCPNetworkNode.hashes.timeToLive)
+        },
+        async () => {
+            for (const socket of this.sockets) {
+                await this.extract(socket)
+            }
         }
     ]
     addSocket(socket: Socket) {
@@ -75,34 +81,36 @@ class TCPNetworkNode extends events.EventEmitter {
             .on('error', () => {})
             .on('close', () => this.destroySocket(socket))
             .on('timeout', () => this.emit('ban', socket))
-            .on('data', async chunk => {
+            .on('data', chunk => {
                 const byteLength = Buffer.byteLength(chunk)
                 socket.bytesReadLastSecond += byteLength
                 if (socket.bytesReadLastSecond > configSettings.TCPNetworkNode.socket.maxBytesPerSecond) return this.emit('ban', socket)
                 socket.data = Buffer.concat([socket.data, chunk])
                 if (Buffer.byteLength(socket.data) > configSettings.TCPNetworkNode.socket.maxBytesInMemory) return this.emit('ban', socket)
-                let index = protocol.getEndIndex(socket.data)
-                while (index >= 32 && !socket.destroyed) {
-                    const checksum = socket.data.slice(0, 32)
-                    const buffer = socket.data.slice(32, index)
-                    socket.data = socket.data.slice(index + Buffer.byteLength(protocol.end))
-                    if (Buffer.byteLength(checksum) > 0
-                    && Buffer.byteLength(buffer) > 0) {
-                        if (crypto.createHash('sha256').update(buffer).digest().equals(checksum) === false) {
-                            console.log('checksum error')
-                            continue
-                        }
-                        if (this.compareAndStoreHash(buffer)) continue
-                        const parsed = protocol.parse(buffer)
-                        // if (parsed === null) return this.emit('ban', socket)
-                        if (parsed === null) continue
-                        const { type, data } = parsed
-                        this.emit(type, data)
-                        await this.broadcastAndStoreDataHash(buffer)
-                    }
-                    index = protocol.getEndIndex(socket.data)
-                }
             })
+    }
+    async extract(socket) {
+        let index = protocol.getEndIndex(socket.data)
+        while (index > 32 && !socket.destroyed) {
+            const checksum = socket.data.slice(0, 32)
+            const buffer = socket.data.slice(32, index)
+            socket.data = socket.data.slice(index + Buffer.byteLength(protocol.end))
+            if (Buffer.byteLength(checksum) > 0
+            && Buffer.byteLength(buffer) > 0) {
+                if (crypto.createHash('sha256').update(buffer).digest().equals(checksum) === false) {
+                    console.log('checksum error')
+                    continue
+                }
+                if (this.compareAndStoreHash(buffer)) continue
+                const parsed = protocol.parse(buffer)
+                // if (parsed === null) return this.emit('ban', socket)
+                if (parsed === null) continue
+                const { type, data } = parsed
+                this.emit(type, data)
+                await this.broadcastAndStoreDataHash(buffer)
+            }
+            index = protocol.getEndIndex(socket.data)
+        }
     }
     compareAndStoreHash(data: Buffer) {
         const hash = crypto.createHash('sha256').update(data).digest()
