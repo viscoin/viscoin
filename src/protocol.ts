@@ -53,7 +53,10 @@ export default {
             return null
         }
     },
-    end: Buffer.alloc(32, 0),
+    end: Buffer.concat([
+        Buffer.alloc(32, 0),
+        Buffer.alloc(32, 0xff)
+    ]),
     getEndIndex(data: Buffer) {
         return data.indexOf(this.end)
     }
