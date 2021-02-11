@@ -83,6 +83,7 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (Buffer.byteLength(socket.data) > configSettings.TCPNetworkNode.socket.maxBytesInMemory) return this.emit('ban', socket)
                 let index = protocol.getEndIndex(socket.data)
                 while (index >= 32 && Buffer.byteLength(socket.data) !== 0 && !socket.destroyed) {
+                    // console.log(socket.data)
                     const checksum = socket.data.slice(0, 32)
                     const buffer = socket.data.slice(32, index)
                     if (Buffer.byteLength(checksum) > 0
@@ -117,6 +118,7 @@ class TCPNetworkNode extends events.EventEmitter {
     }
     broadcast(data: Buffer) {
         return <any> new Promise(resolve => {
+            if (this.sockets.size === 0) resolve(true)
             data = Buffer.concat([
                 crypto.createHash('sha256').update(data).digest(),
                 data,
