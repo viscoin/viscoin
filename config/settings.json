@@ -36,7 +36,9 @@
         "socket": {
             "maxBytesPerSecond": 1048576,
             "setTimeout": 60000,
-            "maxBytesInMemory": 131072
+            "maxBytesInMemory": 131072,
+            "maxRequestsPerSecond": 100,
+            "onAbuseRequestsBehaviour": "continue"
         },
         "server": {
             "maxConnectionsIn": 10

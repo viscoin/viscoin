@@ -9,6 +9,7 @@ import * as fs from 'fs'
 interface Socket extends net.Socket {
     bytesReadLastSecond: number
     data: Buffer
+    requests: number
 }
 interface TCPNetworkNode {
     hashes: Array<{ hash: Buffer, timestamp: number }>
@@ -48,6 +49,7 @@ class TCPNetworkNode extends events.EventEmitter {
         () => {
             for (const socket of this.sockets) {
                 socket.bytesReadLastSecond = 0
+                socket.requests = 0
             }
         },
         () => {
@@ -83,6 +85,10 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (Buffer.byteLength(socket.data) > configSettings.TCPNetworkNode.socket.maxBytesInMemory) return this.emit('ban', socket)
                 let index = protocol.getEndIndex(socket.data)
                 while (index !== -1 && !socket.destroyed) {
+                    if (++socket.requests > configSettings.TCPNetworkNode.socket.maxRequestsPerSecond) {
+                        if (configSettings.TCPNetworkNode.socket.onAbuseRequestsBehaviour === 'continue') continue
+                        else if (configSettings.TCPNetworkNode.socket.onAbuseRequestsBehaviour === 'ban') return this.emit('ban', socket)
+                    }
                     const a = index + Buffer.byteLength(protocol.end)
                     const b = socket.data.slice(0, a) 
                     socket.data = socket.data.slice(a)
