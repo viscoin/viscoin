@@ -158,8 +158,8 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (Buffer.byteLength(Buffer.from(node.address.split('.'))) !== 4
                 && Buffer.byteLength(Buffer.from(node.address.split(':'))) > 8) continue
             }
-            // if (node.port === configNetwork.TCPNetworkNode.port
-            // && node.address === configNetwork.TCPNetworkNode.address) continue
+            if (node.port === configNetwork.TCPNetworkNode.port
+            && node.address === configNetwork.TCPNetworkNode.address) continue
             const socket = <Socket> net.connect(node.port, node.address)
             this.addSocket(socket)
         }
