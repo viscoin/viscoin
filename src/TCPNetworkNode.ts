@@ -83,21 +83,21 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (Buffer.byteLength(socket.data) > configSettings.TCPNetworkNode.socket.maxBytesInMemory) return this.emit('ban', socket)
                 let index = protocol.getEndIndex(socket.data)
                 while (index !== -1 && !socket.destroyed) {
-                    const checksum = socket.data.slice(0, 32)
-                    const buffer = socket.data.slice(32, index)
-                    socket.data = socket.data.slice(index + Buffer.byteLength(protocol.end))
-                    if (Buffer.byteLength(checksum) > 0
-                    && Buffer.byteLength(buffer) > 0) {
-                        if (crypto.createHash('sha256').update(buffer).digest().equals(checksum) === false) {
-                            console.log('checksum error')
-                            continue
-                        }
-                        if (this.compareAndStoreHash(buffer)) continue
-                        const parsed = protocol.parse(buffer)
+                    const a = index + Buffer.byteLength(protocol.end)
+                    const b = socket.data.slice(0, a) 
+                    socket.data = socket.data.slice(a)
+                    const c = b.slice(0, 32)
+                    const d = b.slice(32, a - Buffer.byteLength(protocol.end))
+                    if (Buffer.byteLength(c) > 0
+                    && Buffer.byteLength(d) > 0) {
+                        if (this.compareAndStoreHash(b)) continue
+                        if (crypto.createHash('sha256').update(d).digest().equals(c) === false) continue
+                        const parsed = protocol.parse(d)
                         if (parsed === null) continue
                         const { type, data } = parsed
                         this.emit(type, data, socket)
-                        if (type.startsWith('post')) await this.broadcastAndStoreDataHash(buffer)
+                        if (type.startsWith('post')) await this.broadcast(b)
+                        // if (type.startsWith('post')) await this.broadcastAndStoreDataHash(b)
                     }
                     index = protocol.getEndIndex(socket.data)
                 }
@@ -105,12 +105,11 @@ class TCPNetworkNode extends events.EventEmitter {
     }
     compareAndStoreHash(data: Buffer) {
         const hash = crypto.createHash('sha256').update(data).digest()
-        this.addHash(hash)
-        if (this.hashes.find(e => e.hash.compare(hash) === 0)) return true
-        return false
+        const found = this.hashes.find(e => e.hash.equals(hash)) ? true : false
+        if (found === false) this.addHash(hash)
+        return found
     }
-    addHash(data: Buffer) {
-        const hash = crypto.createHash('sha256').update(data).digest()
+    addHash(hash: Buffer) {
         this.hashes.push({ hash, timestamp: Date.now() })
         if (this.hashes.length > configSettings.TCPNetworkNode.hashes.length) this.hashes.shift()
     }
@@ -119,17 +118,14 @@ class TCPNetworkNode extends events.EventEmitter {
             if (this.sockets.size === 0) resolve(true)
             let i = 0
             for (const socket of this.sockets) {
-                TCPNetworkNode.send(socket, data, () => {
+                socket.write(data, () => {
                     if (++i === this.sockets.size) resolve(true)
                 })
             }
         })
     }
-    static send(socket: Socket, data: Buffer, cb) {
-        socket.write(data, () => cb())
-    }
     async broadcastAndStoreDataHash(data: Buffer) {
-        this.addHash(data)
+        this.compareAndStoreHash(data)
         await this.broadcast(data)
     }
     hasSocketWithRemoteAddress(socket) {
@@ -158,7 +154,8 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (Buffer.byteLength(Buffer.from(node.address.split('.'))) !== 4
                 && Buffer.byteLength(Buffer.from(node.address.split(':'))) > 8) continue
             }
-            if (node.port === configNetwork.TCPNetworkNode.port
+            if (configSettings.TCPNetworkNode.allowConnectionsToSelf === false
+            && node.port === configNetwork.TCPNetworkNode.port
             && node.address === configNetwork.TCPNetworkNode.address) continue
             const socket = <Socket> net.connect(node.port, node.address)
             this.addSocket(socket)

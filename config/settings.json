@@ -27,6 +27,7 @@
         "autoReconnect": 1000
     },
     "TCPNetworkNode": {
+        "allowConnectionsToSelf": false,
         "hashes": {
             "length": 10000,
             "timeToLive": 30000,

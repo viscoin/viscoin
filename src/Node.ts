@@ -31,6 +31,7 @@ interface Node {
     }
     syncIndex: number
     syncLoops: number
+    previousHeight: number
 }
 class Node extends events.EventEmitter {
     constructor() {
@@ -54,10 +55,7 @@ class Node extends events.EventEmitter {
             if (configSettings.Node.connectToNetwork) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
             this.emit('node', node)
         })
-        this.node.on('get-block', async (height, socket) => {
-            console.log(height)
-            TCPNetworkNode.send(socket, protocol.constructDataBuffer('post-block', Block.minify(await this.blockchain.getBlockByHeight(height))), () => {})
-        })
+        this.node.on('get-block', async (height, socket) => socket.write(protocol.constructDataBuffer('post-block', Block.minify(await this.blockchain.getBlockByHeight(height)))))
         this.node.on('socket', socket => {
             if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
             if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/connections.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
@@ -125,7 +123,6 @@ class Node extends events.EventEmitter {
         })
         this.setMaxListeners(configSettings.Node.maxQueueLength)
         this.on('add-block', async (block: Block, cb: Function, retry: boolean = false) => {
-            console.log(block.height)
             let code = -1
             if (this.workersReady.size === 0) {
                 if (this.listeners('worker').length < configSettings.Node.maxQueueLength) {
@@ -190,22 +187,20 @@ class Node extends events.EventEmitter {
         if (configSettings.Node.autoReconnect) setTimeout(this.reconnect.bind(this), configSettings.Node.autoReconnect)
     }
     async nextSync() {
-        // const block = await this.blockchain.getNextSyncBlock()
-        // if (block !== null) {
-        //     const buffer = protocol.constructDataBuffer('post-block', Block.minify(block))
-        //     await this.node.broadcastAndStoreDataHash(buffer)
-        //     this.emit('sync', block)
-        // }
         const height = await this.blockchain.getHeight()
         if (++this.syncIndex > height) {
             if (++this.syncLoops >= height / configSettings.trustedAfterBlocks) {
-                this.syncIndex = 1
+                this.syncIndex = 0
                 this.syncLoops = 0
             }
             else this.syncIndex = height - configSettings.trustedAfterBlocks
         }
         await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('get-block', this.syncIndex))
-        await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('get-block', height + 1))
+        const send = (this.previousHeight !== height
+        || this.previousHeight === height
+        && this.syncIndex % Math.ceil(configSettings.TCPNetworkNode.hashes.timeToLive / configSettings.Node.syncNode.nextSyncTimeout * 2) === 0)
+        this.previousHeight = height
+        if (send === true) await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('get-block', height + 1))
         setTimeout(this.nextSync.bind(this), configSettings.Node.syncNode.nextSyncTimeout)
     }
     addWorker(worker: Worker) {
