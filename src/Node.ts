@@ -29,10 +29,14 @@ interface Node {
         transaction: number
         block: number
     }
+    syncIndex: number
+    syncLoops: number
 }
 class Node extends events.EventEmitter {
     constructor() {
         super()
+        this.syncIndex = 0
+        this.syncLoops = 0
         this.workersReady = new Set()
         this.workersBusy = new Set()
         this.threads = cpus().length
@@ -192,8 +196,16 @@ class Node extends events.EventEmitter {
         //     await this.node.broadcastAndStoreDataHash(buffer)
         //     this.emit('sync', block)
         // }
-        const buffer = protocol.constructDataBuffer('get-block', await this.blockchain.getHeight() + 1)
-        await this.node.broadcastAndStoreDataHash(buffer)
+        const height = await this.blockchain.getHeight()
+        if (++this.syncIndex > height) {
+            if (++this.syncLoops >= height / configSettings.trustedAfterBlocks) {
+                this.syncIndex = 1
+                this.syncLoops = 0
+            }
+            else this.syncIndex = height - configSettings.trustedAfterBlocks
+        }
+        await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('get-block', this.syncIndex))
+        await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('get-block', height + 1))
         setTimeout(this.nextSync.bind(this), configSettings.Node.syncNode.nextSyncTimeout)
     }
     addWorker(worker: Worker) {
