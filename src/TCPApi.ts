@@ -2,6 +2,7 @@ import * as net from 'net'
 import * as events from 'events'
 import * as configSettings from '../config/settings.json'
 import * as configNetwork from '../config/network.json'
+import * as crypto from 'crypto'
 import protocol from './protocol'
 interface Socket extends net.Socket {
     data: Buffer
@@ -65,13 +66,19 @@ class Client extends events.EventEmitter {
             socket.data = Buffer.concat([ socket.data, chunk ])
             let index = protocol.getEndIndex(socket.data)
             while (index !== -1 && !socket.destroyed) {
-                const buffer = socket.data.slice(0, index)
+                const checksum = socket.data.slice(0, 32)
+                const buffer = socket.data.slice(32, index)
                 socket.data = socket.data.slice(index + Buffer.byteLength(protocol.end))
-                if (Buffer.byteLength(buffer) !== 0) {
+                if (Buffer.byteLength(checksum) > 0
+                && Buffer.byteLength(buffer) > 0) {
+                    if (crypto.createHash('sha256').update(buffer).digest().equals(checksum) === false) {
+                        console.log('api checksum error')
+                        continue
+                    }
                     const parsed = protocol.parse(buffer)
                     if (parsed === null) continue
                     const { type, data } = parsed
-                    this.emit(type, data)
+                    this.emit(type, data, socket)
                 }
                 index = protocol.getEndIndex(socket.data)
             }
