@@ -35,11 +35,16 @@ class Server extends events.EventEmitter {
     stop() {
         this.server.close()
     }
-    broadcast(buffer: Buffer) {
-        for (const socket of this.sockets) {
-            socket.write(buffer)
-            socket.write(protocol.end)
-        }
+    broadcast(data: Buffer) {
+        return <any> new Promise(resolve => {
+            if (this.sockets.size === 0) resolve(true)
+            let i = 0
+            for (const socket of this.sockets) {
+                socket.write(data, () => {
+                    if (++i === this.sockets.size) resolve(true)
+                })
+            }
+        })
     }
 }
 interface Client {
@@ -66,16 +71,15 @@ class Client extends events.EventEmitter {
             socket.data = Buffer.concat([ socket.data, chunk ])
             let index = protocol.getEndIndex(socket.data)
             while (index !== -1 && !socket.destroyed) {
-                const checksum = socket.data.slice(0, 32)
-                const buffer = socket.data.slice(32, index)
-                socket.data = socket.data.slice(index + Buffer.byteLength(protocol.end))
-                if (Buffer.byteLength(checksum) > 0
-                && Buffer.byteLength(buffer) > 0) {
-                    if (crypto.createHash('sha256').update(buffer).digest().equals(checksum) === false) {
-                        console.log('api checksum error')
-                        continue
-                    }
-                    const parsed = protocol.parse(buffer)
+                const a = index + Buffer.byteLength(protocol.end)
+                const b = socket.data.slice(0, a) 
+                socket.data = socket.data.slice(a)
+                const c = b.slice(0, 32)
+                const d = b.slice(32, a - Buffer.byteLength(protocol.end))
+                if (Buffer.byteLength(c) > 0
+                && Buffer.byteLength(d) > 0) {
+                    if (crypto.createHash('sha256').update(d).digest().equals(c) === false) continue
+                    const parsed = protocol.parse(d)
                     if (parsed === null) continue
                     const { type, data } = parsed
                     this.emit(type, data, socket)

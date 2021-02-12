@@ -66,9 +66,7 @@ class Node extends events.EventEmitter {
             if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/banned.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
             this.emit('ban', socket)
         })
-        if (configSettings.TCPApi.enabled) {
-            this.tcpServer.start()
-        }
+        if (configSettings.TCPApi.enabled) this.tcpServer.start()
         if (configSettings.HTTPApi.enabled) {
             this.httpApi.start()
             this.httpApi.on('get-config', cb => cb(configSettings))

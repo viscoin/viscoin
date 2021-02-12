@@ -29,9 +29,7 @@ class Miner extends events.EventEmitter {
                 this.emitThreadsPause()
                 await this.start()
             })
-            this.tcpClient.on('post-transaction', async () => {
-                await this.restart()
-            })
+            this.tcpClient.on('post-transaction', async () => await this.restart())
         }
         this.workers = []
         this.threads = cpus().length
