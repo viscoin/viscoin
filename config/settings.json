@@ -78,5 +78,6 @@
         "enabled": true,
         "chanceToNotUse": 0
     },
+    "maxBlocksInCache": 1440,
     "trustedAfterBlocks": 1440
 }

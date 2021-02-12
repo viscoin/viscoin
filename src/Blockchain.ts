@@ -23,6 +23,7 @@ interface Blockchain {
     }
     addresses: object
     genesisBlockTimestamp: number
+    cache: Set<Block>
 }
 class Blockchain extends events.EventEmitter {
     constructor() {
@@ -36,6 +37,7 @@ class Blockchain extends events.EventEmitter {
         this.updateBlockHashes()
         this.addresses = {}
         this.genesisBlockTimestamp = configCore.genesisBlockTimestamp === -1 ? Date.now() : configCore.genesisBlockTimestamp
+        this.cache = new Set()
     }
     static difficultyToWork(difficulty: number) {
         return 2n ** BigInt(difficulty >> configCore.smoothness)
@@ -370,12 +372,18 @@ class Blockchain extends events.EventEmitter {
     }
     async getBlockByHeight(height: number) {
         if (height === 0) return await this.createGenesisBlock()
-        return await Block.load({
+        console.log(this.cache.size)
+        const block = [...this.cache].find(e => e.height === height)
+        if (block !== undefined) return block
+        const _block = await Block.load({
             [configMongoose.schema.block.height.name]: height,
             [configMongoose.schema.block.hash.name]: {
                 $in: this.hashes.current
             }
         }, null, { lean: true })
+        if (_block !== null) this.cache.add(_block)
+        if (this.cache.size > configSettings.maxBlocksInCache) this.cache.delete([...this.cache].sort((a, b) => a.height - b.height)[0])
+        return _block
     }
     async getNewBlock(address: Buffer) {
         this.minByteFee = {
