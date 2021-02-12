@@ -380,8 +380,10 @@ class Blockchain extends events.EventEmitter {
                 $in: this.hashes.current
             }
         }, null, { lean: true })
-        if (_block !== null) this.cache.add(_block)
-        if (this.cache.size > configSettings.maxBlocksInCache) this.cache.delete([...this.cache].sort((a, b) => a.height - b.height)[0])
+        if (_block !== null) {
+            if (this.cache.size + 1 > configSettings.maxBlocksInCache) this.cache.delete([...this.cache].sort((a, b) => a.height - b.height)[0])
+            this.cache.add(_block)
+        }
         return _block
     }
     async getNewBlock(address: Buffer) {
