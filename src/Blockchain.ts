@@ -372,7 +372,6 @@ class Blockchain extends events.EventEmitter {
     }
     async getBlockByHeight(height: number) {
         if (height === 0) return await this.createGenesisBlock()
-        console.log(this.cache.size)
         const block = [...this.cache].find(e => e.height === height)
         if (block !== undefined) return block
         const _block = await Block.load({
