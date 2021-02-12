@@ -1,5 +1,5 @@
 import Blockchain from "./Blockchain"
-import TCPNetworkNode from "./TCPNetworkNode"
+import TCPNode from "./TCPNode"
 import TCPApi from "./TCPApi"
 import HTTPApi from "./HTTPApi"
 import * as configSettings from '../config/settings.json'
@@ -21,7 +21,7 @@ interface Node {
     workersReady: Set<Worker>
     workersBusy: Set<Worker>
     threads: number
-    node: TCPNetworkNode
+    node: TCPNode
     tcpServer: TCPApi['Server']
     httpApi: HTTPApi
     blockchain: Blockchain
@@ -42,7 +42,7 @@ class Node extends events.EventEmitter {
         this.workersBusy = new Set()
         this.threads = cpus().length
         if (configSettings.Node.threads) this.threads = configSettings.Node.threads
-        this.node = new TCPNetworkNode()
+        this.node = new TCPNode()
         this.blockchain = new Blockchain()
         this.tcpServer = TCPApi.createServer()
         this.httpApi = new HTTPApi()
@@ -196,7 +196,7 @@ class Node extends events.EventEmitter {
         await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('get-block', this.syncIndex))
         const send = (this.previousHeight !== height
         || this.previousHeight === height
-        && this.syncIndex % Math.ceil(configSettings.TCPNetworkNode.hashes.timeToLive / configSettings.Node.syncNode.nextSyncTimeout * 2) === 0)
+        && this.syncIndex % Math.ceil(configSettings.TCPNode.hashes.timeToLive / configSettings.Node.syncNode.nextSyncTimeout * 2) === 0)
         this.previousHeight = height
         if (send === true) await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('get-block', height + 1))
         setTimeout(this.nextSync.bind(this), configSettings.Node.syncNode.nextSyncTimeout)
