@@ -44,11 +44,15 @@ class Node extends events.EventEmitter {
         if (configSettings.Node.hostNode === true) this.node.start()
         if (configSettings.Node.connectToNetwork === true) this.reconnect()
         if (configSettings.Node.syncNode.enabled === true) this.nextSync()
-        this.node.on('block', async block => this.emit('add-block', block))
-        this.node.on('transaction', async transaction => this.emit('add-transaction', transaction))
-        this.node.on('node', node => {
+        this.node.on('post-block', async block => this.emit('add-block', block))
+        this.node.on('post-transaction', async transaction => this.emit('add-transaction', transaction))
+        this.node.on('post-node', node => {
             if (configSettings.Node.connectToNetwork) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
             this.emit('node', node)
+        })
+        this.node.on('get-block', async (height, socket) => {
+            console.log(height)
+            TCPNetworkNode.send(socket, protocol.constructDataBuffer('post-block', Block.minify(await this.blockchain.getBlockByHeight(height))), () => {})
         })
         this.node.on('socket', socket => {
             if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
@@ -110,12 +114,14 @@ class Node extends events.EventEmitter {
         })
         this.on('transaction', (transaction, code) => {
             if (code === 0) {
-                this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
-                if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('transaction', Transaction.minify(transaction)))
+                const buffer = protocol.constructDataBuffer('post-transaction', Transaction.minify(transaction))
+                this.node.broadcastAndStoreDataHash(buffer)
+                if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(buffer)
             }
         })
         this.setMaxListeners(configSettings.Node.maxQueueLength)
         this.on('add-block', async (block: Block, cb: Function, retry: boolean = false) => {
+            console.log(block.height)
             let code = -1
             if (this.workersReady.size === 0) {
                 if (this.listeners('worker').length < configSettings.Node.maxQueueLength) {
@@ -145,8 +151,9 @@ class Node extends events.EventEmitter {
         })
         this.on('block', (block, code) => {
             if (code === 0) {
-                this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('block', Block.minify(block)))
-                if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(protocol.constructDataBuffer('block', Block.minify(block)))
+                const buffer = protocol.constructDataBuffer('post-block', Block.minify(block))
+                this.node.broadcastAndStoreDataHash(buffer)
+                if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(buffer)
             }
         })
         this.verifyrate = {
@@ -179,12 +186,14 @@ class Node extends events.EventEmitter {
         if (configSettings.Node.autoReconnect) setTimeout(this.reconnect.bind(this), configSettings.Node.autoReconnect)
     }
     async nextSync() {
-        const block = await this.blockchain.getNextSyncBlock()
-        if (block !== null) {
-            const buffer = protocol.constructDataBuffer('block', Block.minify(block))
-            await this.node.broadcastAndStoreDataHash(buffer)
-            this.emit('sync', block)
-        }
+        // const block = await this.blockchain.getNextSyncBlock()
+        // if (block !== null) {
+        //     const buffer = protocol.constructDataBuffer('post-block', Block.minify(block))
+        //     await this.node.broadcastAndStoreDataHash(buffer)
+        //     this.emit('sync', block)
+        // }
+        const buffer = protocol.constructDataBuffer('get-block', await this.blockchain.getHeight() + 1)
+        await this.node.broadcastAndStoreDataHash(buffer)
         setTimeout(this.nextSync.bind(this), configSettings.Node.syncNode.nextSyncTimeout)
     }
     addWorker(worker: Worker) {

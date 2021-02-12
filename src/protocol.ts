@@ -1,10 +1,12 @@
 import Block from "./Block"
 import Transaction from "./Transaction"
+import * as crypto from 'crypto'
 
 const types = [
-    'block',
-    'transaction',
-    'node'
+    'post-block',
+    'post-transaction',
+    'post-node',
+    'get-block'
 ] as const
 type types_string = typeof types[number]
 export default {
@@ -20,8 +22,16 @@ export default {
         }
         return null
     },
-    constructDataBuffer(type: types_string | number, data: object) {
-        return Buffer.concat([ Buffer.alloc(1, this.getType(type)), Buffer.from(JSON.stringify(data), 'binary') ])
+    constructDataBuffer(type: types_string | number, data: object | number) {
+        const buffer = Buffer.concat([
+            Buffer.alloc(1, this.getType(type)),
+            Buffer.from(JSON.stringify(data), 'binary')
+        ])
+        return Buffer.concat([
+            crypto.createHash('sha256').update(buffer).digest(),
+            buffer,
+            this.end
+        ])
     },
     parse(buffer: Buffer) {
         try {
@@ -29,17 +39,20 @@ export default {
             if (type === null) return null
             let data = JSON.parse(buffer.slice(1).toString('binary'))
             switch (type) {
-                case 'block':
+                case 'post-block':
                     data = new Block(Block.beautify(data))
                     break
-                case 'transaction':
+                case 'post-transaction':
                     data = new Transaction(Transaction.beautify(data))
                     break
-                case 'node':
+                case 'post-node':
                     data = {
                         port: data.port,
                         address: data.address
                     }
+                    break
+                case 'get-block':
+                    // data = parseInt(data)
                     break
                 default:
                     return null
