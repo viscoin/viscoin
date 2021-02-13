@@ -52,7 +52,7 @@ class TCPNetworkNode extends events.EventEmitter {
             })
             .on('del', () => this.peers.delete(peer))
             .on('ban', () => this.emit('ban', peer))
-        for (const type in protocol.types) {
+        for (const type of protocol.types) {
             peer.on(type, (data, buffer) => {
                 if (this.compareAndStoreHash(buffer) === true) return
                 this.emit(type, data, peer)
