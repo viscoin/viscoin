@@ -111,13 +111,10 @@ class Peer extends events.EventEmitter {
         if (this.height !== undefined) {
             if (this.index === undefined
             || this.index > this.height) this.index = this.height - configSettings.trustedAfterBlocks
-            if (this.previousIndex !== this.index) {
-                this.previousIndex = this.index
-                const buffer = protocol.constructBuffer('get-block', this.index)
-                const hash = crypto.createHash('sha256').update(buffer).digest()
-                this.addHash(hash)
-                await <Promise<void>> new Promise(resolve => this.write(buffer, () => resolve()))
-            }
+            const buffer = protocol.constructBuffer('get-block', this.index)
+            const hash = crypto.createHash('sha256').update(buffer).digest()
+            this.addHash(hash)
+            await <Promise<void>> new Promise(resolve => this.write(buffer, () => resolve()))
         }
         setTimeout(this.sync.bind(this), configSettings.Peer.sync.timeout)
     }
