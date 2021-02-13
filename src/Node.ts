@@ -51,7 +51,7 @@ class Node extends events.EventEmitter {
             this.emit('node', node)
         })
         this.node.on('get-block', async (height, peer) => peer.write(protocol.constructBuffer('post-block', Block.minify(await this.blockchain.getBlockByHeight(height)))))
-        this.node.on('get-height', async cb => cb(this.blockchain.height))
+        this.node.on('get-latest-block', async cb => cb(await this.blockchain.getLatestBlock()))
         this.node.on('peer', peer => {
             if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
             if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/connections.txt`, `${peer.socket.remoteAddress}:${peer.socket.remotePort}\n`)

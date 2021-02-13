@@ -30,7 +30,7 @@
         },
         "sync": {
             "enabled": true,
-            "timeout": 100
+            "timeout": 10
         },
         "hashes": {
             "length": 100,
@@ -38,7 +38,7 @@
             "interval": 100
         },
         "maxBytesInMemory": 131072,
-        "maxRequests1s": 20,
+        "maxRequests1s": 200,
         "banRequestsAbuse": false
     },
     "TCPNode": {

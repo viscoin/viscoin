@@ -82,7 +82,6 @@ class Blockchain extends events.EventEmitter {
         }
         this.updatingBlockHashes = true
         if (this.hashes === undefined || this.hashes.current.length === 0) await this.setBlockHashes()
-        this.height = await this.getHeight()
         let block = await this.setLatestBlock(),
         index: number = null
         const newHashes: Array<string> = []
@@ -109,6 +108,7 @@ class Blockchain extends events.EventEmitter {
                 this.hashes.new = newHashes
             }
         }
+        this.height = await this.getHeight()
         this.emit('updated-block-hashes')
         this.updatingBlockHashes = false
     }
