@@ -44,38 +44,39 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (this.hasSocketWithRemoteAddress(peer) || this.peers.size >= configSettings.TCPNode.maxConnectionsOut) return peer.del()
                 this.peers.add(peer)
                 this.emit('peer', peer)
-                this.broadcastAndStoreHash(protocol.constructBuffer('post-node', {
+                const buffer = protocol.constructBuffer('post-node', {
                     address: peer.socket.remoteAddress,
                     family: peer.socket.remoteFamily,
                     port: peer.socket.remotePort
-                }))
+                })
+                const hash = crypto.createHash('sha256').update(buffer).digest()
+                this.addHash(hash)
+                this.broadcast(buffer)
             })
             .on('del', () => this.peers.delete(peer))
             .on('ban', () => this.emit('ban', peer))
         for (const type of protocol.types) {
             peer.on(type, (data, buffer) => {
-                if (this.compareAndStoreHash(buffer) === true) return
                 this.emit(type, data, peer)
-                if (type.startsWith('post')) this.broadcast(buffer)
+                if (type.startsWith('get')) return
+                if (this.compareHash(buffer) === true) return
+                this.broadcast(buffer)
             })
         }
     }
-    compareAndStoreHash(buffer: Buffer) {
-        const hash = crypto.createHash('sha256').update(buffer).digest()
-        const found = this.hashes.find(e => e.hash.equals(hash)) ? true : false
-        if (found === false) this.addHash(hash)
-        return found
+    compareHash(hash: Buffer) {
+        return this.hashes.find(e => e.hash.equals(hash)) !== undefined ? true : false
     }
     addHash(hash: Buffer) {
         this.hashes.push({ hash, timestamp: Date.now() })
         if (this.hashes.length > configSettings.TCPNode.hashes.length) this.hashes.shift()
     }
     broadcast(buffer: Buffer) {
-        return <any> new Promise(resolve => {
-            if (this.peers.size === 0) resolve(true)
+        return <Promise<void>> new Promise(resolve => {
+            if (this.peers.size === 0) resolve()
             let i = 0
             const cb = () => {
-                if (++i === this.peers.size) resolve(true)
+                if (++i === this.peers.size) resolve()
             }
             for (const peer of this.peers) {
                 if (configSettings.Peer.maxRequestsPerSecond !== 0
@@ -83,10 +84,6 @@ class TCPNetworkNode extends events.EventEmitter {
                 peer.write(buffer, () => cb())
             }
         })
-    }
-    async broadcastAndStoreHash(buffer: Buffer) {
-        this.compareAndStoreHash(buffer)
-        await this.broadcast(buffer)
     }
     hasSocketWithRemoteAddress(peer: Peer) {
         for (const _peer of this.peers) {

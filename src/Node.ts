@@ -16,6 +16,7 @@ import { cpus } from 'os'
 import logHardware from './logHardware'
 import toLocaleTimeString from './chalk/LocaleTimeString'
 import * as chalk from 'chalk'
+import * as crypto from 'crypto'
 
 interface Node {
     workersReady: Set<Worker>
@@ -31,7 +32,6 @@ interface Node {
     }
     syncIndex: number
     syncLoops: number
-    previousHeight: number
 }
 class Node extends events.EventEmitter {
     constructor() {
@@ -117,7 +117,9 @@ class Node extends events.EventEmitter {
         this.on('transaction', (transaction, code) => {
             if (code === 0) {
                 const buffer = protocol.constructBuffer('post-transaction', Transaction.minify(transaction))
-                this.node.broadcastAndStoreHash(buffer)
+                const hash = crypto.createHash('sha256').update(buffer).digest()
+                this.node.addHash(hash)
+                this.node.broadcast(buffer)
                 if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(buffer)
             }
         })
@@ -153,7 +155,9 @@ class Node extends events.EventEmitter {
         this.on('block', (block, code) => {
             if (code === 0) {
                 const buffer = protocol.constructBuffer('post-block', Block.minify(block))
-                this.node.broadcastAndStoreHash(buffer)
+                const hash = crypto.createHash('sha256').update(buffer).digest()
+                this.node.addHash(hash)
+                this.node.broadcast(buffer)
                 if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(buffer)
             }
         })
@@ -196,15 +200,23 @@ class Node extends events.EventEmitter {
             else this.syncIndex = height - configSettings.trustedAfterBlocks
         }
         if (configSettings.Node.sync.get === true) {
-            await this.node.broadcastAndStoreHash(protocol.constructBuffer('get-block', this.syncIndex))
-            if (this.previousHeight !== height
-            || (this.previousHeight === height
-                && this.syncIndex % Math.ceil(configSettings.TCPNode.hashes.timeToLive / configSettings.Node.sync.timeout * 2) === 0)) await this.node.broadcastAndStoreHash(protocol.constructBuffer('get-block', height + 1))
-            this.previousHeight = height
+            const buffer = protocol.constructBuffer('get-block', this.syncIndex)
+            const hash = crypto.createHash('sha256').update(buffer).digest()
+            this.node.addHash(hash)
+            await this.node.broadcast(buffer)
+            const _buffer = protocol.constructBuffer('get-block', height + 1)
+            const _hash = crypto.createHash('sha256').update(_buffer).digest()
+            this.node.addHash(_hash)
+            await this.node.broadcast(_buffer)
         }
         if (configSettings.Node.sync.post === true) {
             const block = await this.blockchain.getBlockByHeight(this.syncIndex)
-            if (block !== null) await this.node.broadcastAndStoreHash(protocol.constructBuffer('post-block', Block.minify(block)))
+            if (block !== null) {
+                const buffer = protocol.constructBuffer('post-block', Block.minify(block))
+                const hash = crypto.createHash('sha256').update(buffer).digest()
+                this.node.addHash(hash)
+                await this.node.broadcast(buffer)
+            }
         }
         setTimeout(this.nextSync.bind(this), configSettings.Node.sync.timeout)
     }

@@ -16,9 +16,9 @@
         "autoReconnect": 60000,
         "sync": {
             "enabled": true,
-            "timeout": 1,
-            "get": false,
-            "post": true
+            "timeout": 1000,
+            "get": true,
+            "post": false
         },
         "maxQueueLength": 100,
         "threads": 0
@@ -35,14 +35,14 @@
             "setTimeout": 60000
         },
         "maxBytesInMemory": 131072,
-        "maxRequestsPerSecond": 0,
+        "maxRequestsPerSecond": 200,
         "onAbuseRequestsBehaviour": "continue"
     },
     "TCPNode": {
         "allowConnectionsToSelf": true,
         "hashes": {
             "length": 10000,
-            "timeToLive": 30000,
+            "timeToLive": 3000,
             "interval": 100
         },
         "maxConnectionsIn": 10,

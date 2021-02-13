@@ -36,12 +36,12 @@ class Server extends events.EventEmitter {
         this.server.close()
     }
     broadcast(data: Buffer) {
-        return <any> new Promise(resolve => {
-            if (this.sockets.size === 0) resolve(true)
+        return <Promise<void>> new Promise(resolve => {
+            if (this.sockets.size === 0) resolve()
             let i = 0
             for (const socket of this.sockets) {
                 socket.write(data, () => {
-                    if (++i === this.sockets.size) resolve(true)
+                    if (++i === this.sockets.size) resolve()
                 })
             }
         })

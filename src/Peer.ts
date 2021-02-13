@@ -9,10 +9,7 @@ interface Peer extends events.EventEmitter {
     bytesWritten: number
     buffer: Buffer
     requests: number
-    settings: {
-
-    }
-    index: number
+    hashes: Array<{ hash: Buffer, timestamp: number }>
 }
 class Peer extends events.EventEmitter {
     constructor(socket: net.Socket) {
@@ -22,9 +19,9 @@ class Peer extends events.EventEmitter {
         this.bytesWritten = this.bytesWritten
         this.buffer = Buffer.alloc(0)
         this.requests = 0
-        // this.settings = {}
-        // this.index = 0
+        this.hashes = []
         setInterval(this.interval['1s'].bind(this), 1000)
+        setInterval(this.interval.hashes.bind(this), configSettings.TCPNode.hashes.interval)
         this.socket.setTimeout(configSettings.Peer.socket.setTimeout)
         if (this.socket.connecting === false) this.add()
         this.socket
@@ -40,6 +37,9 @@ class Peer extends events.EventEmitter {
             this.bytesRead = this.socket.bytesRead
             this.bytesWritten = this.socket.bytesWritten
             this.requests = 0
+        },
+        hashes: () => {
+            this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - configSettings.TCPNode.hashes.timeToLive)
         }
     }
     add() {
@@ -71,6 +71,9 @@ class Peer extends events.EventEmitter {
             const d = b.slice(32, a - Buffer.byteLength(protocol.end))
             if (Buffer.byteLength(c) > 0
             && Buffer.byteLength(d) > 0) {
+                const hash = crypto.createHash('sha256').update(b).digest()
+                if (this.compareHash(hash) === true) continue
+                this.addHash(hash)
                 if (crypto.createHash('sha256').update(d).digest().equals(c) === false) continue
                 const parsed = protocol.parse(d)
                 if (parsed === null) continue
@@ -82,8 +85,20 @@ class Peer extends events.EventEmitter {
         }
     }
     write(buffer: Buffer, cb) {
-        if (this.socket.bytesWritten + Buffer.byteLength(buffer) - this.bytesWritten > configSettings.Peer.socket.maxBytesWritten1s) return cb()
-        this.socket.write(buffer, () => cb())
+        if (this.socket.bytesWritten + Buffer.byteLength(buffer) - this.bytesWritten > configSettings.Peer.socket.maxBytesWritten1s) {
+            if (cb !== undefined) cb()
+            return
+        }
+        this.socket.write(buffer, () => {
+            if (cb !== undefined) cb()
+        })
+    }
+    compareHash(hash: Buffer) {
+        return this.hashes.find(e => e.hash.equals(hash)) !== undefined ? true : false
+    }
+    addHash(hash: Buffer) {
+        this.hashes.push({ hash, timestamp: Date.now() })
+        if (this.hashes.length > configSettings.TCPNode.hashes.length) this.hashes.shift()
     }
 }
 export default Peer
