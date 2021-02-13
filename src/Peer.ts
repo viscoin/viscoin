@@ -1,55 +1,61 @@
 import * as configSettings from '../config/settings.json'
 import * as net from 'net'
+import * as events from 'events'
 import * as crypto from 'crypto'
 import protocol from './protocol'
-interface Socket extends net.Socket {
+interface Peer extends events.EventEmitter {
+    socket: net.Socket
+    bytesRead: number
+    bytesWritten: number
     buffer: Buffer
-    bytesReadLastSecond: number
     requests: number
     settings: {
 
     }
     index: number
 }
-class Socket implements Socket {
-    constructor() {
+class Peer extends events.EventEmitter {
+    constructor(socket: net.Socket) {
+        super()
+        this.socket = socket
+        this.bytesRead = this.bytesRead
+        this.bytesWritten = this.bytesWritten
         this.buffer = Buffer.alloc(0)
-        this.bytesReadLastSecond = this.bytesRead
         this.requests = 0
-        this.setTimeout(configSettings.TCPNode.socket.setTimeout)
-        setInterval(this.clear.bind(this), 1000)
-        if (this.connecting === false) this.add()
-        this
-            .on('connect', () => this.add())
-            .on('error', () => this.del())
+        // this.settings = {}
+        // this.index = 0
+        setInterval(this.interval['1s'].bind(this), 1000)
+        this.socket.setTimeout(configSettings.TCPNode.socket.setTimeout)
+        if (this.socket.connecting === false) this.emit('add')
+        this.socket
+            .on('connect', () => this.emit('add'))
+            .on('error', () => {})
             .on('close', () => this.del())
             .on('timeout', () => this.emit('ban'))
             .on('data', chunk => this.onData(chunk))
             .on('ban', () => this.del())
     }
-    add() {
-        this.emit('add')
+    interval = {
+        '1s': () => {
+            this.bytesRead = this.socket.bytesRead
+            this.bytesWritten = this.socket.bytesWritten
+            this.requests = 0
+        }
     }
     del() {
-        this.destroy()
-        this.removeAllListeners()
+        this.socket.destroy()
+        // this.socket.removeAllListeners()
         this.emit('del')
     }
-    clear() {
-        this.bytesReadLastSecond = 0
-        this.requests = 0
-    }
-    async onData(chunk: Buffer) {
-        const byteLength = Buffer.byteLength(chunk)
-        this.bytesReadLastSecond += byteLength
-        if (this.bytesReadLastSecond > configSettings.TCPNode.socket.maxBytesPerSecond) return this.emit('ban')
-        this.buffer = Buffer.concat([
-            this.buffer,
-            chunk
-        ])
+    onData(chunk: Buffer) {
+        if (this.socket.bytesRead - this.bytesRead > configSettings.TCPNode.socket.maxBytesPerSecond) return this.emit('ban')
+        this.buffer = Buffer.concat([ this.buffer, chunk ])
         if (Buffer.byteLength(this.buffer) > configSettings.TCPNode.socket.maxBytesInMemory) return this.emit('ban')
+        this.extract()
+    }
+    async extract() {
         let index = protocol.getEndIndex(this.buffer)
-        while (index !== -1 && !this.destroyed) {
+        while (index !== -1 && this.socket.destroyed === false) {
             if (configSettings.TCPNode.socket.maxRequestsPerSecond !== 0
             && ++this.requests > configSettings.TCPNode.socket.maxRequestsPerSecond) {
                 if (configSettings.TCPNode.socket.onAbuseRequestsBehaviour === 'continue') continue
@@ -73,4 +79,4 @@ class Socket implements Socket {
         }
     }
 }
-export default Socket
+export default Peer

@@ -58,15 +58,15 @@ class Node extends events.EventEmitter {
             this.emit('node', node)
         })
         this.node.on('get-block', async (height, socket) => socket.write(protocol.constructDataBuffer('post-block', Block.minify(await this.blockchain.getBlockByHeight(height)))))
-        this.node.on('socket', socket => {
+        this.node.on('peer', peer => {
             if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
-            if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/connections.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
-            this.emit('socket', socket)
+            if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/connections.txt`, `${peer.socket.remoteAddress}:${peer.socket.remotePort}\n`)
+            this.emit('peer', peer)
         })
-        this.node.on('ban', (socket) => {
+        this.node.on('ban', peer => {
             if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
-            if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/banned.txt`, `${socket.remoteAddress}:${socket.remotePort}\n`)
-            this.emit('ban', socket)
+            if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/banned.txt`, `${peer.socket.remoteAddress}:${peer.socket.remotePort}\n`)
+            this.emit('ban', peer)
         })
         if (configSettings.TCPApi.enabled) this.tcpServer.start()
         if (configSettings.HTTPApi.enabled) {

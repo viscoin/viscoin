@@ -5,11 +5,11 @@ import * as configNetwork from '../config/network.json'
 import * as crypto from 'crypto'
 import protocol from './protocol'
 import parseNodes from './parseNodes'
-import Socket from './Socket'
+import Peer from './Peer'
 import * as fs from 'fs'
 interface TCPNetworkNode {
     hashes: Array<{ hash: Buffer, timestamp: number }>
-    sockets: Set<Socket>
+    peers: Set<Peer>
     banned: Array<String>
     // server
     server: net.Server
@@ -19,45 +19,42 @@ class TCPNetworkNode extends events.EventEmitter {
     constructor() {
         super()
         this.hashes = []
-        this.sockets = new Set()
+        this.peers = new Set()
         this.banned = []
         if (configSettings.logs.use && fs.existsSync(`${configSettings.logs.path}/banned.txt`)) this.banned = parseNodes(fs.readFileSync(`${configSettings.logs.path}/banned.txt`, 'binary')).map(e => `${e.address}:${e.port}`)
-        this.on('ban', (socket: Socket) => this.banned.push(socket.remoteAddress))
+        this.on('ban', (peer: Peer) => this.banned.push(peer.socket.remoteAddress))
         setInterval(this.clear.bind(this), configSettings.TCPNode.hashes.interval)
         // server
         this.server = new net.Server()
         this.server.maxConnections = configSettings.TCPNode.server.maxConnectionsIn
         this.server
-            .on('connection', (socket: Socket) => {
-                this.add(socket)
-                this.emit('connection', socket)
-            })
+            .on('connection', socket => this.add(new Peer(socket)))
             .on('listening', () => this.emit('listening'))
             .on('error', e => this.emit('error', e))
-            .on('close', () => {})
+            // .on('close', () => {})
         // client
     }
     clear() {
         this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - configSettings.TCPNode.hashes.timeToLive)
     }
-    add(socket: Socket) {
-        if (this.banned.includes(socket.remoteAddress)) return socket.del()
-        socket
+    add(peer: Peer) {
+        if (this.banned.includes(peer.socket.remoteAddress)) return peer.del()
+        peer
             .on('add', () => {
-                if (this.hasSocketWithRemoteAddress(socket) || this.sockets.size >= configSettings.TCPNode.maxConnectionsOut) return socket.del()
-                this.sockets.add(socket)
+                if (this.hasSocketWithRemoteAddress(peer) || this.peers.size >= configSettings.TCPNode.maxConnectionsOut) return peer.del()
+                this.peers.add(peer)
+                this.emit('peer', peer)
                 this.broadcastAndStoreDataHash(protocol.constructDataBuffer('post-node', {
-                    address: socket.remoteAddress,
-                    family: socket.remoteFamily,
-                    port: socket.remotePort
+                    address: peer.socket.remoteAddress,
+                    family: peer.socket.remoteFamily,
+                    port: peer.socket.remotePort
                 }))
-                this.emit('socket', socket)
             })
-            .on('del', () => this.sockets.delete(socket))
-            .on('ban', () => this.emit('ban', socket))
+            .on('del', () => this.peers.delete(peer))
+            .on('ban', () => this.emit('ban', peer))
         for (const type in protocol.types) {
-            socket.on(type, (data, buffer) => {
-                if (this.compareAndStoreHash(buffer)) return
+            peer.on(type, (data, buffer) => {
+                if (this.compareAndStoreHash(buffer) === true) return
                 this.emit(type, data)
                 if (type.startsWith('post')) this.broadcast(buffer)
             })
@@ -75,15 +72,15 @@ class TCPNetworkNode extends events.EventEmitter {
     }
     broadcast(data: Buffer) {
         return <any> new Promise(resolve => {
-            if (this.sockets.size === 0) resolve(true)
+            if (this.peers.size === 0) resolve(true)
             let i = 0
             const cb = () => {
-                if (++i === this.sockets.size) resolve(true)
+                if (++i === this.peers.size) resolve(true)
             }
-            for (const socket of this.sockets) {
+            for (const peer of this.peers) {
                 if (configSettings.TCPNode.socket.maxRequestsPerSecond !== 0
-                && ++socket.requests > configSettings.TCPNode.socket.maxRequestsPerSecond) cb()
-                socket.write(data, () => cb())
+                && ++peer.requests > configSettings.TCPNode.socket.maxRequestsPerSecond) cb()
+                peer.socket.write(data, () => cb())
             }
         })
     }
@@ -91,9 +88,9 @@ class TCPNetworkNode extends events.EventEmitter {
         this.compareAndStoreHash(data)
         await this.broadcast(data)
     }
-    hasSocketWithRemoteAddress(socket) {
-        for (const _socket of this.sockets) {
-            if (socket.remoteAddress === _socket.remoteAddress) return true
+    hasSocketWithRemoteAddress(peer: Peer) {
+        for (const _peer of this.peers) {
+            if (peer.socket.remoteAddress === _peer.socket.remoteAddress) return true
         }
         return false
     }
@@ -120,13 +117,13 @@ class TCPNetworkNode extends events.EventEmitter {
             if (configSettings.TCPNode.allowConnectionsToSelf === false
             && node.port === configNetwork.TCPNetworkNode.port
             && node.address === configNetwork.TCPNetworkNode.address) continue
-            const socket = <Socket> net.connect(node.port, node.address)
-            this.add(socket)
+            const socket = net.connect(node.port, node.address)
+            this.add(new Peer(socket))
         }
     }
     disconnectFromNetwork() {
-        for (const socket of this.sockets) {
-            this.emit('del', (socket))
+        for (const peer of this.peers) {
+            peer.del()
         }
     }
     // server

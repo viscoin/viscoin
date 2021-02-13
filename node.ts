@@ -23,8 +23,8 @@ if (isMainThread) {
     node.on('sync', block => {
         if (configSettings.consoleLog.sync === true && block.height % configSettings.consoleLog.syncModulu === 0) console.log(`${toLocaleTimeString()} ${chalk.yellow('sync')} { height: ${chalk.yellowBright(block.height)} }`)
     })
-    node.on('socket', socket => console.log(`${toLocaleTimeString()} ${chalk.green('new')} ${chalk.yellow('Socket')} ${socket.remoteAddress}:${socket.remotePort}`))
-    node.on('ban', socket => console.log(`${toLocaleTimeString()} ${chalk.redBright('Banned')} ${socket.remoteAddress}:${socket.remotePort}`))
+    node.on('peer', peer => console.log(`${toLocaleTimeString()} ${chalk.green('new')} ${chalk.yellow('Socket')} ${peer.socket.remoteAddress}:${peer.socket.remotePort}`))
+    node.on('ban', peer => console.log(`${toLocaleTimeString()} ${chalk.redBright('Banned')} ${peer.socket.remoteAddress}:${peer.socket.remotePort}`))
     node.on('transaction', (transaction, code) => {
         if (code === 0) console.log(`${toLocaleTimeString()} ${chalk.green('new')} ${chalk.yellow('Transaction')} { from: ${chalk.yellowBright(base58.encode(transaction.from))} }`)
     })
