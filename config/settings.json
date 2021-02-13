@@ -16,7 +16,7 @@
         "autoReconnect": 60000,
         "sync": {
             "enabled": true,
-            "timeout": 0,
+            "timeout": 1,
             "get": false,
             "post": true
         },
