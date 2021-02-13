@@ -26,7 +26,7 @@ class TCPNetworkNode extends events.EventEmitter {
         setInterval(this.clear.bind(this), configSettings.TCPNode.hashes.interval)
         // server
         this.server = new net.Server()
-        this.server.maxConnections = configSettings.TCPNode.server.maxConnectionsIn
+        this.server.maxConnections = configSettings.TCPNode.maxConnectionsIn
         this.server
             .on('connection', socket => this.add(new Peer(socket)))
             .on('listening', () => this.emit('listening'))
@@ -78,8 +78,8 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (++i === this.peers.size) resolve(true)
             }
             for (const peer of this.peers) {
-                if (configSettings.TCPNode.socket.maxRequestsPerSecond !== 0
-                && ++peer.requests > configSettings.TCPNode.socket.maxRequestsPerSecond) cb()
+                if (configSettings.Peer.socket.maxRequestsPerSecond !== 0
+                && ++peer.requests > configSettings.Peer.socket.maxRequestsPerSecond) cb()
                 peer.write(buffer, () => cb())
             }
         })

@@ -25,7 +25,7 @@ class Peer extends events.EventEmitter {
         // this.settings = {}
         // this.index = 0
         setInterval(this.interval['1s'].bind(this), 1000)
-        this.socket.setTimeout(configSettings.TCPNode.socket.setTimeout)
+        this.socket.setTimeout(configSettings.Peer.socket.setTimeout)
         if (this.socket.connecting === false) this.emit('add')
         this.socket
             .on('connect', () => this.emit('add'))
@@ -50,16 +50,16 @@ class Peer extends events.EventEmitter {
     onData(chunk: Buffer) {
         if (this.socket.bytesRead - this.bytesRead > configSettings.Peer.socket.maxBytesRead1s) return this.emit('ban')
         this.buffer = Buffer.concat([ this.buffer, chunk ])
-        if (Buffer.byteLength(this.buffer) > configSettings.TCPNode.socket.maxBytesInMemory) return this.emit('ban')
+        if (Buffer.byteLength(this.buffer) > configSettings.Peer.socket.maxBytesInMemory) return this.emit('ban')
         this.extract()
     }
     async extract() {
         let index = protocol.getEndIndex(this.buffer)
         while (index !== -1 && this.socket.destroyed === false) {
-            if (configSettings.TCPNode.socket.maxRequestsPerSecond !== 0
-            && ++this.requests > configSettings.TCPNode.socket.maxRequestsPerSecond) {
-                if (configSettings.TCPNode.socket.onAbuseRequestsBehaviour === 'continue') continue
-                else if (configSettings.TCPNode.socket.onAbuseRequestsBehaviour === 'ban') return this.emit('ban')
+            if (configSettings.Peer.socket.maxRequestsPerSecond !== 0
+            && ++this.requests > configSettings.Peer.socket.maxRequestsPerSecond) {
+                if (configSettings.Peer.socket.onAbuseRequestsBehaviour === 'continue') continue
+                else if (configSettings.Peer.socket.onAbuseRequestsBehaviour === 'ban') return this.emit('ban')
             }
             const a = index + Buffer.byteLength(protocol.end)
             const b = this.buffer.slice(0, a) 

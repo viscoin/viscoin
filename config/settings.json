@@ -31,7 +31,11 @@
     "Peer": {
         "socket": {
             "maxBytesRead1s": 1048576,
-            "maxBytesWritten1s": 2000
+            "maxBytesWritten1s": 1048576,
+            "setTimeout": 60000,
+            "maxBytesInMemory": 131072,
+            "maxRequestsPerSecond": 0,
+            "onAbuseRequestsBehaviour": "continue"
         }
     },
     "TCPNode": {
@@ -41,15 +45,7 @@
             "timeToLive": 30000,
             "interval": 100
         },
-        "socket": {
-            "setTimeout": 60000,
-            "maxBytesInMemory": 131072,
-            "maxRequestsPerSecond": 0,
-            "onAbuseRequestsBehaviour": "continue"
-        },
-        "server": {
-            "maxConnectionsIn": 10
-        },
+        "maxConnectionsIn": 10,
         "maxConnectionsOut": 10
     },
     "Wallet": {
