@@ -30,11 +30,11 @@
         },
         "sync": {
             "enabled": true,
-            "timeout": 10
+            "timeout": 50
         },
         "hashes": {
             "length": 100,
-            "timeToLive": 30000,
+            "timeToLive": 3000,
             "interval": 100
         },
         "maxBytesInMemory": 131072,
@@ -45,7 +45,7 @@
         "allowConnectionsToSelf": false,
         "hashes": {
             "length": 1000,
-            "timeToLive": 30000,
+            "timeToLive": 3000,
             "interval": 100
         },
         "maxConnectionsIn": 10,
