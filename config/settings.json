@@ -14,9 +14,11 @@
         "hostNode": true,
         "connectToNetwork": true,
         "autoReconnect": 60000,
-        "syncNode": {
+        "sync": {
             "enabled": true,
-            "nextSyncTimeout": 100
+            "timeout": 1000,
+            "get": true,
+            "post": true
         },
         "maxQueueLength": 100,
         "threads": 0
@@ -37,7 +39,7 @@
             "maxBytesPerSecond": 1048576,
             "setTimeout": 60000,
             "maxBytesInMemory": 131072,
-            "maxRequestsPerSecond": 100,
+            "maxRequestsPerSecond": 20,
             "onAbuseRequestsBehaviour": "continue"
         },
         "server": {

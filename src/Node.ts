@@ -48,7 +48,9 @@ class Node extends events.EventEmitter {
         this.httpApi = new HTTPApi()
         if (configSettings.Node.hostNode === true) this.node.start()
         if (configSettings.Node.connectToNetwork === true) this.reconnect()
-        if (configSettings.Node.syncNode.enabled === true) this.nextSync()
+        if (configSettings.Node.sync.enabled === true
+        && (configSettings.Node.sync.get === true
+        || configSettings.Node.sync.post === true)) this.nextSync()
         this.node.on('post-block', async block => this.emit('add-block', block))
         this.node.on('post-transaction', async transaction => this.emit('add-transaction', transaction))
         this.node.on('post-node', node => {
@@ -193,13 +195,19 @@ class Node extends events.EventEmitter {
             }
             else this.syncIndex = height - configSettings.trustedAfterBlocks
         }
-        await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('get-block', this.syncIndex))
-        const send = (this.previousHeight !== height
-        || this.previousHeight === height
-        && this.syncIndex % Math.ceil(configSettings.TCPNode.hashes.timeToLive / configSettings.Node.syncNode.nextSyncTimeout * 2) === 0)
-        this.previousHeight = height
-        if (send === true) await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('get-block', height + 1))
-        setTimeout(this.nextSync.bind(this), configSettings.Node.syncNode.nextSyncTimeout)
+        if (configSettings.Node.sync.get === true) {
+            await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('get-block', this.syncIndex))
+            const send = (this.previousHeight !== height
+            || this.previousHeight === height
+            && this.syncIndex % Math.ceil(configSettings.TCPNode.hashes.timeToLive / configSettings.Node.sync.timeout * 2) === 0)
+            this.previousHeight = height
+            if (send === true) await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('get-block', height + 1))
+        }
+        if (configSettings.Node.sync.post === true) {
+            const block = await this.blockchain.getBlockByHeight(height)
+            if (block !== null) await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('post-block', Block.minify(block)))
+        }
+        setTimeout(this.nextSync.bind(this), configSettings.Node.sync.timeout)
     }
     addWorker(worker: Worker) {
         this.workersBusy.add(worker)
