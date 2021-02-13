@@ -59,29 +59,32 @@ class Peer extends events.EventEmitter {
         if (Buffer.byteLength(this.buffer) > configSettings.Peer.maxBytesInMemory) return this.emit('ban')
         this.extract()
     }
-    async extract() {
+    extract() {
         let index = protocol.getEndIndex(this.buffer)
         while (index !== -1 && this.socket.destroyed === false) {
             if (++this.requests > configSettings.Peer.maxRequests1s
             && configSettings.Peer.maxRequests1s !== 0) {
                 if (configSettings.Peer.banRequestsAbuse === true) return this.emit('ban')
+                this.buffer = Buffer.alloc(0)
             }
-            const a = index + Buffer.byteLength(protocol.end)
-            const b = this.buffer.slice(0, a) 
-            this.buffer = this.buffer.slice(a)
-            const c = b.slice(0, 32)
-            const d = b.slice(32, a - Buffer.byteLength(protocol.end))
-            if (Buffer.byteLength(c) > 0
-            && Buffer.byteLength(d) > 0) {
-                const hash = crypto.createHash('sha256').update(b).digest()
-                if (this.compareHash(hash) === true) continue
-                this.addHash(hash)
-                if (crypto.createHash('sha256').update(d).digest().equals(c) === false) continue
-                const parsed = protocol.parse(d)
-                if (parsed === null) continue
-                const { type, data } = parsed
-                if (type === 'post-block' && this.index === data?.height) this.index++
-                this.emit(type, data, b)
+            else {
+                const a = index + Buffer.byteLength(protocol.end)
+                const b = this.buffer.slice(0, a) 
+                this.buffer = this.buffer.slice(a)
+                const c = b.slice(0, 32)
+                const d = b.slice(32, a - Buffer.byteLength(protocol.end))
+                if (Buffer.byteLength(c) > 0
+                && Buffer.byteLength(d) > 0) {
+                    const hash = crypto.createHash('sha256').update(b).digest()
+                    if (this.compareHash(hash) === true) continue
+                    this.addHash(hash)
+                    if (crypto.createHash('sha256').update(d).digest().equals(c) === false) continue
+                    const parsed = protocol.parse(d)
+                    if (parsed === null) continue
+                    const { type, data } = parsed
+                    if (type === 'post-block' && this.index === data?.height) this.index++
+                    this.emit(type, data, b)
+                }
             }
             index = protocol.getEndIndex(this.buffer)
         }
