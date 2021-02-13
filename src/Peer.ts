@@ -26,9 +26,9 @@ class Peer extends events.EventEmitter {
         // this.index = 0
         setInterval(this.interval['1s'].bind(this), 1000)
         this.socket.setTimeout(configSettings.Peer.socket.setTimeout)
-        if (this.socket.connecting === false) this.emit('add')
+        if (this.socket.connecting === false) this.add()
         this.socket
-            .on('connect', () => this.emit('add'))
+            .on('connect', () => this.add())
             .on('error', () => {})
             .on('close', () => this.del())
             .on('timeout', () => this.emit('ban'))
@@ -41,6 +41,9 @@ class Peer extends events.EventEmitter {
             this.bytesWritten = this.socket.bytesWritten
             this.requests = 0
         }
+    }
+    add() {
+        this.emit('add')
     }
     del() {
         this.socket.destroy()
