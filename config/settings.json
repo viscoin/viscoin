@@ -32,6 +32,11 @@
             "enabled": true,
             "timeout": 100
         },
+        "hashes": {
+            "length": 100,
+            "timeToLive": 30000,
+            "interval": 100
+        },
         "maxBytesInMemory": 131072,
         "maxRequests1s": 20,
         "banRequestsAbuse": false
@@ -39,8 +44,8 @@
     "TCPNode": {
         "allowConnectionsToSelf": true,
         "hashes": {
-            "length": 10000,
-            "timeToLive": 3000,
+            "length": 1000,
+            "timeToLive": 30000,
             "interval": 100
         },
         "maxConnectionsIn": 10,

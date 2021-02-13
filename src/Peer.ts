@@ -24,7 +24,7 @@ class Peer extends events.EventEmitter {
         this.hashes = []
         if (configSettings.Peer.sync.enabled === true) this.sync()
         setInterval(this.interval['1s'].bind(this), 1000)
-        setInterval(this.interval.hashes.bind(this), configSettings.TCPNode.hashes.interval)
+        setInterval(this.interval.hashes.bind(this), configSettings.Peer.hashes.interval)
         this.socket.setTimeout(configSettings.Peer.socket.setTimeout)
         if (this.socket.connecting === false) this.add()
         this.socket
@@ -42,7 +42,7 @@ class Peer extends events.EventEmitter {
             this.requests = 0
         },
         hashes: () => {
-            this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - configSettings.TCPNode.hashes.timeToLive)
+            this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - configSettings.Peer.hashes.timeToLive)
         }
     }
     add() {
@@ -100,7 +100,7 @@ class Peer extends events.EventEmitter {
     }
     addHash(hash: Buffer) {
         this.hashes.push({ hash, timestamp: Date.now() })
-        if (this.hashes.length > configSettings.TCPNode.hashes.length) this.hashes.shift()
+        if (this.hashes.length > configSettings.Peer.hashes.length) this.hashes.shift()
     }
     async sync() {
         this.emit('get-height', (height: number) => this.height = height)
