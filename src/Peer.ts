@@ -11,7 +11,6 @@ interface Peer extends events.EventEmitter {
     requests: number
     hashes: Array<{ hash: Buffer, timestamp: number }>
     index: number
-    previousIndex: number
     height: number
 }
 class Peer extends events.EventEmitter {
