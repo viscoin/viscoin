@@ -48,7 +48,7 @@ class Peer extends events.EventEmitter {
         this.emit('del')
     }
     onData(chunk: Buffer) {
-        if (this.socket.bytesRead - this.bytesRead > configSettings.TCPNode.socket.maxBytesPerSecond) return this.emit('ban')
+        if (this.socket.bytesRead - this.bytesRead > configSettings.Peer.socket.maxBytesRead1s) return this.emit('ban')
         this.buffer = Buffer.concat([ this.buffer, chunk ])
         if (Buffer.byteLength(this.buffer) > configSettings.TCPNode.socket.maxBytesInMemory) return this.emit('ban')
         this.extract()
@@ -79,6 +79,7 @@ class Peer extends events.EventEmitter {
         }
     }
     write(buffer: Buffer, cb) {
+        if (this.socket.bytesWritten + Buffer.byteLength(buffer) - this.bytesWritten > configSettings.Peer.socket.maxBytesWritten1s) return cb()
         this.socket.write(buffer, () => cb())
     }
 }

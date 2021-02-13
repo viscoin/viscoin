@@ -28,15 +28,20 @@
         "maxConnections": 20,
         "autoReconnect": 1000
     },
+    "Peer": {
+        "socket": {
+            "maxBytesRead1s": 1048576,
+            "maxBytesWritten1s": 2000
+        }
+    },
     "TCPNode": {
-        "allowConnectionsToSelf": false,
+        "allowConnectionsToSelf": true,
         "hashes": {
             "length": 10000,
             "timeToLive": 30000,
             "interval": 100
         },
         "socket": {
-            "maxBytesPerSecond": 1048576,
             "setTimeout": 60000,
             "maxBytesInMemory": 131072,
             "maxRequestsPerSecond": 0,
