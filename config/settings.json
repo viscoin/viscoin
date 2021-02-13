@@ -35,7 +35,7 @@
             "setTimeout": 60000
         },
         "maxBytesInMemory": 131072,
-        "maxRequestsPerSecond": 200,
+        "maxRequests1s": 200,
         "onAbuseRequestsBehaviour": "continue"
     },
     "TCPNode": {

@@ -79,8 +79,8 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (++i === this.peers.size) resolve()
             }
             for (const peer of this.peers) {
-                if (configSettings.Peer.maxRequestsPerSecond !== 0
-                && ++peer.requests > configSettings.Peer.maxRequestsPerSecond) cb()
+                if (configSettings.Peer.maxRequests1s !== 0
+                && ++peer.requests > configSettings.Peer.maxRequests1s) cb()
                 peer.write(buffer, () => cb())
             }
         })

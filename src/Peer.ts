@@ -59,8 +59,8 @@ class Peer extends events.EventEmitter {
     async extract() {
         let index = protocol.getEndIndex(this.buffer)
         while (index !== -1 && this.socket.destroyed === false) {
-            if (configSettings.Peer.maxRequestsPerSecond !== 0
-            && ++this.requests > configSettings.Peer.maxRequestsPerSecond) {
+            if (configSettings.Peer.maxRequests1s !== 0
+            && ++this.requests > configSettings.Peer.maxRequests1s) {
                 if (configSettings.Peer.onAbuseRequestsBehaviour === 'continue') continue
                 else if (configSettings.Peer.onAbuseRequestsBehaviour === 'ban') return this.emit('ban')
             }
