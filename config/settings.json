@@ -16,7 +16,7 @@
         "autoReconnect": 60000,
         "sync": {
             "enabled": true,
-            "timeout": 1000,
+            "timeout": 10,
             "get": true,
             "post": false
         },
@@ -33,6 +33,10 @@
             "maxBytesRead1s": 1048576,
             "maxBytesWritten1s": 1048576,
             "setTimeout": 60000
+        },
+        "sync": {
+            "enabled": true,
+            "timeout": 50
         },
         "maxBytesInMemory": 131072,
         "maxRequests1s": 200,

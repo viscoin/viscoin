@@ -24,6 +24,7 @@ interface Blockchain {
     addresses: object
     genesisBlockTimestamp: number
     cache: Set<Block>
+    height: number
 }
 class Blockchain extends events.EventEmitter {
     constructor() {
@@ -81,6 +82,7 @@ class Blockchain extends events.EventEmitter {
         }
         this.updatingBlockHashes = true
         if (this.hashes === undefined || this.hashes.current.length === 0) await this.setBlockHashes()
+        this.height = await this.getHeight()
         let block = await this.setLatestBlock(),
         index: number = null
         const newHashes: Array<string> = []
@@ -151,7 +153,7 @@ class Blockchain extends events.EventEmitter {
         return 0
     }
     async addBlock(block: Block) {
-        if (block.height < await this.getHeight() - configSettings.trustedAfterBlocks) return 1
+        if (this.height !== undefined && block.height < this.height - configSettings.trustedAfterBlocks) return 1
         const previousBlock = await Block.load({ [configMongoose.schema.block.hash.name]: block.previousHash.toString('binary') }, null, { lean: true })
         if (previousBlock) {
             if (block.timestamp <= previousBlock.timestamp) return 2
@@ -444,8 +446,8 @@ class Blockchain extends events.EventEmitter {
         // console.log(block.hasValidTransactions())
         return block
     }
-    async getCircumlatingSupply() {
-        return BigInt(await this.getHeight()) * parseBigInt(configCore.blockReward)
+    getCircumlatingSupply() {
+        return BigInt(this.height) * parseBigInt(configCore.blockReward)
     }
     async getHeight() {
         return (await this.getLatestBlock()).height

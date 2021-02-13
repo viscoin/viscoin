@@ -55,6 +55,7 @@ class TCPNetworkNode extends events.EventEmitter {
             })
             .on('del', () => this.peers.delete(peer))
             .on('ban', () => this.emit('ban', peer))
+            .on('get-height', cb => this.emit('get-height', (height: number) => cb(height)))
         for (const type of protocol.types) {
             peer.on(type, (data, buffer) => {
                 this.emit(type, data, peer)

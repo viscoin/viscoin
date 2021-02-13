@@ -48,9 +48,9 @@ class Node extends events.EventEmitter {
         this.httpApi = new HTTPApi()
         if (configSettings.Node.hostNode === true) this.node.start()
         if (configSettings.Node.connectToNetwork === true) this.reconnect()
-        if (configSettings.Node.sync.enabled === true
-        && (configSettings.Node.sync.get === true
-            || configSettings.Node.sync.post === true)) this.nextSync()
+        // if (configSettings.Node.sync.enabled === true
+        // && (configSettings.Node.sync.get === true
+        //     || configSettings.Node.sync.post === true)) this.nextSync()
         this.node.on('post-block', async block => this.emit('add-block', block))
         this.node.on('post-transaction', async transaction => this.emit('add-transaction', transaction))
         this.node.on('post-node', node => {
@@ -58,6 +58,7 @@ class Node extends events.EventEmitter {
             this.emit('node', node)
         })
         this.node.on('get-block', async (height, peer) => peer.write(protocol.constructBuffer('post-block', Block.minify(await this.blockchain.getBlockByHeight(height)))))
+        this.node.on('get-height', async cb => cb(this.blockchain.height))
         this.node.on('peer', peer => {
             if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
             if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/connections.txt`, `${peer.socket.remoteAddress}:${peer.socket.remotePort}\n`)
@@ -144,9 +145,9 @@ class Node extends events.EventEmitter {
             }
             if (code === 0) code = await this.blockchain.addBlock(block)
             else if (retry === false) {
-                this.once('block', async (_block, code) => {
+                this.once('block', (_block, code) => {
                     if (code === 0
-                    && _block.height === await this.blockchain.getHeight()) this.emit('add-block', block, cb, true)
+                    && _block.height === this.blockchain.height) this.emit('add-block', block, cb, true)
                 })
             }
             this.emit('block', block, code)
@@ -191,7 +192,7 @@ class Node extends events.EventEmitter {
         if (configSettings.Node.autoReconnect) setTimeout(this.reconnect.bind(this), configSettings.Node.autoReconnect)
     }
     async nextSync() {
-        const height = await this.blockchain.getHeight()
+        const height = this.blockchain.height
         if (++this.syncIndex > height) {
             if (++this.syncLoops >= height / configSettings.trustedAfterBlocks) {
                 this.syncIndex = 0

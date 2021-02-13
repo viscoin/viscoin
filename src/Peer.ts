@@ -10,6 +10,8 @@ interface Peer extends events.EventEmitter {
     buffer: Buffer
     requests: number
     hashes: Array<{ hash: Buffer, timestamp: number }>
+    index: number
+    height: number
 }
 class Peer extends events.EventEmitter {
     constructor(socket: net.Socket) {
@@ -20,6 +22,7 @@ class Peer extends events.EventEmitter {
         this.buffer = Buffer.alloc(0)
         this.requests = 0
         this.hashes = []
+        if (configSettings.Peer.sync.enabled === true) this.sync()
         setInterval(this.interval['1s'].bind(this), 1000)
         setInterval(this.interval.hashes.bind(this), configSettings.TCPNode.hashes.interval)
         this.socket.setTimeout(configSettings.Peer.socket.setTimeout)
@@ -78,6 +81,7 @@ class Peer extends events.EventEmitter {
                 const parsed = protocol.parse(d)
                 if (parsed === null) continue
                 const { type, data } = parsed
+                if (type === 'post-block' && this.index === data?.height) this.index++
                 console.log(parsed)
                 this.emit(type, data, b)
             }
@@ -99,6 +103,18 @@ class Peer extends events.EventEmitter {
     addHash(hash: Buffer) {
         this.hashes.push({ hash, timestamp: Date.now() })
         if (this.hashes.length > configSettings.TCPNode.hashes.length) this.hashes.shift()
+    }
+    async sync() {
+        this.emit('get-height', (height: number) => this.height = height)
+        if (this.height !== undefined) {
+            if (this.index === undefined
+            || this.index > this.height) this.index = this.height - configSettings.trustedAfterBlocks
+            const buffer = protocol.constructBuffer('get-block', this.index)
+            const hash = crypto.createHash('sha256').update(buffer).digest()
+            // this.addHash(hash)
+            await <Promise<void>> new Promise(resolve => this.write(buffer, () => resolve()))
+        }
+        setTimeout(this.sync.bind(this), configSettings.Peer.sync.timeout)
     }
 }
 export default Peer
