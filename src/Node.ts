@@ -30,14 +30,10 @@ interface Node {
         transaction: number
         block: number
     }
-    syncIndex: number
-    syncLoops: number
 }
 class Node extends events.EventEmitter {
     constructor() {
         super()
-        this.syncIndex = 0
-        this.syncLoops = 0
         this.workersReady = new Set()
         this.workersBusy = new Set()
         this.threads = cpus().length
@@ -48,9 +44,6 @@ class Node extends events.EventEmitter {
         this.httpApi = new HTTPApi()
         if (configSettings.Node.hostNode === true) this.node.start()
         if (configSettings.Node.connectToNetwork === true) this.reconnect()
-        // if (configSettings.Node.sync.enabled === true
-        // && (configSettings.Node.sync.get === true
-        //     || configSettings.Node.sync.post === true)) this.nextSync()
         this.node.on('post-block', async block => this.emit('add-block', block))
         this.node.on('post-transaction', async transaction => this.emit('add-transaction', transaction))
         this.node.on('post-node', node => {
@@ -190,36 +183,6 @@ class Node extends events.EventEmitter {
     reconnect() {
         this.node.connectToNetwork(this.getNodes())
         if (configSettings.Node.autoReconnect) setTimeout(this.reconnect.bind(this), configSettings.Node.autoReconnect)
-    }
-    async nextSync() {
-        const height = this.blockchain.height
-        if (++this.syncIndex > height) {
-            if (++this.syncLoops >= height / configSettings.trustedAfterBlocks) {
-                this.syncIndex = 0
-                this.syncLoops = 0
-            }
-            else this.syncIndex = height - configSettings.trustedAfterBlocks
-        }
-        if (configSettings.Node.sync.get === true) {
-            const buffer = protocol.constructBuffer('get-block', this.syncIndex)
-            const hash = crypto.createHash('sha256').update(buffer).digest()
-            this.node.addHash(hash)
-            await this.node.broadcast(buffer)
-            const _buffer = protocol.constructBuffer('get-block', height + 1)
-            const _hash = crypto.createHash('sha256').update(_buffer).digest()
-            this.node.addHash(_hash)
-            await this.node.broadcast(_buffer)
-        }
-        if (configSettings.Node.sync.post === true) {
-            const block = await this.blockchain.getBlockByHeight(this.syncIndex)
-            if (block !== null) {
-                const buffer = protocol.constructBuffer('post-block', Block.minify(block))
-                const hash = crypto.createHash('sha256').update(buffer).digest()
-                this.node.addHash(hash)
-                await this.node.broadcast(buffer)
-            }
-        }
-        setTimeout(this.nextSync.bind(this), configSettings.Node.sync.timeout)
     }
     addWorker(worker: Worker) {
         this.workersBusy.add(worker)

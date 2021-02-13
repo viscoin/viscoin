@@ -62,10 +62,9 @@ class Peer extends events.EventEmitter {
     async extract() {
         let index = protocol.getEndIndex(this.buffer)
         while (index !== -1 && this.socket.destroyed === false) {
-            if (configSettings.Peer.maxRequests1s !== 0
-            && ++this.requests > configSettings.Peer.maxRequests1s) {
-                if (configSettings.Peer.onAbuseRequestsBehaviour === 'continue') continue
-                else if (configSettings.Peer.onAbuseRequestsBehaviour === 'ban') return this.emit('ban')
+            if (++this.requests > configSettings.Peer.maxRequests1s
+            && configSettings.Peer.maxRequests1s !== 0) {
+                if (configSettings.Peer.banRequestsAbuse === true) return this.emit('ban')
             }
             const a = index + Buffer.byteLength(protocol.end)
             const b = this.buffer.slice(0, a) 
@@ -82,7 +81,6 @@ class Peer extends events.EventEmitter {
                 if (parsed === null) continue
                 const { type, data } = parsed
                 if (type === 'post-block' && this.index === data?.height) this.index++
-                console.log(parsed)
                 this.emit(type, data, b)
             }
             index = protocol.getEndIndex(this.buffer)
@@ -111,7 +109,7 @@ class Peer extends events.EventEmitter {
             || this.index > this.height) this.index = this.height - configSettings.trustedAfterBlocks
             const buffer = protocol.constructBuffer('get-block', this.index)
             const hash = crypto.createHash('sha256').update(buffer).digest()
-            // this.addHash(hash)
+            this.addHash(hash)
             await <Promise<void>> new Promise(resolve => this.write(buffer, () => resolve()))
         }
         setTimeout(this.sync.bind(this), configSettings.Peer.sync.timeout)

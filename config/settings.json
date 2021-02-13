@@ -14,12 +14,6 @@
         "hostNode": true,
         "connectToNetwork": true,
         "autoReconnect": 60000,
-        "sync": {
-            "enabled": true,
-            "timeout": 10,
-            "get": true,
-            "post": false
-        },
         "maxQueueLength": 100,
         "threads": 0
     },
@@ -36,11 +30,11 @@
         },
         "sync": {
             "enabled": true,
-            "timeout": 50
+            "timeout": 100
         },
         "maxBytesInMemory": 131072,
-        "maxRequests1s": 200,
-        "onAbuseRequestsBehaviour": "continue"
+        "maxRequests1s": 20,
+        "banRequestsAbuse": false
     },
     "TCPNode": {
         "allowConnectionsToSelf": true,
@@ -67,9 +61,7 @@
     "consoleLog": {
         "hardware": true,
         "hashrate": true,
-        "verifyrate": false,
-        "sync": false,
-        "syncModulu": 100
+        "verifyrate": false
     },
     "logs": {
         "save": true,

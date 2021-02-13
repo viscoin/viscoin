@@ -20,9 +20,6 @@ if (isMainThread) {
     node.httpApi.on('listening', () => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('API (TCP) listening on')} ${chalk.blueBright(`${configNetwork.TCPApi.address}:${configNetwork.TCPApi.port}`)}`))
     node.httpApi.on('error', e => console.log(`${toLocaleTimeString()} ${chalk.redBright('API (TCP) error')} ${chalk.blueBright(`${configNetwork.TCPApi.address}:${configNetwork.TCPApi.port}`)} ${chalk.redBright(e?.code)}`))
     node.tcpServer.on('connection', (port, address) => console.log(`${toLocaleTimeString()} ${chalk.cyanBright('API (TCP) connection')} ${chalk.blueBright(`${address}:${port}`)}`))
-    node.on('sync', block => {
-        if (configSettings.consoleLog.sync === true && block.height % configSettings.consoleLog.syncModulu === 0) console.log(`${toLocaleTimeString()} ${chalk.yellow('sync')} { height: ${chalk.yellowBright(block.height)} }`)
-    })
     node.on('peer', peer => console.log(`${toLocaleTimeString()} ${chalk.green('new')} ${chalk.yellow('Socket')} ${peer.socket.remoteAddress}:${peer.socket.remotePort}`))
     node.on('ban', peer => console.log(`${toLocaleTimeString()} ${chalk.redBright('Banned')} ${peer.socket.remoteAddress}:${peer.socket.remotePort}`))
     node.on('transaction', (transaction, code) => {
