@@ -57,7 +57,7 @@ class Node extends events.EventEmitter {
             if (configSettings.Node.connectToNetwork) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
             this.emit('node', node)
         })
-        this.node.on('get-block', async (height, socket) => socket.write(protocol.constructDataBuffer('post-block', Block.minify(await this.blockchain.getBlockByHeight(height)))))
+        this.node.on('get-block', async (height, peer) => peer.write(protocol.constructBuffer('post-block', Block.minify(await this.blockchain.getBlockByHeight(height)))))
         this.node.on('peer', peer => {
             if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
             if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/connections.txt`, `${peer.socket.remoteAddress}:${peer.socket.remotePort}\n`)
@@ -116,8 +116,8 @@ class Node extends events.EventEmitter {
         })
         this.on('transaction', (transaction, code) => {
             if (code === 0) {
-                const buffer = protocol.constructDataBuffer('post-transaction', Transaction.minify(transaction))
-                this.node.broadcastAndStoreDataHash(buffer)
+                const buffer = protocol.constructBuffer('post-transaction', Transaction.minify(transaction))
+                this.node.broadcastAndStoreHash(buffer)
                 if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(buffer)
             }
         })
@@ -152,8 +152,8 @@ class Node extends events.EventEmitter {
         })
         this.on('block', (block, code) => {
             if (code === 0) {
-                const buffer = protocol.constructDataBuffer('post-block', Block.minify(block))
-                this.node.broadcastAndStoreDataHash(buffer)
+                const buffer = protocol.constructBuffer('post-block', Block.minify(block))
+                this.node.broadcastAndStoreHash(buffer)
                 if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(buffer)
             }
         })
@@ -196,15 +196,15 @@ class Node extends events.EventEmitter {
             else this.syncIndex = height - configSettings.trustedAfterBlocks
         }
         if (configSettings.Node.sync.get === true) {
-            await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('get-block', this.syncIndex))
+            await this.node.broadcastAndStoreHash(protocol.constructBuffer('get-block', this.syncIndex))
             if (this.previousHeight !== height
             || (this.previousHeight === height
-                && this.syncIndex % Math.ceil(configSettings.TCPNode.hashes.timeToLive / configSettings.Node.sync.timeout * 2) === 0)) await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('get-block', height + 1))
+                && this.syncIndex % Math.ceil(configSettings.TCPNode.hashes.timeToLive / configSettings.Node.sync.timeout * 2) === 0)) await this.node.broadcastAndStoreHash(protocol.constructBuffer('get-block', height + 1))
             this.previousHeight = height
         }
         if (configSettings.Node.sync.post === true) {
             const block = await this.blockchain.getBlockByHeight(this.syncIndex)
-            if (block !== null) await this.node.broadcastAndStoreDataHash(protocol.constructDataBuffer('post-block', Block.minify(block)))
+            if (block !== null) await this.node.broadcastAndStoreHash(protocol.constructBuffer('post-block', Block.minify(block)))
         }
         setTimeout(this.nextSync.bind(this), configSettings.Node.sync.timeout)
     }

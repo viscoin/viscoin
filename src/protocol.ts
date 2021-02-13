@@ -22,7 +22,7 @@ export default {
         }
         return null
     },
-    constructDataBuffer(type: types_string | number, data: object | number) {
+    constructBuffer(type: types_string | number, data: object | number) {
         const buffer = Buffer.concat([
             Buffer.alloc(1, this.getType(type)),
             Buffer.from(JSON.stringify(data), 'binary')

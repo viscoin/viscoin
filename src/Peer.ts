@@ -78,5 +78,8 @@ class Peer extends events.EventEmitter {
             index = protocol.getEndIndex(this.buffer)
         }
     }
+    write(buffer: Buffer, cb) {
+        this.socket.write(buffer, () => cb())
+    }
 }
 export default Peer
