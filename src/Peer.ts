@@ -11,6 +11,7 @@ interface Peer extends events.EventEmitter {
     requests: number
     hashes: Array<{ hash: Buffer, timestamp: number }>
     index: number
+    previousIndex: number
     height: number
 }
 class Peer extends events.EventEmitter {
@@ -26,7 +27,7 @@ class Peer extends events.EventEmitter {
         setInterval(this.interval['1s'].bind(this), 1000)
         setInterval(this.interval.hashes.bind(this), configSettings.Peer.hashes.interval)
         this.socket.setTimeout(configSettings.Peer.socket.setTimeout)
-        if (this.socket.connecting === false) this.add()
+        if (this.socket.connecting === false) setImmediate(() => this.add())
         this.socket
             .on('connect', () => this.add())
             .on('error', () => {})
@@ -110,10 +111,13 @@ class Peer extends events.EventEmitter {
         if (this.height !== undefined) {
             if (this.index === undefined
             || this.index > this.height) this.index = this.height - configSettings.trustedAfterBlocks
-            const buffer = protocol.constructBuffer('get-block', this.index)
-            const hash = crypto.createHash('sha256').update(buffer).digest()
-            this.addHash(hash)
-            await <Promise<void>> new Promise(resolve => this.write(buffer, () => resolve()))
+            if (this.previousIndex !== this.index) {
+                this.previousIndex = this.index
+                const buffer = protocol.constructBuffer('get-block', this.index)
+                const hash = crypto.createHash('sha256').update(buffer).digest()
+                this.addHash(hash)
+                await <Promise<void>> new Promise(resolve => this.write(buffer, () => resolve()))
+            }
         }
         setTimeout(this.sync.bind(this), configSettings.Peer.sync.timeout)
     }
