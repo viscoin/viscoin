@@ -373,7 +373,7 @@ class Blockchain extends events.EventEmitter {
     async getBlockByHeight(height: number) {
         if (height === 0) return await this.createGenesisBlock()
         const block = [...this.cache].find(e => e.height === height)
-        if (block !== undefined) return block
+        if (block !== undefined && this.hashes.current.includes(block.hash.toString('binary'))) return block
         const _block = await Block.load({
             [configMongoose.schema.block.height.name]: height,
             [configMongoose.schema.block.hash.name]: {
