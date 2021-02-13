@@ -71,6 +71,7 @@ class TCPNetworkNode extends events.EventEmitter {
         }
         if (socket.connecting === false) add()
         socket.bytesReadLastSecond = socket.bytesRead
+        socket.requests = 0
         socket.data = Buffer.alloc(0)
         socket
             .on('connect', () => add())
@@ -123,10 +124,12 @@ class TCPNetworkNode extends events.EventEmitter {
         return <any> new Promise(resolve => {
             if (this.sockets.size === 0) resolve(true)
             let i = 0
+            const cb = () => {
+                if (++i === this.sockets.size) resolve(true)
+            }
             for (const socket of this.sockets) {
-                socket.write(data, () => {
-                    if (++i === this.sockets.size) resolve(true)
-                })
+                if (++socket.requests > configSettings.TCPNode.socket.maxRequestsPerSecond) cb()
+                socket.write(data, () => cb())
             }
         })
     }
