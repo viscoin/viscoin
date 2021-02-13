@@ -50,16 +50,16 @@ class Peer extends events.EventEmitter {
     onData(chunk: Buffer) {
         if (this.socket.bytesRead - this.bytesRead > configSettings.Peer.socket.maxBytesRead1s) return this.emit('ban')
         this.buffer = Buffer.concat([ this.buffer, chunk ])
-        if (Buffer.byteLength(this.buffer) > configSettings.Peer.socket.maxBytesInMemory) return this.emit('ban')
+        if (Buffer.byteLength(this.buffer) > configSettings.Peer.maxBytesInMemory) return this.emit('ban')
         this.extract()
     }
     async extract() {
         let index = protocol.getEndIndex(this.buffer)
         while (index !== -1 && this.socket.destroyed === false) {
-            if (configSettings.Peer.socket.maxRequestsPerSecond !== 0
-            && ++this.requests > configSettings.Peer.socket.maxRequestsPerSecond) {
-                if (configSettings.Peer.socket.onAbuseRequestsBehaviour === 'continue') continue
-                else if (configSettings.Peer.socket.onAbuseRequestsBehaviour === 'ban') return this.emit('ban')
+            if (configSettings.Peer.maxRequestsPerSecond !== 0
+            && ++this.requests > configSettings.Peer.maxRequestsPerSecond) {
+                if (configSettings.Peer.onAbuseRequestsBehaviour === 'continue') continue
+                else if (configSettings.Peer.onAbuseRequestsBehaviour === 'ban') return this.emit('ban')
             }
             const a = index + Buffer.byteLength(protocol.end)
             const b = this.buffer.slice(0, a) 

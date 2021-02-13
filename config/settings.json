@@ -32,11 +32,11 @@
         "socket": {
             "maxBytesRead1s": 1048576,
             "maxBytesWritten1s": 1048576,
-            "setTimeout": 60000,
-            "maxBytesInMemory": 131072,
-            "maxRequestsPerSecond": 0,
-            "onAbuseRequestsBehaviour": "continue"
-        }
+            "setTimeout": 60000
+        },
+        "maxBytesInMemory": 131072,
+        "maxRequestsPerSecond": 0,
+        "onAbuseRequestsBehaviour": "continue"
     },
     "TCPNode": {
         "allowConnectionsToSelf": true,
