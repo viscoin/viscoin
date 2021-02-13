@@ -42,7 +42,7 @@
         "banRequestsAbuse": false
     },
     "TCPNode": {
-        "allowConnectionsToSelf": true,
+        "allowConnectionsToSelf": false,
         "hashes": {
             "length": 1000,
             "timeToLive": 30000,
