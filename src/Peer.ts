@@ -89,7 +89,7 @@ class Peer extends events.EventEmitter {
                     if (parsed === null) continue
                     const { type, data } = parsed
                     if (type === 'post-block') {
-                        if (this.index !== data?.height) this.index--
+                        if (this.index === data?.height) this.index++
                         if (this.height + 1 === data?.height) {
                             if (data.previousHash?.equals(this.latestBlock.hash)) {
                                 this.synced = true
@@ -125,14 +125,17 @@ class Peer extends events.EventEmitter {
         this.latestBlock = await <Promise<Block>> new Promise(resolve => this.emit('get-latest-block', block => resolve(block)))
         this.height = this.latestBlock.height
         if (this.height !== undefined) {
-            if (this.index === undefined
-            || this.index < this.height - configSettings.trustedAfterBlocks) this.index = this.height
+            if (this.index === undefined) {
+                this.index = this.height - configSettings.trustedAfterBlocks
+                await <Promise<void>> new Promise(resolve => this.write(protocol.constructBuffer('get-block', this.height + 1), () => resolve()))
+            }
+            if (this.index > this.height) this.index = this.height - configSettings.trustedAfterBlocks
             // const buffer = protocol.constructBuffer('get-block', this.index)
             // const hash = crypto.createHash('sha256').update(buffer).digest()
             // this.addHash(hash)
             // await <Promise<void>> new Promise(resolve => this.write(buffer, () => resolve()))
-            if (this.synced !== true) await <Promise<void>> new Promise(resolve => this.write(protocol.constructBuffer('get-block', this.index), () => resolve()))
-            await <Promise<void>> new Promise(resolve => this.write(protocol.constructBuffer('get-block', this.height + 1), () => resolve()))
+            if (this.synced === true) await <Promise<void>> new Promise(resolve => this.write(protocol.constructBuffer('get-block', this.height + 1), () => resolve()))
+            else await <Promise<void>> new Promise(resolve => this.write(protocol.constructBuffer('get-block', this.index), () => resolve()))
         }
         this.syncTimeout = setTimeout(this.sync.bind(this), configSettings.Peer.sync.timeout)
     }
