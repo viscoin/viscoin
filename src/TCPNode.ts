@@ -40,9 +40,13 @@ class TCPNetworkNode extends events.EventEmitter {
     add(peer: Peer) {
         if (this.banned.includes(peer.socket.remoteAddress)) return peer.del()
         peer
-            .on('add', () => {
-                if (this.hasSocketWithRemoteAddress(peer) || this.peers.size >= configSettings.TCPNode.maxConnectionsOut) return peer.del()
+            .on('add', (cb: Function) => {
+                if (this.hasSocketWithRemoteAddress(peer) || this.peers.size >= configSettings.TCPNode.maxConnectionsOut) {
+                    cb(false)
+                    return peer.del()
+                }
                 this.peers.add(peer)
+                cb(true)
                 this.emit('peer', peer)
                 const buffer = protocol.constructBuffer('post-node', {
                     address: peer.socket.remoteAddress,

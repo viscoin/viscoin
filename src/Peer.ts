@@ -12,6 +12,7 @@ interface Peer extends events.EventEmitter {
     hashes: Array<{ hash: Buffer, timestamp: number }>
     index: number
     height: number
+    syncTimeout: NodeJS.Timeout
 }
 class Peer extends events.EventEmitter {
     constructor(socket: net.Socket) {
@@ -22,7 +23,6 @@ class Peer extends events.EventEmitter {
         this.buffer = Buffer.alloc(0)
         this.requests = 0
         this.hashes = []
-        if (configSettings.Peer.sync.enabled === true) this.sync()
         setInterval(this.interval['1s'].bind(this), 1000)
         setInterval(this.interval.hashes.bind(this), configSettings.Peer.hashes.interval)
         this.socket.setTimeout(configSettings.Peer.socket.setTimeout)
@@ -45,13 +45,16 @@ class Peer extends events.EventEmitter {
             this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - configSettings.Peer.hashes.timeToLive)
         }
     }
-    add() {
-        this.emit('add')
+    async add() {
+        if (configSettings.Peer.sync.enabled === true
+        && await <Promise<boolean>> new Promise(resolve => this.emit('add', added => resolve(added)))) this.sync()
     }
     del() {
-        this.socket.destroy()
-        // this.socket.removeAllListeners()
         this.emit('del')
+        this.socket.destroy()
+        this.socket.removeAllListeners()
+        this.removeAllListeners()
+        clearTimeout(this.syncTimeout)
     }
     onData(chunk: Buffer) {
         if (this.socket.bytesRead - this.bytesRead > configSettings.Peer.socket.maxBytesRead1s) return this.emit('ban')
@@ -115,7 +118,7 @@ class Peer extends events.EventEmitter {
             this.addHash(hash)
             await <Promise<void>> new Promise(resolve => this.write(buffer, () => resolve()))
         }
-        setTimeout(this.sync.bind(this), configSettings.Peer.sync.timeout)
+        this.syncTimeout = setTimeout(this.sync.bind(this), configSettings.Peer.sync.timeout)
     }
 }
 export default Peer
