@@ -25,7 +25,7 @@
     },
     "TCPApi": {
         "enabled": true,
-        "maxConnections": 20,
+        "maxConnectionsIn": 20,
         "autoReconnect": 1000
     },
     "Peer": {

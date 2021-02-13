@@ -16,7 +16,7 @@ class Server extends events.EventEmitter {
         super()
         this.sockets = new Set()
         this.server = new net.Server()
-        this.server.maxConnections = configSettings.TCPApi.maxConnections
+        this.server.maxConnections = configSettings.TCPApi.maxConnectionsIn
         this.server
             .on('connection', (socket: net.Socket) => {
                 this.sockets.add(socket)
