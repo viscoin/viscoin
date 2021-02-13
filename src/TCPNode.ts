@@ -86,7 +86,8 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (Buffer.byteLength(socket.data) > configSettings.TCPNode.socket.maxBytesInMemory) return this.emit('ban', socket)
                 let index = protocol.getEndIndex(socket.data)
                 while (index !== -1 && !socket.destroyed) {
-                    if (++socket.requests > configSettings.TCPNode.socket.maxRequestsPerSecond) {
+                    if (configSettings.TCPNode.socket.maxRequestsPerSecond !== 0
+                    && ++socket.requests > configSettings.TCPNode.socket.maxRequestsPerSecond) {
                         if (configSettings.TCPNode.socket.onAbuseRequestsBehaviour === 'continue') continue
                         else if (configSettings.TCPNode.socket.onAbuseRequestsBehaviour === 'ban') return this.emit('ban', socket)
                     }
@@ -128,7 +129,8 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (++i === this.sockets.size) resolve(true)
             }
             for (const socket of this.sockets) {
-                if (++socket.requests > configSettings.TCPNode.socket.maxRequestsPerSecond) cb()
+                if (configSettings.TCPNode.socket.maxRequestsPerSecond !== 0
+                && ++socket.requests > configSettings.TCPNode.socket.maxRequestsPerSecond) cb()
                 socket.write(data, () => cb())
             }
         })

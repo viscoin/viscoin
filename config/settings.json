@@ -16,8 +16,8 @@
         "autoReconnect": 60000,
         "sync": {
             "enabled": true,
-            "timeout": 1000,
-            "get": true,
+            "timeout": 0,
+            "get": false,
             "post": true
         },
         "maxQueueLength": 100,
@@ -39,7 +39,7 @@
             "maxBytesPerSecond": 1048576,
             "setTimeout": 60000,
             "maxBytesInMemory": 131072,
-            "maxRequestsPerSecond": 20,
+            "maxRequestsPerSecond": 0,
             "onAbuseRequestsBehaviour": "continue"
         },
         "server": {
