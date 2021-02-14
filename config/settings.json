@@ -64,7 +64,7 @@
     "argon2": "./node_modules/argon2/lib/binding/napi-v3/argon2.node",
     "confirmations": 6,
     "consoleLog": {
-        "hardware": true,
+        "hardware": false,
         "hashrate": true,
         "verifyrate": false
     },
