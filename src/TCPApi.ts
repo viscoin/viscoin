@@ -74,7 +74,7 @@ class Client extends events.EventEmitter {
                 const a = index + Buffer.byteLength(protocol.end)
                 const b = socket.data.slice(0, a) 
                 socket.data = socket.data.slice(a)
-                const d = b.slice(a - Buffer.byteLength(protocol.end))
+                const d = b.slice(0, a - Buffer.byteLength(protocol.end))
                 if (Buffer.byteLength(d) > 0) {
                     const parsed = protocol.parse(d)
                     if (parsed !== null) {

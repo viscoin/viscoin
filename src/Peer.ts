@@ -80,7 +80,7 @@ class Peer extends events.EventEmitter {
                 const hash = crypto.createHash('sha256').update(b).digest()
                 if (this.compareHash(hash) === false) {
                     this.addHash(hash)
-                    const d = b.slice(a - Buffer.byteLength(protocol.end))
+                    const d = b.slice(0, a - Buffer.byteLength(protocol.end))
                     if (Buffer.byteLength(d) > 0) {
                         const parsed = protocol.parse(d)
                         if (parsed !== null) {
