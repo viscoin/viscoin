@@ -74,15 +74,13 @@ class Client extends events.EventEmitter {
                 const a = index + Buffer.byteLength(protocol.end)
                 const b = socket.data.slice(0, a) 
                 socket.data = socket.data.slice(a)
-                const c = b.slice(0, 32)
-                const d = b.slice(32, a - Buffer.byteLength(protocol.end))
-                if (Buffer.byteLength(c) > 0
-                && Buffer.byteLength(d) > 0) {
-                    if (crypto.createHash('sha256').update(d).digest().equals(c) === false) continue
+                const d = b.slice(a - Buffer.byteLength(protocol.end))
+                if (Buffer.byteLength(d) > 0) {
                     const parsed = protocol.parse(d)
-                    if (parsed === null) continue
-                    const { type, data } = parsed
-                    this.emit(type, data, socket)
+                    if (parsed !== null) {
+                        const { type, data } = parsed
+                        this.emit(type, data, socket)
+                    }
                 }
                 index = protocol.getEndIndex(socket.data)
             }

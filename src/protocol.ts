@@ -23,13 +23,9 @@ export default {
         return null
     },
     constructBuffer(type: types_string | number, data: object | number) {
-        const buffer = Buffer.concat([
-            Buffer.alloc(1, this.getType(type)),
-            Buffer.from(JSON.stringify(data), 'binary')
-        ])
         return Buffer.concat([
-            crypto.createHash('sha256').update(buffer).digest(),
-            buffer,
+            Buffer.alloc(1, this.getType(type)),
+            Buffer.from(JSON.stringify(data), 'binary'),
             this.end
         ])
     },

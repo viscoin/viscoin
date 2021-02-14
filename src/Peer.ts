@@ -75,31 +75,30 @@ class Peer extends events.EventEmitter {
             }
             else {
                 const a = index + Buffer.byteLength(protocol.end)
-                const b = this.buffer.slice(0, a) 
+                const b = this.buffer.slice(0, a)
                 this.buffer = this.buffer.slice(a)
-                const c = b.slice(0, 32)
-                const d = b.slice(32, a - Buffer.byteLength(protocol.end))
-                if (Buffer.byteLength(c) > 0
-                && Buffer.byteLength(d) > 0) {
-                    const hash = crypto.createHash('sha256').update(b).digest()
-                    if (this.compareHash(hash) === true) continue
+                const hash = crypto.createHash('sha256').update(b).digest()
+                if (this.compareHash(hash) === false) {
                     this.addHash(hash)
-                    if (crypto.createHash('sha256').update(d).digest().equals(c) === false) continue
-                    const parsed = protocol.parse(d)
-                    if (parsed === null) continue
-                    const { type, data } = parsed
-                    if (type === 'post-block') {
-                        if (this.index === data?.height) this.index++
-                        if (this.height + 1 === data?.height) {
-                            if (data.previousHash?.equals(this.latestBlock.hash)) {
-                                this.synced = true
-                                // this.index = this.height + 1
-                                // console.log('synced')
+                    const d = b.slice(a - Buffer.byteLength(protocol.end))
+                    if (Buffer.byteLength(d) > 0) {
+                        const parsed = protocol.parse(d)
+                        if (parsed !== null) {
+                            const { type, data } = parsed
+                            if (type === 'post-block') {
+                                if (this.index === data?.height) this.index++
+                                if (this.height + 1 === data?.height) {
+                                    if (data.previousHash?.equals(this.latestBlock.hash)) {
+                                        this.synced = true
+                                        // this.index = this.height + 1
+                                        // console.log('synced')
+                                    }
+                                    else this.synced = false
+                                }
                             }
-                            else this.synced = false
+                            this.emit(type, data, b)
                         }
                     }
-                    this.emit(type, data, b)
                 }
             }
             index = protocol.getEndIndex(this.buffer)
