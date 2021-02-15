@@ -85,13 +85,12 @@ class Peer extends events.EventEmitter {
                         const parsed = protocol.parse(d)
                         if (parsed !== null) {
                             const { type, data } = parsed
-                            await <Promise<void>> new Promise(resolve => this.emit(type, data, b, () => resolve()))
-                            if (type === 'post-block') {
+                            const code = await <Promise<void | number>> new Promise(resolve => this.emit(type, data, b, code => resolve(code)))
+                            console.log(type, code)
+                            if (type === 'res-block') {
+                                this.synced = code === 0 ? true : false
+                                console.log(data?.height)
                                 if (this.index === data?.height) this.index++
-                                if (this.height + 1 === data?.height) {
-                                    if (data.previousHash?.equals(this.latestBlock.hash)) this.synced = true
-                                    else this.synced = false
-                                }
                             }
                         }
                     }
