@@ -23,7 +23,6 @@ class TCPNetworkNode extends events.EventEmitter {
         this.banned = []
         if (configSettings.logs.use && fs.existsSync(`${configSettings.logs.path}/banned.txt`)) this.banned = parseNodes(fs.readFileSync(`${configSettings.logs.path}/banned.txt`, 'binary')).map(e => `${e.address}:${e.port}`)
         this.on('ban', (peer: Peer) => this.banned.push(peer.socket.remoteAddress))
-        setInterval(this.clear.bind(this), configSettings.TCPNode.hashes.interval)
         // server
         this.server = new net.Server()
         this.server.maxConnections = configSettings.TCPNode.maxConnectionsIn
@@ -34,51 +33,32 @@ class TCPNetworkNode extends events.EventEmitter {
             // .on('close', () => {})
         // client
     }
-    clear() {
-        this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - configSettings.TCPNode.hashes.timeToLive)
-    }
     add(peer: Peer) {
         if (this.banned.includes(peer.socket.remoteAddress)) return peer.del()
         peer
-            .on('add', (cb: Function) => {
-                if (this.hasSocketWithRemoteAddress(peer) || this.peers.size >= configSettings.TCPNode.maxConnectionsOut) {
-                    cb(false)
-                    return peer.del()
-                }
+            .on('add', () => {
+                if (this.hasSocketWithRemoteAddress(peer) || this.peers.size >= configSettings.TCPNode.maxConnectionsOut) return peer.del()
                 this.peers.add(peer)
-                cb(true)
                 this.emit('peer', peer)
-                const buffer = protocol.constructBuffer('post-node', {
+                const buffer = protocol.constructBuffer('node', {
                     address: peer.socket.remoteAddress,
                     family: peer.socket.remoteFamily,
                     port: peer.socket.remotePort
                 })
-                const hash = crypto.createHash('sha256').update(buffer).digest()
-                this.addHash(hash)
-                this.broadcast(buffer, hash)
+                this.broadcast(buffer)
             })
             .on('del', () => this.peers.delete(peer))
             .on('ban', () => this.emit('ban', peer))
-            .on('get-latest-block', cb => this.emit('get-latest-block', block => cb(block)))
         for (const type of protocol.types) {
             peer.on(type, (data, buffer, cb) => {
                 this.emit(type, data, peer, cb)
-                if (type.startsWith('post') === false) return
-                const hash = crypto.createHash('sha256').update(buffer).digest()
-                if (this.compareHash(hash) === true) return
-                this.broadcast(buffer, hash)
+                this.broadcast(buffer)
             })
         }
     }
-    compareHash(hash: Buffer) {
-        return this.hashes.find(e => e.hash.equals(hash)) !== undefined ? true : false
-    }
-    addHash(hash: Buffer) {
-        this.hashes.push({ hash, timestamp: Date.now() })
-        if (this.hashes.length > configSettings.TCPNode.hashes.length) this.hashes.shift()
-    }
-    broadcast(buffer: Buffer, hash: Buffer) {
+    broadcast(buffer: Buffer) {
         return <Promise<void>> new Promise(resolve => {
+            const hash = crypto.createHash('sha256').update(buffer).digest()
             if (this.peers.size === 0) resolve()
             let i = 0
             const cb = () => {

@@ -29,9 +29,9 @@ class Peer extends events.EventEmitter {
         setInterval(this.interval['1s'].bind(this), 1000)
         setInterval(this.interval.hashes.bind(this), configSettings.Peer.hashes.interval)
         this.socket.setTimeout(configSettings.Peer.socket.setTimeout)
-        if (this.socket.connecting === false) setImmediate(() => this.add())
+        if (this.socket.connecting === false) setImmediate(() => this.emit('add'))
         this.socket
-            .on('connect', () => this.add())
+            .on('connect', () => this.emit('add'))
             .on('error', () => {})
             .on('close', () => this.del())
             .on('timeout', () => this.emit('ban'))
@@ -47,10 +47,6 @@ class Peer extends events.EventEmitter {
         hashes: () => {
             this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - configSettings.Peer.hashes.timeToLive)
         }
-    }
-    async add() {
-        if (configSettings.Peer.sync.enabled === true
-        && await <Promise<boolean>> new Promise(resolve => this.emit('add', added => resolve(added)))) this.sync()
     }
     del() {
         this.emit('del')
@@ -85,14 +81,7 @@ class Peer extends events.EventEmitter {
                         const parsed = protocol.parse(d)
                         if (parsed !== null) {
                             const { type, data } = parsed
-                            const code = await <Promise<void | number>> new Promise(resolve => this.emit(type, data, b, code => resolve(code)))
-                            if (type === 'res-block') {
-                                if (code === 0) this.synced = true
-                                // this.synced = code === 0 ? true : false
-                                console.log(type, code)
-                                console.log(data?.height)
-                                if (this.index === data?.height) this.index++
-                            }
+                            await <Promise<void | number>> new Promise(resolve => this.emit(type, data, b, code => resolve(code)))
                         }
                     }
                 }
@@ -110,24 +99,6 @@ class Peer extends events.EventEmitter {
     addHash(hash: Buffer) {
         this.hashes.push({ hash, timestamp: Date.now() })
         if (this.hashes.length > configSettings.Peer.hashes.length) this.hashes.shift()
-    }
-    async sync() {
-        this.latestBlock = await <Promise<Block>> new Promise(resolve => this.emit('get-latest-block', block => resolve(block)))
-        this.height = this.latestBlock.height
-        if (this.height !== undefined) {
-            if (this.index === undefined
-            || this.index > this.height + 1) {
-                this.index = this.height - configSettings.trustedAfterBlocks
-                protocol.constructBuffer('get-block', this.height + 1)
-            }
-            const buffer = this.synced === true ? protocol.constructBuffer('get-block', this.height + 1) : protocol.constructBuffer('get-block', this.index)
-            const hash = crypto.createHash('sha256').update(buffer).digest()
-            if (this.compareHash(hash) === false) {
-                this.addHash(hash)
-                await <Promise<void>> new Promise(resolve => this.write(buffer, () => resolve()))
-            }
-        }
-        this.syncTimeout = setTimeout(this.sync.bind(this), configSettings.Peer.sync.timeout)
     }
 }
 export default Peer

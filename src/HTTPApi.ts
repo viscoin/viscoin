@@ -52,7 +52,7 @@ class HTTPApi extends events.EventEmitter {
         app.post('/transaction', (req, res) => {
             try {
                 const transaction = new Transaction(Transaction.beautify(req.body))
-                this.emit('post-transaction', transaction, code => HTTPApi.resEndJSON(res, code))
+                this.emit('transaction', transaction, code => HTTPApi.resEndJSON(res, code))
             }
             catch {
                 res.status(400).end()
@@ -61,7 +61,7 @@ class HTTPApi extends events.EventEmitter {
         app.post('/block', (req, res) => {
             try {
                 const block = new Block(Block.beautify(req.body))
-                this.emit('post-block', block, code => HTTPApi.resEndJSON(res, code))
+                this.emit('block', block, code => HTTPApi.resEndJSON(res, code))
             }
             catch {
                 res.status(400).end()

@@ -16,7 +16,6 @@ import { cpus } from 'os'
 import logHardware from './logHardware'
 import toLocaleTimeString from './chalk/LocaleTimeString'
 import * as chalk from 'chalk'
-import * as crypto from 'crypto'
 
 interface Node {
     workersReady: Set<Worker>
@@ -30,10 +29,15 @@ interface Node {
         transaction: number
         block: number
     }
+    syncTimeout: NodeJS.Timeout
+    syncIndex: number
+    syncLoops: number
 }
 class Node extends events.EventEmitter {
     constructor() {
         super()
+        this.syncIndex = 0
+        this.syncLoops = 0
         this.workersReady = new Set()
         this.workersBusy = new Set()
         this.threads = cpus().length
@@ -44,19 +48,14 @@ class Node extends events.EventEmitter {
         this.httpApi = new HTTPApi()
         if (configSettings.Node.hostNode === true) this.node.start()
         if (configSettings.Node.connectToNetwork === true) this.reconnect()
-        this.node.on('post-block', async (block, peer, cb) => this.emit('add-block', block, cb))
-        this.node.on('res-block', async (block, peer, cb) => this.emit('add-block', block, cb))
-        this.node.on('post-transaction', async (transaction, peer, cb) => this.emit('add-transaction', transaction, cb))
-        this.node.on('post-node', (node, peer, cb) => {
+        if (configSettings.Node.sync === true) this.sync()
+        this.node.on('block', async (block, peer, cb) => this.emit('add-block', block, cb))
+        this.node.on('transaction', async (transaction, peer, cb) => this.emit('add-transaction', transaction, cb))
+        this.node.on('node', (node, peer, cb) => {
             if (configSettings.Node.connectToNetwork) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
             cb()
             this.emit('node', node)
         })
-        this.node.on('get-block', async (height, peer, cb) => {
-            await <Promise<void>> new Promise(async resolve => peer.write(protocol.constructBuffer('res-block', Block.minify(await this.blockchain.getBlockByHeight(height))), () => resolve()))
-            cb()
-        })
-        this.node.on('get-latest-block', async cb => cb(await this.blockchain.getLatestBlock()))
         this.node.on('peer', peer => {
             if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
             if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/connections.txt`, `${peer.socket.remoteAddress}:${peer.socket.remotePort}\n`)
@@ -76,8 +75,8 @@ class Node extends events.EventEmitter {
             this.httpApi.on('get-block-latest', async cb => cb(Block.minify(await this.blockchain.getLatestBlock())))
             this.httpApi.on('get-block-new', async (address, cb) => cb(Block.minify(await this.blockchain.getNewBlock(address))))
             this.httpApi.on('get-balance-address', async (address, cb) => cb(beautifyBigInt(await this.blockchain.getBalanceOfAddress(address))))
-            this.httpApi.on('post-transaction', async (transaction, cb) => this.emit('add-transaction', transaction, code => cb(code)))
-            this.httpApi.on('post-block', async (block, cb) => this.emit('add-block', block, code => cb(code)))
+            this.httpApi.on('transaction', async (transaction, cb) => this.emit('add-transaction', transaction, code => cb(code)))
+            this.httpApi.on('block', async (block, cb) => this.emit('add-block', block, code => cb(code)))
             this.httpApi.on('get-transactions-address', async (address, cb) => {
                 const projection = `
                     ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.to.name}
@@ -115,10 +114,8 @@ class Node extends events.EventEmitter {
         })
         this.on('transaction', (transaction, code) => {
             if (code === 0) {
-                const buffer = protocol.constructBuffer('post-transaction', Transaction.minify(transaction))
-                const hash = crypto.createHash('sha256').update(buffer).digest()
-                this.node.addHash(hash)
-                this.node.broadcast(buffer, hash)
+                const buffer = protocol.constructBuffer('transaction', Transaction.minify(transaction))
+                this.node.broadcast(buffer)
                 if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(buffer)
             }
         })
@@ -153,10 +150,8 @@ class Node extends events.EventEmitter {
         })
         this.on('block', (block, code) => {
             if (code === 0) {
-                const buffer = protocol.constructBuffer('post-block', Block.minify(block))
-                const hash = crypto.createHash('sha256').update(buffer).digest()
-                this.node.addHash(hash)
-                this.node.broadcast(buffer, hash)
+                const buffer = protocol.constructBuffer('block', Block.minify(block))
+                this.node.broadcast(buffer)
                 if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(buffer)
             }
         })
@@ -235,6 +230,19 @@ class Node extends events.EventEmitter {
             }
             reject()
         })
+    }
+    async sync() {
+        const height = await this.blockchain.getHeight()
+        if (++this.syncIndex > height) {
+            if (++this.syncLoops >= height / configSettings.trustedAfterBlocks) {
+                this.syncIndex = 0
+                this.syncLoops = 0
+            }
+            else this.syncIndex = height - configSettings.trustedAfterBlocks
+        }
+        const block = await this.blockchain.getBlockByHeight(this.syncIndex)
+        if (block !== null) await this.node.broadcast(protocol.constructBuffer('block', Block.minify(block)))
+        this.syncTimeout = setTimeout(this.sync.bind(this), configSettings.Node.syncTimeout)
     }
 }
 export default Node

@@ -2,11 +2,9 @@ import Block from "./Block"
 import Transaction from "./Transaction"
 
 const types = [
-    'post-block',
-    'post-transaction',
-    'post-node',
-    'get-block',
-    'res-block'
+    'block',
+    'transaction',
+    'node'
 ] as const
 type types_string = typeof types[number]
 export default {
@@ -22,7 +20,7 @@ export default {
         }
         return null
     },
-    constructBuffer(type: types_string | number, data: object | number) {
+    constructBuffer(type: types_string | number, data: object) {
         return Buffer.concat([
             Buffer.alloc(1, this.getType(type)),
             Buffer.from(JSON.stringify(data), 'binary'),
@@ -35,23 +33,17 @@ export default {
             if (type === null) return null
             let data = JSON.parse(buffer.slice(1).toString('binary'))
             switch (type) {
-                case 'post-block':
+                case 'block':
                     data = new Block(Block.beautify(data))
                     break
-                case 'res-block':
-                    data = new Block(Block.beautify(data))
-                    break
-                case 'post-transaction':
+                case 'transaction':
                     data = new Transaction(Transaction.beautify(data))
                     break
-                case 'post-node':
+                case 'node':
                     data = {
                         port: data.port,
                         address: data.address
                     }
-                    break
-                case 'get-block':
-                    // data = parseInt(data)
                     break
                 default:
                     return null
