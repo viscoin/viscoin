@@ -103,7 +103,7 @@ class Node extends events.EventEmitter {
             })
         }
         this.on('add-block', async (block: Block) => {
-            if (this.queue.transactions.size > configSettings.Node.queue.blocks) return
+            if (this.queue.blocks.size > configSettings.Node.queue.blocks) return
             this.queue.blocks.add(block)
         })
         this.on('add-transaction', async (transaction: Transaction) => {
@@ -201,6 +201,7 @@ class Node extends events.EventEmitter {
     async nextBlock() {
         const block = [...this.queue.blocks].sort((a, b) => a.height - b.height)[0]
         if (block === undefined || this.workersReady.size === 0) return setImmediate(this.nextBlock.bind(this))
+        this.queue.blocks.delete(block)
         let code = -1
         try {
             code = await this.assignJob({
@@ -216,6 +217,7 @@ class Node extends events.EventEmitter {
     async nextTransaction() {
         const transaction = [...this.queue.transactions].sort((a, b) => a.timestamp - b.timestamp)[0]
         if (transaction === undefined || this.workersReady.size === 0) return setImmediate(this.nextTransaction.bind(this))
+        this.queue.transactions.delete(transaction)
         let code = -1
         try {
             code = await this.assignJob({
