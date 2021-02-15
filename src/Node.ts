@@ -240,7 +240,7 @@ class Node extends events.EventEmitter {
             else this.syncIndex = height - configSettings.trustedAfterBlocks
         }
         const block = await this.blockchain.getBlockByHeight(this.syncIndex)
-        console.log('sync', block?.height, height)
+        // console.log('sync', block?.height, height)
         if (block !== null) await this.node.broadcast(protocol.constructBuffer('block', Block.minify(block)))
         this.syncTimeout = setTimeout(this.sync.bind(this), configSettings.Node.syncTimeout)
     }
