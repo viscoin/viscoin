@@ -38,9 +38,7 @@
             "timeToLive": 3000,
             "interval": 100
         },
-        "maxBytesInMemory": 131072,
-        "maxRequests1s": 200,
-        "banRequestsAbuse": false
+        "maxBytesInMemory": 131072
     },
     "TCPNode": {
         "allowConnectionsToSelf": false,

@@ -65,10 +65,11 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (++i === this.peers.size) resolve()
             }
             for (const peer of this.peers) {
-                if ((configSettings.Peer.maxRequests1s !== 0
-                && ++peer.requests > configSettings.Peer.maxRequests1s)
-                    || peer.compareHash(hash) === true) cb()
-                peer.write(buffer, () => cb())
+                if (peer.compareHash(hash) === true) cb()
+                else {
+                    peer.addHash(hash)
+                    peer.write(buffer, () => cb())
+                }
             }
         })
     }

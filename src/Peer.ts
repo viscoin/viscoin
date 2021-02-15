@@ -61,28 +61,21 @@ class Peer extends events.EventEmitter {
         if (Buffer.byteLength(this.buffer) > configSettings.Peer.maxBytesInMemory) return this.emit('ban')
         this.extract()
     }
-    async extract() {
+    extract() {
         let index = protocol.getEndIndex(this.buffer)
         while (index !== -1 && this.socket.destroyed === false) {
-            if (++this.requests > configSettings.Peer.maxRequests1s
-            && configSettings.Peer.maxRequests1s !== 0) {
-                if (configSettings.Peer.banRequestsAbuse === true) return this.emit('ban')
-                this.buffer = Buffer.alloc(0)
-            }
-            else {
-                const a = index + Buffer.byteLength(protocol.end)
-                const b = this.buffer.slice(0, a)
-                this.buffer = this.buffer.slice(a)
-                const hash = crypto.createHash('sha256').update(b).digest()
-                if (this.compareHash(hash) === false) {
-                    this.addHash(hash)
-                    const d = b.slice(0, a - Buffer.byteLength(protocol.end))
-                    if (Buffer.byteLength(d) > 0) {
-                        const parsed = protocol.parse(d)
-                        if (parsed !== null) {
-                            const { type, data } = parsed
-                            this.emit(type, data, b)
-                        }
+            const a = index + Buffer.byteLength(protocol.end)
+            const b = this.buffer.slice(0, a)
+            this.buffer = this.buffer.slice(a)
+            const hash = crypto.createHash('sha256').update(b).digest()
+            if (this.compareHash(hash) === false) {
+                this.addHash(hash)
+                const d = b.slice(0, a - Buffer.byteLength(protocol.end))
+                if (Buffer.byteLength(d) > 0) {
+                    const parsed = protocol.parse(d)
+                    if (parsed !== null) {
+                        const { type, data } = parsed
+                        this.emit(type, data, b)
                     }
                 }
             }
