@@ -44,13 +44,18 @@ class Node extends events.EventEmitter {
         this.httpApi = new HTTPApi()
         if (configSettings.Node.hostNode === true) this.node.start()
         if (configSettings.Node.connectToNetwork === true) this.reconnect()
-        this.node.on('post-block', async block => this.emit('add-block', block))
-        this.node.on('post-transaction', async transaction => this.emit('add-transaction', transaction))
-        this.node.on('post-node', node => {
+        this.node.on('post-block', async (block, peer, cb) => this.emit('add-block', block, cb))
+        this.node.on('res-block', async (block, peer, cb) => this.emit('add-block', block, cb))
+        this.node.on('post-transaction', async (transaction, peer, cb) => this.emit('add-transaction', transaction, cb))
+        this.node.on('post-node', (node, peer, cb) => {
             if (configSettings.Node.connectToNetwork) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
+            cb()
             this.emit('node', node)
         })
-        this.node.on('get-block', async (height, peer) => peer.write(protocol.constructBuffer('post-block', Block.minify(await this.blockchain.getBlockByHeight(height)))))
+        this.node.on('get-block', async (height, peer, cb) => {
+            await <Promise<void>> new Promise(async resolve => peer.write(protocol.constructBuffer('res-block', Block.minify(await this.blockchain.getBlockByHeight(height))), () => resolve()))
+            cb()
+        })
         this.node.on('get-latest-block', async cb => cb(await this.blockchain.getLatestBlock()))
         this.node.on('peer', peer => {
             if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)

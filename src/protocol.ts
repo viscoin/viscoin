@@ -1,12 +1,12 @@
 import Block from "./Block"
 import Transaction from "./Transaction"
-import * as crypto from 'crypto'
 
 const types = [
     'post-block',
     'post-transaction',
     'post-node',
-    'get-block'
+    'get-block',
+    'res-block'
 ] as const
 type types_string = typeof types[number]
 export default {

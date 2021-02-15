@@ -65,7 +65,7 @@ class Peer extends events.EventEmitter {
         if (Buffer.byteLength(this.buffer) > configSettings.Peer.maxBytesInMemory) return this.emit('ban')
         this.extract()
     }
-    extract() {
+    async extract() {
         let index = protocol.getEndIndex(this.buffer)
         while (index !== -1 && this.socket.destroyed === false) {
             if (++this.requests > configSettings.Peer.maxRequests1s
@@ -85,6 +85,7 @@ class Peer extends events.EventEmitter {
                         const parsed = protocol.parse(d)
                         if (parsed !== null) {
                             const { type, data } = parsed
+                            await <Promise<void>> new Promise(resolve => this.emit(type, data, b, () => resolve()))
                             if (type === 'post-block') {
                                 if (this.index === data?.height) this.index++
                                 if (this.height + 1 === data?.height) {
@@ -92,7 +93,6 @@ class Peer extends events.EventEmitter {
                                     else this.synced = false
                                 }
                             }
-                            this.emit(type, data, b)
                         }
                     }
                 }
@@ -101,13 +101,8 @@ class Peer extends events.EventEmitter {
         }
     }
     write(buffer: Buffer, cb) {
-        if (this.socket.bytesWritten + Buffer.byteLength(buffer) - this.bytesWritten > configSettings.Peer.socket.maxBytesWritten1s) {
-            if (cb !== undefined) cb()
-            return
-        }
-        this.socket.write(buffer, () => {
-            if (cb !== undefined) cb()
-        })
+        if (this.socket.bytesWritten + Buffer.byteLength(buffer) - this.bytesWritten > configSettings.Peer.socket.maxBytesWritten1s) return cb()
+        this.socket.write(buffer, () => cb())
     }
     compareHash(hash: Buffer) {
         return this.hashes.find(e => e.hash.equals(hash)) !== undefined ? true : false
