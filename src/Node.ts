@@ -102,8 +102,14 @@ class Node extends events.EventEmitter {
                 ])
             })
         }
-        this.on('add-block', async (block: Block) => this.queue.blocks.add(block))
-        this.on('add-transaction', async (transaction: Transaction) => this.queue.transactions.add(transaction))
+        this.on('add-block', async (block: Block) => {
+            if (this.queue.transactions.size > configSettings.Node.queue.blocks) return
+            this.queue.blocks.add(block)
+        })
+        this.on('add-transaction', async (transaction: Transaction) => {
+            if (this.queue.transactions.size > configSettings.Node.queue.transactions) return
+            this.queue.transactions.add(transaction)
+        })
         this.on('block', (block, code) => {
             if (code !== 0) return
             const buffer = protocol.constructBuffer('block', Block.minify(block))

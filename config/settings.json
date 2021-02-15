@@ -15,6 +15,10 @@
         "connectToNetwork": true,
         "sync": true,
         "syncTimeout": 50,
+        "queue": {
+            "blocks": 1000,
+            "transactions": 1000
+        },
         "autoReconnect": 60000,
         "threads": 0
     },
