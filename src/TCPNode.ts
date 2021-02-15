@@ -55,7 +55,7 @@ class TCPNetworkNode extends events.EventEmitter {
                 })
                 const hash = crypto.createHash('sha256').update(buffer).digest()
                 this.addHash(hash)
-                this.broadcast(buffer)
+                this.broadcast(buffer, hash)
             })
             .on('del', () => this.peers.delete(peer))
             .on('ban', () => this.emit('ban', peer))
@@ -64,8 +64,9 @@ class TCPNetworkNode extends events.EventEmitter {
             peer.on(type, (data, buffer, cb) => {
                 this.emit(type, data, peer, cb)
                 if (type.startsWith('post') === false) return
-                if (this.compareHash(buffer) === true) return
-                this.broadcast(buffer)
+                const hash = crypto.createHash('sha256').update(buffer).digest()
+                if (this.compareHash(hash) === true) return
+                this.broadcast(buffer, hash)
             })
         }
     }
@@ -76,7 +77,7 @@ class TCPNetworkNode extends events.EventEmitter {
         this.hashes.push({ hash, timestamp: Date.now() })
         if (this.hashes.length > configSettings.TCPNode.hashes.length) this.hashes.shift()
     }
-    broadcast(buffer: Buffer) {
+    broadcast(buffer: Buffer, hash: Buffer) {
         return <Promise<void>> new Promise(resolve => {
             if (this.peers.size === 0) resolve()
             let i = 0
@@ -84,8 +85,9 @@ class TCPNetworkNode extends events.EventEmitter {
                 if (++i === this.peers.size) resolve()
             }
             for (const peer of this.peers) {
-                if (configSettings.Peer.maxRequests1s !== 0
-                && ++peer.requests > configSettings.Peer.maxRequests1s) cb()
+                if ((configSettings.Peer.maxRequests1s !== 0
+                && ++peer.requests > configSettings.Peer.maxRequests1s)
+                    || peer.compareHash(hash) === true) cb()
                 peer.write(buffer, () => cb())
             }
         })

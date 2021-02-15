@@ -118,7 +118,7 @@ class Node extends events.EventEmitter {
                 const buffer = protocol.constructBuffer('post-transaction', Transaction.minify(transaction))
                 const hash = crypto.createHash('sha256').update(buffer).digest()
                 this.node.addHash(hash)
-                this.node.broadcast(buffer)
+                this.node.broadcast(buffer, hash)
                 if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(buffer)
             }
         })
@@ -156,7 +156,7 @@ class Node extends events.EventEmitter {
                 const buffer = protocol.constructBuffer('post-block', Block.minify(block))
                 const hash = crypto.createHash('sha256').update(buffer).digest()
                 this.node.addHash(hash)
-                this.node.broadcast(buffer)
+                this.node.broadcast(buffer, hash)
                 if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(buffer)
             }
         })
