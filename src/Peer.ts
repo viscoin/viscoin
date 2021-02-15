@@ -86,9 +86,10 @@ class Peer extends events.EventEmitter {
                         if (parsed !== null) {
                             const { type, data } = parsed
                             const code = await <Promise<void | number>> new Promise(resolve => this.emit(type, data, b, code => resolve(code)))
-                            console.log(type, code)
                             if (type === 'res-block') {
-                                this.synced = code === 0 ? true : false
+                                if (code === 0) this.synced = true
+                                // this.synced = code === 0 ? true : false
+                                console.log(type, code)
                                 console.log(data?.height)
                                 if (this.index === data?.height) this.index++
                             }
@@ -115,7 +116,10 @@ class Peer extends events.EventEmitter {
         this.height = this.latestBlock.height
         if (this.height !== undefined) {
             if (this.index === undefined
-            || this.index > this.height + 1) this.index = this.height - configSettings.trustedAfterBlocks
+            || this.index > this.height + 1) {
+                this.index = this.height - configSettings.trustedAfterBlocks
+                protocol.constructBuffer('get-block', this.height + 1)
+            }
             const buffer = this.synced === true ? protocol.constructBuffer('get-block', this.height + 1) : protocol.constructBuffer('get-block', this.index)
             const hash = crypto.createHash('sha256').update(buffer).digest()
             if (this.compareHash(hash) === false) {
