@@ -220,13 +220,17 @@ class Node extends events.EventEmitter {
                 this.workersReady.delete(worker)
                 this.workersBusy.add(worker)
                 worker.postMessage(JSON.stringify(e))
-                worker.once('message', e => {
-                    e = JSON.parse(e)
-                    this.workersBusy.delete(worker)
-                    this.workersReady.add(worker)
-                    this.emit('worker')
-                    resolve(e)
-                })
+                const onMessage = () => {
+                    worker.once('message', e => {
+                        e = JSON.parse(e)
+                        if (e.e === 'verifyrate') return onMessage()
+                        this.workersBusy.delete(worker)
+                        this.workersReady.add(worker)
+                        this.emit('worker')
+                        resolve(e)
+                    })
+                }
+                onMessage()
                 return
             }
             reject()
