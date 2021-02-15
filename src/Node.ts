@@ -103,7 +103,9 @@ class Node extends events.EventEmitter {
             })
         }
         this.on('add-block', async (block: Block) => {
-            if (this.queue.blocks.size > configSettings.Node.queue.blocks) return
+            if (this.blockchain.height === undefined) return
+            if (this.queue.blocks.size > configSettings.Node.queue.blocks
+            || block.height < this.blockchain.height - configSettings.trustedAfterBlocks) return
             this.queue.blocks.add(block)
         })
         this.on('add-transaction', async (transaction: Transaction) => {
@@ -231,13 +233,12 @@ class Node extends events.EventEmitter {
         setImmediate(this.nextTransaction.bind(this))
     }
     async sync() {
-        const height = await this.blockchain.getHeight()
-        if (++this.syncIndex > height) {
-            if (++this.syncLoops >= height / configSettings.trustedAfterBlocks) {
+        if (this.blockchain.height !== undefined && ++this.syncIndex > this.blockchain.height) {
+            if (++this.syncLoops >= this.blockchain.height / configSettings.trustedAfterBlocks) {
                 this.syncIndex = 0
                 this.syncLoops = 0
             }
-            else this.syncIndex = height - configSettings.trustedAfterBlocks
+            else this.syncIndex = this.blockchain.height - configSettings.trustedAfterBlocks
         }
         const block = await this.blockchain.getBlockByHeight(this.syncIndex)
         // console.log('sync', block?.height, height)
