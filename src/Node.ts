@@ -32,12 +32,22 @@ interface Node {
     syncTimeout: NodeJS.Timeout
     syncIndex: number
     syncLoops: number
+    queue: {
+        blocks: Set<Block>
+        transactions: Set<Transaction>
+    }
 }
 class Node extends events.EventEmitter {
     constructor() {
         super()
         this.syncIndex = 0
         this.syncLoops = 0
+        this.queue = {
+            blocks: new Set(),
+            transactions: new Set()
+        }
+        this.nextBlock()
+        this.nextTransaction()
         this.workersReady = new Set()
         this.workersBusy = new Set()
         this.threads = cpus().length
@@ -49,11 +59,10 @@ class Node extends events.EventEmitter {
         if (configSettings.Node.hostNode === true) this.node.start()
         if (configSettings.Node.connectToNetwork === true) this.reconnect()
         if (configSettings.Node.sync === true) this.sync()
-        this.node.on('block', async (block, peer, cb) => this.emit('add-block', block, cb))
-        this.node.on('transaction', async (transaction, peer, cb) => this.emit('add-transaction', transaction, cb))
-        this.node.on('node', (node, peer, cb) => {
+        this.node.on('block', async block => this.emit('add-block', block))
+        this.node.on('transaction', async transaction => this.emit('add-transaction', transaction))
+        this.node.on('node', node => {
             if (configSettings.Node.connectToNetwork) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
-            cb()
             this.emit('node', node)
         })
         this.node.on('peer', peer => {
@@ -93,67 +102,19 @@ class Node extends events.EventEmitter {
                 ])
             })
         }
-        this.on('add-transaction', async (transaction: Transaction, cb) => {
-            let code = -1
-            if (this.workersReady.size === 0) {
-                if (this.listeners('worker').length < configSettings.Node.maxQueueLength) return this.once('worker', () => this.emit('add-transaction', transaction, cb))
-            }
-            else code = 0
-            if (code === 0) {
-                try {
-                    code = await this.assignJob({
-                        e: 'transaction',
-                        transaction: Transaction.minify(transaction)
-                    })
-                }
-                catch {}
-            }
-            if (code === 0) code = await this.blockchain.addTransaction(transaction)
-            this.emit('transaction', transaction, code)
-            if (cb !== undefined) cb(code)
+        this.on('add-block', async (block: Block) => this.queue.blocks.add(block))
+        this.on('add-transaction', async (transaction: Transaction) => this.queue.transactions.add(transaction))
+        this.on('block', (block, code) => {
+            if (code !== 0) return
+            const buffer = protocol.constructBuffer('block', Block.minify(block))
+            this.node.broadcast(buffer)
+            if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(buffer)
         })
         this.on('transaction', (transaction, code) => {
-            if (code === 0) {
-                const buffer = protocol.constructBuffer('transaction', Transaction.minify(transaction))
-                this.node.broadcast(buffer)
-                if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(buffer)
-            }
-        })
-        this.setMaxListeners(configSettings.Node.maxQueueLength)
-        this.on('add-block', async (block: Block, cb: Function, retry: boolean = false) => {
-            let code = -1
-            if (this.workersReady.size === 0) {
-                if (this.listeners('worker').length < configSettings.Node.maxQueueLength) {
-                    if (retry === false) return this.once('worker', () => this.emit('add-block', block, cb))
-                    else return this.prependOnceListener('worker', () => this.emit('add-block', block, cb))
-                }
-            }
-            else code = 0
-            if (code === 0) {
-                try {
-                    code = await this.assignJob({
-                        e: 'block',
-                        block: Block.minify(block)
-                    })
-                }
-                catch {}
-            }
-            if (code === 0) code = await this.blockchain.addBlock(block)
-            else if (retry === false) {
-                this.once('block', (_block, code) => {
-                    if (code === 0
-                    && _block.height === this.blockchain.height) this.emit('add-block', block, cb, true)
-                })
-            }
-            this.emit('block', block, code)
-            if (cb !== undefined) cb(code)
-        })
-        this.on('block', (block, code) => {
-            if (code === 0) {
-                const buffer = protocol.constructBuffer('block', Block.minify(block))
-                this.node.broadcast(buffer)
-                if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(buffer)
-            }
+            if (code !== 0) return
+            const buffer = protocol.constructBuffer('transaction', Transaction.minify(transaction))
+            this.node.broadcast(buffer)
+            if (configSettings.TCPApi.enabled) this.tcpServer.broadcast(buffer)
         })
         this.verifyrate = {
             transaction: 0,
@@ -231,6 +192,36 @@ class Node extends events.EventEmitter {
             reject()
         })
     }
+    async nextBlock() {
+        const block = [...this.queue.blocks].sort((a, b) => a.height - b.height)[0]
+        if (block === undefined || this.workersReady.size === 0) return setImmediate(this.nextBlock.bind(this))
+        let code = -1
+        try {
+            code = await this.assignJob({
+                e: 'block',
+                block: Block.minify(block)
+            })
+        }
+        catch {}
+        if (code === 0) code = await this.blockchain.addBlock(block)
+        this.emit('block', block, code)
+        setImmediate(this.nextBlock.bind(this))
+    }
+    async nextTransaction() {
+        const transaction = [...this.queue.transactions].sort((a, b) => a.timestamp - b.timestamp)[0]
+        if (transaction === undefined || this.workersReady.size === 0) return setImmediate(this.nextTransaction.bind(this))
+        let code = -1
+        try {
+            code = await this.assignJob({
+                e: 'timestamp',
+                timestamp: Transaction.minify(transaction)
+            })
+        }
+        catch {}
+        if (code === 0) code = await this.blockchain.addTransaction(transaction)
+        this.emit('transaction', transaction, code)
+        setImmediate(this.nextTransaction.bind(this))
+    }
     async sync() {
         const height = await this.blockchain.getHeight()
         if (++this.syncIndex > height) {
@@ -241,6 +232,7 @@ class Node extends events.EventEmitter {
             else this.syncIndex = height - configSettings.trustedAfterBlocks
         }
         const block = await this.blockchain.getBlockByHeight(this.syncIndex)
+        console.log('sync', block?.height, height)
         if (block !== null) await this.node.broadcast(protocol.constructBuffer('block', Block.minify(block)))
         this.syncTimeout = setTimeout(this.sync.bind(this), configSettings.Node.syncTimeout)
     }

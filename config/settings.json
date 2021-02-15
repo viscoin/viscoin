@@ -14,9 +14,8 @@
         "hostNode": true,
         "connectToNetwork": true,
         "sync": true,
-        "syncTimeout": 500,
+        "syncTimeout": 50,
         "autoReconnect": 60000,
-        "maxQueueLength": 100,
         "threads": 0
     },
     "TCPApi": {

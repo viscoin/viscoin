@@ -81,7 +81,7 @@ class Peer extends events.EventEmitter {
                         const parsed = protocol.parse(d)
                         if (parsed !== null) {
                             const { type, data } = parsed
-                            await <Promise<void | number>> new Promise(resolve => this.emit(type, data, b, code => resolve(code)))
+                            this.emit(type, data, b)
                         }
                     }
                 }
