@@ -38,6 +38,9 @@ export default {
                 case 'post-block':
                     data = new Block(Block.beautify(data))
                     break
+                case 'res-block':
+                    data = new Block(Block.beautify(data))
+                    break
                 case 'post-transaction':
                     data = new Transaction(Transaction.beautify(data))
                     break
