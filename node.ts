@@ -2,7 +2,6 @@ import init from './src/mongoose/init'
 init()
 import Node from './src/Node'
 import * as configNetwork from './config/network.json'
-import * as configSettings from './config/settings.json'
 import * as chalk from 'chalk'
 import base58 from './src/base58'
 import toLocaleTimeString from './src/chalk/LocaleTimeString'

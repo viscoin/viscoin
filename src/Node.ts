@@ -35,6 +35,7 @@ interface Node {
     queue: {
         blocks: Set<Block>
         transactions: Set<Transaction>
+        callbacks: Map<Buffer, Function>
     }
 }
 class Node extends events.EventEmitter {
@@ -44,7 +45,8 @@ class Node extends events.EventEmitter {
         this.syncLoops = 0
         this.queue = {
             blocks: new Set(),
-            transactions: new Set()
+            transactions: new Set(),
+            callbacks: new Map()
         }
         this.nextBlock()
         this.nextTransaction()
@@ -102,15 +104,17 @@ class Node extends events.EventEmitter {
                 ])
             })
         }
-        this.on('add-block', async (block: Block) => {
+        this.on('add-block', async (block: Block, cb: Function) => {
             if (this.blockchain.height === undefined) return
             if (this.queue.blocks.size > configSettings.Node.queue.blocks
             || block.height < this.blockchain.height - configSettings.trustedAfterBlocks) return
             this.queue.blocks.add(block)
+            if (cb !== undefined) this.queue.callbacks.set(block.hash, cb)
         })
-        this.on('add-transaction', async (transaction: Transaction) => {
+        this.on('add-transaction', async (transaction: Transaction, cb: Function) => {
             if (this.queue.transactions.size > configSettings.Node.queue.transactions) return
             this.queue.transactions.add(transaction)
+            if (cb !== undefined) this.queue.callbacks.set(Transaction.calculateHash(transaction), cb)
         })
         this.on('block', (block, code) => {
             if (code !== 0) return
@@ -213,6 +217,10 @@ class Node extends events.EventEmitter {
         }
         catch {}
         if (code === 0) code = await this.blockchain.addBlock(block)
+        if (this.queue.callbacks.has(block.hash)) {
+            this.queue.callbacks.get(block.hash)(code)
+            this.queue.callbacks.delete(block.hash)
+        }
         this.emit('block', block, code)
         setImmediate(this.nextBlock.bind(this))
     }
@@ -229,6 +237,11 @@ class Node extends events.EventEmitter {
         }
         catch {}
         if (code === 0) code = await this.blockchain.addTransaction(transaction)
+        const hash = Transaction.calculateHash(transaction)
+        if (this.queue.callbacks.has(hash)) {
+            this.queue.callbacks.get(hash)(code)
+            this.queue.callbacks.delete(hash)
+        }
         this.emit('transaction', transaction, code)
         setImmediate(this.nextTransaction.bind(this))
     }
