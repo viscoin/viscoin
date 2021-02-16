@@ -231,8 +231,8 @@ class Node extends events.EventEmitter {
         let code = -1
         try {
             code = await this.assignJob({
-                e: 'timestamp',
-                timestamp: Transaction.minify(transaction)
+                e: 'transaction',
+                transaction: Transaction.minify(transaction)
             })
         }
         catch {}
