@@ -108,13 +108,19 @@ class Node extends events.EventEmitter {
             if (this.blockchain.height === undefined) return
             if (this.queue.blocks.size > configSettings.Node.queue.blocks
             || block.height < this.blockchain.height - configSettings.trustedAfterBlocks) return
+            if (cb !== undefined) {
+                if (this.queue.callbacks.has(block.hash)) return
+                this.queue.callbacks.set(block.hash, cb)
+            }
             this.queue.blocks.add(block)
-            if (cb !== undefined) this.queue.callbacks.set(block.hash, cb)
         })
         this.on('add-transaction', async (transaction: Transaction, cb: Function) => {
             if (this.queue.transactions.size > configSettings.Node.queue.transactions) return
+            if (cb !== undefined) {
+                if (this.queue.callbacks.has(transaction.signature)) return
+                this.queue.callbacks.set(transaction.signature, cb)
+            }
             this.queue.transactions.add(transaction)
-            if (cb !== undefined) this.queue.callbacks.set(Transaction.calculateHash(transaction), cb)
         })
         this.on('block', (block, code) => {
             if (code !== 0) return
@@ -237,10 +243,9 @@ class Node extends events.EventEmitter {
         }
         catch {}
         if (code === 0) code = await this.blockchain.addTransaction(transaction)
-        const hash = Transaction.calculateHash(transaction)
-        if (this.queue.callbacks.has(hash)) {
-            this.queue.callbacks.get(hash)(code)
-            this.queue.callbacks.delete(hash)
+        if (this.queue.callbacks.has(transaction.signature)) {
+            this.queue.callbacks.get(transaction.signature)(code)
+            this.queue.callbacks.delete(transaction.signature)
         }
         this.emit('transaction', transaction, code)
         setImmediate(this.nextTransaction.bind(this))
