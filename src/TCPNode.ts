@@ -7,7 +7,7 @@ import protocol from './protocol'
 import parseNodes from './parseNodes'
 import Peer from './Peer'
 import * as fs from 'fs'
-interface TCPNetworkNode {
+interface TCPNode {
     hashes: Array<{ hash: Buffer, timestamp: number }>
     peers: Set<Peer>
     banned: Array<String>
@@ -15,7 +15,7 @@ interface TCPNetworkNode {
     server: net.Server
     // client
 }
-class TCPNetworkNode extends events.EventEmitter {
+class TCPNode extends events.EventEmitter {
     constructor() {
         super()
         this.hashes = []
@@ -91,22 +91,32 @@ class TCPNetworkNode extends events.EventEmitter {
         }
         return arr
     }
+    static verifyNode({ port, address }: { port: number, address: string }) {
+        if (typeof port !== 'number') return 1
+        if (typeof address !== 'string') return 2
+        if (port < 0 || port > 65535) return 3
+        if (address !== 'localhost') {
+            if (Buffer.byteLength(Buffer.from(address.split('.'))) !== 4
+            && Buffer.byteLength(Buffer.from(address.split(':'))) > 8) return 4
+        }
+        if (configSettings.TCPNode.allowConnectionsToSelf === false
+        && port === configNetwork.TCPNode.port
+        && address === configNetwork.TCPNode.address) return 5
+        return 0
+    }
     connectToNetwork(nodes: Array<{ port: number, address: string }>) {
-        nodes = TCPNetworkNode.shuffle(nodes)
+        nodes = TCPNode.shuffle(nodes)
         for (const node of nodes) {
-            if (typeof node.port !== 'number') continue
-            if (typeof node.address !== 'string') continue
-            if (node.port < 0 || node.port > 65535) continue
-            if (node.address !== 'localhost') {
-                if (Buffer.byteLength(Buffer.from(node.address.split('.'))) !== 4
-                && Buffer.byteLength(Buffer.from(node.address.split(':'))) > 8) continue
-            }
-            if (configSettings.TCPNode.allowConnectionsToSelf === false
-            && node.port === configNetwork.TCPNetworkNode.port
-            && node.address === configNetwork.TCPNetworkNode.address) continue
+            if (TCPNode.verifyNode(node) !== 0) continue
             const socket = net.connect(node.port, node.address)
             this.add(new Peer(socket), false)
         }
+    }
+    connectToNode({ port, address }: { port: number, address: string }) {
+        if (TCPNode.verifyNode({ port, address }) !== 0) return 1
+        const socket = net.connect(port, address)
+        this.add(new Peer(socket), false)
+        return 0
     }
     disconnectFromNetwork() {
         for (const peer of this.peers) {
@@ -115,11 +125,11 @@ class TCPNetworkNode extends events.EventEmitter {
     }
     // server
     start() {
-        this.server.listen(configNetwork.TCPNetworkNode.port, configNetwork.TCPNetworkNode.address)
+        this.server.listen(configNetwork.TCPNode.port, configNetwork.TCPNode.address)
     }
     stop() {
         this.server.close()
     }
     // client
 }
-export default TCPNetworkNode
+export default TCPNode

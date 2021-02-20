@@ -64,8 +64,10 @@ class Node extends events.EventEmitter {
         this.node.on('block', async (block, cb) => this.emit('add-block', block, code => cb(code)))
         this.node.on('transaction', async (transaction, cb) => this.emit('add-transaction', transaction, code => cb(code)))
         this.node.on('node', (node, cb) => {
-            cb(0)
-            if (configSettings.Node.connectToNetwork) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
+            if (configSettings.Node.connectToNetwork) {
+                cb(this.node.connectToNode(node))
+            }
+            else cb(0)
             this.emit('node', node)
         })
         this.node.on('peer', peer => {
