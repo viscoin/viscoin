@@ -107,7 +107,8 @@ class Node extends events.EventEmitter {
         this.on('add-block', async (block: Block, cb: Function) => {
             if (this.blockchain.height === undefined) return
             if (this.queue.blocks.size > configSettings.Node.queue.blocks
-            || block.height < this.blockchain.height - configSettings.trustedAfterBlocks) return
+            || block.height < this.blockchain.height - configSettings.trustedAfterBlocks
+            || this.blockchain.hashes.current.includes(block.hash.toString('binary'))) return
             if (cb !== undefined) {
                 if (this.queue.callbacks.has(block.hash)) return
                 this.queue.callbacks.set(block.hash, cb)
