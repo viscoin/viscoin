@@ -61,9 +61,10 @@ class Node extends events.EventEmitter {
         if (configSettings.Node.hostNode === true) this.node.start()
         if (configSettings.Node.connectToNetwork === true) this.reconnect()
         if (configSettings.Node.sync === true) this.sync()
-        this.node.on('block', async block => this.emit('add-block', block))
-        this.node.on('transaction', async transaction => this.emit('add-transaction', transaction))
-        this.node.on('node', node => {
+        this.node.on('block', async (block, cb) => this.emit('add-block', block, code => cb(code)))
+        this.node.on('transaction', async (transaction, cb) => this.emit('add-transaction', transaction, code => cb(code)))
+        this.node.on('node', (node, cb) => {
+            cb(0)
             if (configSettings.Node.connectToNetwork) this.node.connectToNetwork([ <{ port: number, address: string }> node ])
             this.emit('node', node)
         })
@@ -109,18 +110,14 @@ class Node extends events.EventEmitter {
             if (this.queue.blocks.size > configSettings.Node.queue.blocks
             || block.height < this.blockchain.height - configSettings.trustedAfterBlocks
             || this.blockchain.hashes.current.includes(block.hash.toString('binary'))) return
-            if (cb !== undefined) {
-                if (this.queue.callbacks.has(block.hash)) return
-                this.queue.callbacks.set(block.hash, cb)
-            }
+            if (this.queue.callbacks.has(block.hash)) return
+            this.queue.callbacks.set(block.hash, cb)
             this.queue.blocks.add(block)
         })
         this.on('add-transaction', async (transaction: Transaction, cb: Function) => {
             if (this.queue.transactions.size > configSettings.Node.queue.transactions) return
-            if (cb !== undefined) {
-                if (this.queue.callbacks.has(transaction.signature)) return
-                this.queue.callbacks.set(transaction.signature, cb)
-            }
+            if (this.queue.callbacks.has(transaction.signature)) return
+            this.queue.callbacks.set(transaction.signature, cb)
             this.queue.transactions.add(transaction)
         })
         this.on('block', (block, code) => {
@@ -215,15 +212,17 @@ class Node extends events.EventEmitter {
         const block = [...this.queue.blocks].sort((a, b) => a.height - b.height)[0]
         if (block === undefined || this.workersReady.size === 0) return setImmediate(this.nextBlock.bind(this))
         this.queue.blocks.delete(block)
-        let code = -1
+        let code = 0
         try {
-            code = await this.assignJob({
+            if (await this.assignJob({
                 e: 'block',
                 block: Block.minify(block)
-            })
+            }) !== 0) code = 1
         }
         catch {}
-        if (code === 0) code = await this.blockchain.addBlock(block)
+        if (code === 0) {
+            if (await this.blockchain.addBlock(block)) code = 2
+        }
         if (this.queue.callbacks.has(block.hash)) {
             this.queue.callbacks.get(block.hash)(code)
             this.queue.callbacks.delete(block.hash)
@@ -235,15 +234,17 @@ class Node extends events.EventEmitter {
         const transaction = [...this.queue.transactions].sort((a, b) => a.timestamp - b.timestamp)[0]
         if (transaction === undefined || this.workersReady.size === 0) return setImmediate(this.nextTransaction.bind(this))
         this.queue.transactions.delete(transaction)
-        let code = -1
+        let code = 0
         try {
-            code = await this.assignJob({
+            if (await this.assignJob({
                 e: 'transaction',
                 transaction: Transaction.minify(transaction)
-            })
+            }) !== 0) code = 1
         }
         catch {}
-        if (code === 0) code = await this.blockchain.addTransaction(transaction)
+        if (code === 0) {
+            if (await this.blockchain.addTransaction(transaction) !== 0) code = 2
+        }
         if (this.queue.callbacks.has(transaction.signature)) {
             this.queue.callbacks.get(transaction.signature)(code)
             this.queue.callbacks.delete(transaction.signature)

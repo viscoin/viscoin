@@ -75,7 +75,9 @@ class Peer extends events.EventEmitter {
                     const parsed = protocol.parse(d)
                     if (parsed !== null) {
                         const { type, data } = parsed
-                        this.emit(type, data, b)
+                        this.emit(type, data, b, code => {
+                            if (code === 1) this.emit('ban')
+                        })
                     }
                 }
             }

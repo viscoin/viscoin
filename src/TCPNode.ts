@@ -27,32 +27,34 @@ class TCPNetworkNode extends events.EventEmitter {
         this.server = new net.Server()
         this.server.maxConnections = configSettings.TCPNode.maxConnectionsIn
         this.server
-            .on('connection', socket => this.add(new Peer(socket)))
+            .on('connection', socket => this.add(new Peer(socket), true))
             .on('listening', () => this.emit('listening'))
             .on('error', e => this.emit('error', e))
             // .on('close', () => {})
         // client
     }
-    add(peer: Peer) {
+    add(peer: Peer, server: boolean) {
         if (this.banned.includes(peer.socket.remoteAddress)) return peer.del()
         peer
             .on('add', () => {
                 if (this.hasSocketWithRemoteAddress(peer) || this.peers.size >= configSettings.TCPNode.maxConnectionsOut) return peer.del()
                 this.peers.add(peer)
                 this.emit('peer', peer)
-                const buffer = protocol.constructBuffer('node', {
-                    address: peer.socket.remoteAddress,
-                    family: peer.socket.remoteFamily,
-                    port: peer.socket.remotePort
-                })
-                this.broadcast(buffer)
+                if (server === false) {
+                    this.broadcast(protocol.constructBuffer('node', {
+                        address: peer.socket.remoteAddress,
+                        port: peer.socket.remotePort
+                    }))
+                }
             })
             .on('del', () => this.peers.delete(peer))
             .on('ban', () => this.emit('ban', peer))
         for (const type of protocol.types) {
-            peer.on(type, (data, buffer) => {
-                this.emit(type, data)
-                this.broadcast(buffer)
+            peer.on(type, (data, buffer, cb) => {
+                this.emit(type, data, code => {
+                    cb(code)
+                    if (code === 0) this.broadcast(buffer)
+                })
             })
         }
     }
@@ -103,7 +105,7 @@ class TCPNetworkNode extends events.EventEmitter {
             && node.port === configNetwork.TCPNetworkNode.port
             && node.address === configNetwork.TCPNetworkNode.address) continue
             const socket = net.connect(node.port, node.address)
-            this.add(new Peer(socket))
+            this.add(new Peer(socket), false)
         }
     }
     disconnectFromNetwork() {
