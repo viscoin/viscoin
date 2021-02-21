@@ -113,7 +113,8 @@ class TCPNode extends events.EventEmitter {
         }
     }
     connectToNode({ port, address }: { port: number, address: string }) {
-        if (TCPNode.verifyNode({ port, address }) !== 0) return 1
+        const code = TCPNode.verifyNode({ port, address })
+        if ([ 0, 5 ].includes(code) === false) return 1
         const socket = net.connect(port, address)
         this.add(new Peer(socket), false)
         return 0
