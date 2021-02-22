@@ -94,11 +94,11 @@ class TCPNode extends events.EventEmitter {
     static verifyNode({ port, address }: { port: number, address: string }) {
         if (typeof port !== 'number') return 1
         if (typeof address !== 'string') return 2
-        if (port < 0 || port > 65535) return 3
         if (address !== 'localhost') {
             if (Buffer.byteLength(Buffer.from(address.split('.'))) !== 4
-            && Buffer.byteLength(Buffer.from(address.split(':'))) > 8) return 4
+            && Buffer.byteLength(Buffer.from(address.split(':'))) > 8) return 3
         }
+        if (port < 1024 || port > 49151) return 4
         if (configSettings.TCPNode.allowConnectionsToSelf === false
         && port === configNetwork.TCPNode.port
         && address === configNetwork.TCPNode.address) return 5
@@ -114,7 +114,8 @@ class TCPNode extends events.EventEmitter {
     }
     connectToNode({ port, address }: { port: number, address: string }) {
         const code = TCPNode.verifyNode({ port, address })
-        if ([ 0, 5 ].includes(code) === false) return 1
+        if ([ 0, 4, 5 ].includes(code) === false) return 1
+        else if (code === 4) port = configNetwork.TCPNode.port
         else if (code === 5) return 2
         const socket = net.connect(port, address)
         this.add(new Peer(socket), false)
