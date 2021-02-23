@@ -54,7 +54,7 @@
             "parallelism": 1
         }
     },
-    "addressList": "./addresses.txt",
+    "addressList": "./config/addresses.txt",
     "argon2": "./node_modules/argon2/lib/binding/napi-v3/argon2.node",
     "confirmations": 6,
     "consoleLog": {
