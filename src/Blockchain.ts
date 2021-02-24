@@ -446,9 +446,6 @@ class Blockchain extends events.EventEmitter {
         // console.log(block.hasValidTransactions())
         return block
     }
-    getCircumlatingSupply() {
-        return BigInt(this.height) * parseBigInt(configCore.blockReward)
-    }
     async getHeight() {
         return (await this.getLatestBlock()).height
     }
