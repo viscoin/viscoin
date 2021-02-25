@@ -6,7 +6,7 @@
     },
     "Miner": {
         "miningRewardAddress": "visC6571qoyNNzepeCLpy4EmhqD",
-        "restartDelay": 6000,
+        "restartDelay": 1000,
         "maxListeners": 500,
         "threads": 0
     },
@@ -14,17 +14,17 @@
         "hostNode": true,
         "connectToNetwork": true,
         "sync": true,
-        "syncTimeout": 50,
+        "syncTimeout": 100,
         "queue": {
             "blocks": 1000,
             "transactions": 1000
         },
-        "autoReconnect": 60000,
+        "autoReconnect": 1800000,
         "threads": 0
     },
     "TCPApi": {
         "enabled": true,
-        "maxConnectionsIn": 20,
+        "maxConnectionsIn": 100,
         "autoReconnect": 1000
     },
     "Peer": {
@@ -34,16 +34,16 @@
             "setTimeout": 60000
         },
         "hashes": {
-            "length": 100,
-            "timeToLive": 3000,
-            "interval": 100
+            "length": 60000,
+            "timeToLive": 60000,
+            "interval": 1000
         },
         "maxBytesInMemory": 131072
     },
     "TCPNode": {
         "allowConnectionsToSelf": false,
-        "maxConnectionsIn": 10,
-        "maxConnectionsOut": 10
+        "maxConnectionsIn": 50,
+        "maxConnectionsOut": 50
     },
     "Wallet": {
         "wordlist": "english.txt",
@@ -76,6 +76,6 @@
         "enabled": true,
         "chanceToNotUse": 0
     },
-    "maxBlocksInCache": 2880,
-    "trustedAfterBlocks": 1440
+    "maxBlocksInCache": 10080,
+    "trustedAfterBlocks": 10080
 }
