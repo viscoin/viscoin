@@ -17,10 +17,22 @@ class HTTPApi extends events.EventEmitter {
         app.get('/config', (req, res) => this.emit('get-config', config => HTTPApi.resEndJSON(res, config)))
         app.get('/block', (req, res) => this.emit('get-block-latest', block => HTTPApi.resEndJSON(res, block)))
         app.get('/transactions/pending', (req, res) => this.emit('get-transactions-pending', transactions => HTTPApi.resEndJSON(res, transactions)))
-        app.get('/block/:height', (req, res) => {
-            const height = parseInt(req.params.height)
-            if (isNaN(height)) return res.status(400).end()
-            this.emit('get-block', height, block => HTTPApi.resEndJSON(res, block))
+        app.get('/block/:h', (req, res) => {
+            if (req.params.h === parseInt(req.params.h).toString()) {
+                const height = parseInt(req.params.h)
+                if (isNaN(height)) return res.status(400).end()
+                this.emit('get-block-height', height, block => HTTPApi.resEndJSON(res, block))
+            }
+            else {
+                try {
+                    const hash = Buffer.from(req.params.h, 'hex')
+                    if (Buffer.byteLength(hash) !== 32) return res.status(400).end()
+                    this.emit('get-block-hash', hash, block => HTTPApi.resEndJSON(res, block))
+                }
+                catch {
+                    res.status(400).end()
+                }
+            }
         })
         app.get('/block/new/:address', (req, res) => {
             try {
@@ -154,6 +166,11 @@ class HTTPApi extends events.EventEmitter {
     }
     static async getBlockByHeight(height: number) {
         const block = await this.get(`/block/${height}`)
+        if (!block) return null
+        return new Block(Block.beautify(block))
+    }
+    static async getBlockByHash(hash: Buffer) {
+        const block = await this.get(`/block/${hash.toString('hex')}`)
         if (!block) return null
         return new Block(Block.beautify(block))
     }

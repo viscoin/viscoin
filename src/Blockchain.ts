@@ -388,6 +388,13 @@ class Blockchain extends events.EventEmitter {
         }
         return _block
     }
+    async getBlockByHash(hash: Buffer) {
+        const block = [...this.cache].find(e => e.hash?.equals(hash))
+        if (block !== undefined && this.hashes.current.includes(block.hash.toString('binary'))) return block
+        return await Block.load({
+            [configMongoose.schema.block.hash.name]: hash.toString('binary')
+        }, null, { lean: true })
+    }
     async getNewBlock(address: Buffer) {
         this.minByteFee = {
             bigint: parseBigInt(configSettings.minByteFee.bigint),
