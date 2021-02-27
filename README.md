@@ -10,5 +10,5 @@ To configure network options go to ./config/network.json and replace localhost w
 MongoDB database is required for running a full node.
 
 ### Downloads
-https://nodejs.org/en/download/
-https://www.mongodb.com/try/download/community
+[NodeJS](https://nodejs.org/en/download/)
+[MongoDB](https://www.mongodb.com/try/download/community)
