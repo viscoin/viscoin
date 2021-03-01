@@ -1,5 +1,5 @@
 {
-    "EOL": "",
+    "EOL": "\n",
     "HTTPApi": {
         "enabled": true,
         "autoRetry": 1000

@@ -72,12 +72,12 @@ class Node extends events.EventEmitter {
         })
         this.node.on('peer', peer => {
             if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
-            if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/connections.txt`, `${peer.socket.remoteAddress}:${peer.socket.remotePort}\n`)
+            if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/connections.txt`, `${peer.socket.remoteAddress}:${peer.socket.remotePort}${configSettings.EOL}`)
             this.emit('peer', peer)
         })
         this.node.on('ban', peer => {
             if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
-            if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/banned.txt`, `${peer.socket.remoteAddress}:${peer.socket.remotePort}\n`)
+            if (configSettings.logs.save === true) fs.appendFileSync(`${configSettings.logs.path}/banned.txt`, `${peer.socket.remoteAddress}:${peer.socket.remotePort}${configSettings.EOL}`)
             this.emit('ban', peer)
         })
         if (configSettings.TCPApi.enabled) this.tcpServer.start()
@@ -150,11 +150,11 @@ class Node extends events.EventEmitter {
         if (configSettings.consoleLog.verifyrate === true) this.on('verifyrate', ({ transaction, block }) => console.log(`${toLocaleTimeString()} ${chalk.yellowBright(block)} ${chalk.redBright('B/s')} ${chalk.yellowBright(transaction)} ${chalk.redBright('T/s')}`))
     }
     getNodes() {
-        let arr = parseNodes(fs.readFileSync(configSettings.addressList, 'binary'))
+        let arr = parseNodes(fs.readFileSync(configSettings.addressList).toString())
         if (configSettings.logs.use === true) {
-            if (fs.existsSync(`${configSettings.logs.path}/connections.txt`)) arr.push(...parseNodes(fs.readFileSync(`${configSettings.logs.path}/connections.txt`, 'binary')))
+            if (fs.existsSync(`${configSettings.logs.path}/connections.txt`)) arr.push(...parseNodes(fs.readFileSync(`${configSettings.logs.path}/connections.txt`).toString()))
             if (fs.existsSync(`${configSettings.logs.path}/banned.txt`)) {
-                const _arr = parseNodes(fs.readFileSync(`${configSettings.logs.path}/banned.txt`, 'binary'))
+                const _arr = parseNodes(fs.readFileSync(`${configSettings.logs.path}/banned.txt`).toString())
                 arr = arr.filter(e => _arr.includes(e) === false)
             }
         }
