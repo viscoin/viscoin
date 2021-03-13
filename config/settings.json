@@ -47,7 +47,7 @@
     },
     "Wallet": {
         "wordlist": "english.txt",
-        "timesToRepeatBroadcastTransaction": 5,
+        "timesToRepeatBroadcastTransaction": 1,
         "argon2": {
             "timeCost": 2,
             "memoryCost": 1048576,
