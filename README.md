@@ -5,7 +5,7 @@ Viscoin is an experimental digital currency that enables instant payments to any
 ## Installation
 Clone this repository.
 ```
-git clone https://github.com/viscoin/viscoin
+git clone https://github.com/viscoin/viscoin.git
 ```
 Install dependencies and compile typescript.
 ```
