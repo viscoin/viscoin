@@ -1,14 +1,28 @@
-# viscoin
+# Viscoin
 
-### General
-In order for viscoin to work properly make sure you have NodeJS version 14.16.0 installed.
+Viscoin is an experimental digital currency that enables instant payments to anyone, anywhere in the world.
 
-### Network
-To configure network options go to ./config/network.json and replace localhost with an ip address.
+## Installation
+Clone this repository.
+```
+git clone https://github.com/viscoin/viscoin
+```
+Install dependencies and compile typescript.
+```
+npm i
+npm run c
+```
 
-### Running a full node
-MongoDB database is required for running a full node.
+## Usage
+```
+node wallet
+```
+```
+node miner
+```
+```
+node node
+```
 
-### Downloads
-[NodeJS](https://nodejs.org/en/download/)
-[MongoDB](https://www.mongodb.com/try/download/community)
+## Contributing
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
