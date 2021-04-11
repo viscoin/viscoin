@@ -1,0 +1,116 @@
+{
+    "EOL": "\n",
+    "HTTPApi": {
+        "autoRetry": 1000,
+        "get": {
+            "/config": true,
+            "/block": true,
+            "/transactions/pending": true,
+            "/block/:h": true,
+            "/block/new/:address": true,
+            "/transactions/:address": true,
+            "/balance/:address": true
+        },
+        "post": {
+            "/transaction": true,
+            "/block": true
+        }
+    },
+    "Miner": {
+        "miningRewardAddress": "visC6571qoyNNzepeCLpy4EmhqD",
+        "restartDelay": 1000,
+        "maxListeners": 500,
+        "threads": 0
+    },
+    "Node": {
+        "HTTPApi": true,
+        "TCPApi": true,
+        "TCPNode": true,
+        "connectToNetwork": true,
+        "sync": true,
+        "syncBlocksPerRequest": 2,
+        "queue": {
+            "blocks": 1000,
+            "transactions": 1000
+        },
+        "autoReconnect": 1800000,
+        "threads": 0
+    },
+    "TCPApi": {
+        "maxConnectionsIn": 100,
+        "autoReconnect": 1000,
+        "rateLimit": {
+            "windowMs": 1000,
+            "max": 20,
+            "message": ""
+        }
+    },
+    "Peer": {
+        "socket": {
+            "maxBytesRead1s": 1048576,
+            "maxBytesWritten1s": 1048576,
+            "setTimeout": 60000
+        },
+        "hashes": {
+            "length": 60000,
+            "timeToLive": 60000,
+            "interval": 1000
+        },
+        "maxBytesInMemory": 131072,
+        "maxRequestsPerSecond": {
+            "block": 100,
+            "transaction": 100,
+            "sync": 100,
+            "node": 100
+        }
+    },
+    "TCPNode": {
+        "allowConnectionsToSelf": false,
+        "maxConnectionsIn": 50,
+        "maxConnectionsOut": 50
+    },
+    "Wallet": {
+        "wordlist": "english.txt",
+        "timesToRepeatBroadcastTransaction": 1,
+        "argon2": {
+            "timeCost": 2,
+            "memoryCost": 1048576,
+            "parallelism": 1
+        }
+    },
+    "addressList": "./config/addresses.txt",
+    "confirmations": 6,
+    "log": {
+        "thread": true,
+        "sync": true,
+        "block": true,
+        "transaction": true,
+        "hardware": true,
+        "hashrate": true,
+        "verifyrate": true,
+        "loading": true,
+        "loaded": true,
+        "starting": true,
+        "mined": true,
+        "connect": true,
+        "TCPApi": true,
+        "HTTPApi": true,
+        "TCPNode": true
+    },
+    "logs": {
+        "save": true,
+        "use": true,
+        "path": "./logs"
+    },
+    "maxDesync": 30000,
+    "minByteFee": {
+        "bigint": "0",
+        "remainder": "0"
+    },
+    "optimization": {
+        "enabled": true,
+        "chanceToNotUse": 0
+    },
+    "maxBlocksInCache": 10080,
+    "trustedAfterBlocks": 1440
+}
