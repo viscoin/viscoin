@@ -66,6 +66,7 @@ class Client extends events.EventEmitter {
         socket.on('close', () => {
             this.sockets.delete(socket)
             if (autoReconnect) setTimeout(() => this.connect(port, host, autoReconnect), configSettings.TCPApi.autoReconnect)
+            this.emit('disconnect', port, host)
         })
         socket.on('data', chunk => {
             socket.data = Buffer.concat([ socket.data, chunk ])
