@@ -9,7 +9,8 @@
             "/block/:h": true,
             "/block/new/:address": true,
             "/transactions/:address": true,
-            "/balance/:address": true
+            "/balance/:address": true,
+            "/block/transaction/:signature": true
         },
         "post": {
             "/transaction": true,
