@@ -68,6 +68,15 @@ class HTTPApi extends events.EventEmitter {
                 res.status(400).end()
             }
         })
+        if (configSettings.HTTPApi.get['/block/transaction/:signature'] === true) app.get('/block/transaction/:signature', (req, res) => {
+            try {
+                const signature = base58.decode(req.params.signature)
+                this.emit('get-block-transaction-signature', signature, block => HTTPApi.resEndJSON(res, block))
+            }
+            catch {
+                res.status(400).end()
+            }
+        })
         if (configSettings.HTTPApi.post['/transaction'] === true) app.post('/transaction', (req, res) => {
             try {
                 const transaction = new Transaction(Transaction.beautify(req.body))
@@ -196,6 +205,16 @@ class HTTPApi extends events.EventEmitter {
     static async getBlockByHash(address: Address, hash: Buffer) {
         try {
             const block = await this.get(address, `/block/${hash.toString('hex')}`)
+            if (!block) return null
+            return new Block(Block.beautify(block))
+        }
+        catch {
+            return null
+        }
+    }
+    static async getBlockByTransactionSignature(address: Address, signature: Buffer) {
+        try {
+            const block = await this.get(address, `/block/transaction/${base58.encode(signature)}`)
             if (!block) return null
             return new Block(Block.beautify(block))
         }

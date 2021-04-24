@@ -401,6 +401,18 @@ class Blockchain extends events.EventEmitter {
             .exec()
         return info
     }
+    async getBlockByTransactionSignature(signature: Buffer) {
+        const block = await model_block
+            .findOne({
+                [`${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.signature.name}`]: signature.toString('binary')
+            }, null, { lean: true })
+            .exec()
+        if (!block) return null
+        if (!this.hashes.current.includes(block[configMongoose.schema.block.hash.name])) return null
+        return new Block(Block.beautify(block))
+        // const transactions = block[configMongoose.schema.block.transactions.name]
+        // return new Transaction(Transaction.beautify(transactions.find(e => e[configMongoose.schema.transaction.signature.name] === signature.toString('binary'))))
+    }
     async getBlockByHash(hash: Buffer) {
         if (!this.hashes.current.includes(hash.toString('binary'))) return null
         const block = await model_block

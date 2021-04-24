@@ -57,6 +57,7 @@ class Node extends events.EventEmitter {
             this.httpApi.start()
             this.httpApi.on('get-config', cb => cb(configSettings))
             this.httpApi.on('get-transactions-pending', cb => cb(this.blockchain.pendingTransactions.map(e => Transaction.minify(e))))
+            this.httpApi.on('get-block-transaction-signature', async (signature, cb) => cb(Block.minify(await this.blockchain.getBlockByTransactionSignature(signature))))
             this.httpApi.on('get-block-height', async (height, cb) => cb(Block.minify(await this.blockchain.getBlockByHeight(height))))
             this.httpApi.on('get-block-hash', async (hash, cb) => cb(Block.minify(await this.blockchain.getBlockByHash(hash))))
             this.httpApi.on('get-block-latest', async cb => cb(Block.minify(await this.blockchain.getLatestBlock())))
