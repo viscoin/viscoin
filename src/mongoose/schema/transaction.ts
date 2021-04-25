@@ -6,4 +6,4 @@ const options = {
 for (const property in configMongoose.schema.transaction) {
     options[configMongoose.schema.transaction[property].name] = configMongoose.schema.transaction[property].type
 }
-export default mongoose.Schema(options)
+export default new mongoose.Schema(options)

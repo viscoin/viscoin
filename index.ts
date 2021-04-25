@@ -1,5 +1,4 @@
 import init from './src/mongoose/init'
-init()
 import Node from './src/Node'
 import * as configSettings from './config/settings.json'
 import * as configNetwork from './config/network.json'
@@ -12,6 +11,7 @@ import { setPriority } from 'os'
 import * as chalk from 'chalk'
 
 if (isMainThread) {
+    init()
     const node = new Node()
     if (configSettings.log.starting === true) console.log(`${LTS()} ${chalk.cyanBright('Starting')} ${chalk.cyan(`node with ${chalk.yellowBright(node.threads)} threads...`)}`)
     if (configSettings.log.hardware === true) logHardware()

@@ -15,4 +15,4 @@ for (const property in configMongoose.schema.block) {
             break
     }
 }
-export default mongoose.Schema(options, { collection: 'blocks', versionKey: false })
+export default new mongoose.Schema(options, { collection: 'blocks', versionKey: false })

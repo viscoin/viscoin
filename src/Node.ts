@@ -113,13 +113,13 @@ class Node extends events.EventEmitter {
             this.tcpNode.on('peer-connect', peer => {
                 if (configSettings.logs.save === true) {
                     if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
-                    fs.appendFileSync(`${configSettings.logs.path}/connections.txt`, `${peer.remoteAddress}:${peer.remotePort}${configSettings.EOL}`)
+                    if (peer.remoteAddress && peer.remotePort) fs.appendFileSync(`${configSettings.logs.path}/connections.txt`, `${peer.remoteAddress}:${peer.remotePort}${configSettings.EOL}`)
                 }
             })
             this.tcpNode.on('peer-ban', peer => {
                 if (configSettings.logs.save === true) {
                     if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
-                    fs.appendFileSync(`${configSettings.logs.path}/banned.txt`, `${peer.remoteAddress}${configSettings.EOL}`)
+                    if (peer.remoteAddress) fs.appendFileSync(`${configSettings.logs.path}/banned.txt`, `${peer.remoteAddress}${configSettings.EOL}`)
                 }
             })
         }
