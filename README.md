@@ -21,7 +21,7 @@ node wallet
 node miner
 ```
 ```
-node node
+node .
 ```
 
 ## Contributing
