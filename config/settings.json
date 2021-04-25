@@ -39,7 +39,7 @@
             "blocks": 1000,
             "transactions": 1000
         },
-        "autoReconnect": 1800000,
+        "autoReconnect": 120000,
         "threads": 0
     },
     "TCPApi": {
