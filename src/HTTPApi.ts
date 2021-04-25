@@ -20,7 +20,7 @@ class HTTPApi extends events.EventEmitter {
         super()
         const app = express()
         app.use(express.json({ limit: '2mb' }))
-        app.use(rateLimit(configSettings.TCPApi.rateLimit))
+        app.use(rateLimit(configSettings.HTTPApi.rateLimit))
         if (configSettings.HTTPApi.get['/config'] === true) app.get('/config', (req, res) => this.emit('get-config', config => HTTPApi.resEndJSON(res, config)))
         if (configSettings.HTTPApi.get['/block'] === true) app.get('/block', (req, res) => this.emit('get-block-latest', block => HTTPApi.resEndJSON(res, block)))
         if (configSettings.HTTPApi.get['/transactions/pending'] === true) app.get('/transactions/pending', (req, res) => this.emit('get-transactions-pending', transactions => HTTPApi.resEndJSON(res, transactions)))

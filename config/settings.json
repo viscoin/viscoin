@@ -14,6 +14,11 @@
         "post": {
             "/transaction": true,
             "/block": true
+        },
+        "rateLimit": {
+            "windowMs": 1000,
+            "max": 2000,
+            "message": ""
         }
     },
     "Miner": {
@@ -39,12 +44,7 @@
     },
     "TCPApi": {
         "maxConnectionsIn": 100,
-        "autoReconnect": 1000,
-        "rateLimit": {
-            "windowMs": 1000,
-            "max": 20,
-            "message": ""
-        }
+        "autoReconnect": 1000
     },
     "Peer": {
         "socket": {
@@ -97,11 +97,6 @@
         "TCPApi": true,
         "HTTPApi": true,
         "TCPNode": true
-    },
-    "logs": {
-        "save": true,
-        "use": true,
-        "path": "./logs"
     },
     "maxDesync": 30000,
     "minByteFee": {
