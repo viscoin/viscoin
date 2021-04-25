@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose'
 import * as configMongoose from '../../config/mongoose.json'
-export default () => {
+export default (log: boolean = true) => {
     const dbOptions = {
         useNewUrlParser: true,
         autoIndex: false,
@@ -10,13 +10,13 @@ export default () => {
     }
     mongoose.set("useFindAndModify", false)
     mongoose.connection.on("connected", () => {
-        console.log("Mongoose connection successfully opened!")
+        if (log === true) console.log("Mongoose connection successfully opened!")
     })
     mongoose.connection.on("err", err => {
-        console.error(`Mongoose connection error:\n${err.stack}`)
+        if (log === true) console.error(`Mongoose connection error:\n${err.stack}`)
     })
     mongoose.connection.on("disconnected", () => {
-        console.log("Mongoose connection disconnected")
+        if (log === true) console.log("Mongoose connection disconnected")
     })
     mongoose.connect(configMongoose.connectionString, dbOptions)
 }

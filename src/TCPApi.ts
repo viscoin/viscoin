@@ -2,7 +2,6 @@ import * as net from 'net'
 import * as events from 'events'
 import * as configSettings from '../config/settings.json'
 import * as configNetwork from '../config/network.json'
-import * as crypto from 'crypto'
 import protocol from './protocol'
 interface Socket extends net.Socket {
     data: Buffer
@@ -30,7 +29,7 @@ class Server extends events.EventEmitter {
             .on('close', () => {})
     }
     start() {
-        this.server.listen(configNetwork.TCPApi.port, configNetwork.TCPApi.address)
+        this.server.listen(configNetwork.TCPApi.port, configNetwork.TCPApi.host)
     }
     stop() {
         this.server.close()

@@ -21,6 +21,9 @@ node wallet
 node miner
 ```
 ```
+node net
+```
+```
 node .
 ```
 

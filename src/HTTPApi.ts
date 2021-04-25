@@ -105,7 +105,7 @@ class HTTPApi extends events.EventEmitter {
         res.end(JSON.stringify(data, null, 4))
     }
     start() {
-        this.server.listen(configNetwork.HTTPApi.port, configNetwork.HTTPApi.address)
+        this.server.listen(configNetwork.HTTPApi.port, configNetwork.HTTPApi.host)
     }
     stop() {
         this.server.close()

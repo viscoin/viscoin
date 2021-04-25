@@ -1,14 +1,14 @@
 {
     "HTTPApi": {
-        "address": "localhost",
+        "host": "localhost",
         "port": 80
     },
     "TCPApi": {
-        "address": "localhost",
+        "host": "localhost",
         "port": 9332
     },
     "TCPNode": {
-        "address": "localhost",
+        "host": "localhost",
         "port": 9333
     }
 }

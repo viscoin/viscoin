@@ -7,12 +7,11 @@ import * as configMongoose from '../config/mongoose.json'
 import * as events from 'events'
 import protocol from './protocol'
 import Block from './Block'
-import * as fs from 'fs'
 import Transaction from "./Transaction"
 import beautifyBigInt from "./beautifyBigInt"
-import parseNodes from './parseNodes'
 import { Worker } from 'worker_threads'
 import { cpus } from 'os'
+import Model_Node from './mongoose/model/node'
 
 interface Node {
     workersReady: Set<Worker>
@@ -110,16 +109,24 @@ class Node extends events.EventEmitter {
                     hash = block.hash
                 }
             })
-            this.tcpNode.on('peer-connect', peer => {
-                if (configSettings.logs.save === true) {
-                    if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
-                    if (peer.remoteAddress && peer.remotePort) fs.appendFileSync(`${configSettings.logs.path}/connections.txt`, `${peer.remoteAddress}:${peer.remotePort}${configSettings.EOL}`)
-                }
+            this.tcpNode.on('peer-connect', async peer => {
+                if (!peer.remoteAddress) return
+                if (await Model_Node.exists({
+                    host: peer.remoteAddress
+                })) return
+                await new Model_Node({
+                    host: peer.remoteAddress
+                }).save()
             })
-            this.tcpNode.on('peer-ban', peer => {
-                if (configSettings.logs.save === true) {
-                    if (!fs.existsSync(configSettings.logs.path)) fs.mkdirSync(configSettings.logs.path)
-                    if (peer.remoteAddress) fs.appendFileSync(`${configSettings.logs.path}/banned.txt`, `${peer.remoteAddress}${configSettings.EOL}`)
+            this.tcpNode.on('peer-ban', async peer => {
+                if (!peer.remoteAddress) return
+                const doc = await Model_Node.findOne({
+                    host: peer.remoteAddress
+                }).exec()
+                console.log(doc)
+                if (doc) {
+                    doc.banned = Date.now()
+                    await doc.save()
                 }
             })
         }
@@ -166,15 +173,15 @@ class Node extends events.EventEmitter {
             }
         }, 1000)
     }
-    getNodes() {
-        let arr = parseNodes(fs.readFileSync(configSettings.addressList).toString())
-        if (configSettings.logs.use === true) {
-            if (fs.existsSync(`${configSettings.logs.path}/connections.txt`)) arr.push(...parseNodes(fs.readFileSync(`${configSettings.logs.path}/connections.txt`).toString()))
-        }
-        return arr
+    async getNodes() {
+        return (await Model_Node.find({
+            banned: {
+                $lt: Date.now() - configSettings.Node.banTimeout
+            }
+        }, 'host', { lean: true }).exec()).map(e => e.host)
     }
-    reconnect() {
-        this.tcpNode.connectToNetwork(this.getNodes())
+    async reconnect() {
+        this.tcpNode.connectToNetwork(await this.getNodes())
         if (configSettings.Node.autoReconnect) setTimeout(this.reconnect.bind(this), configSettings.Node.autoReconnect)
     }
     addWorker(worker: Worker) {

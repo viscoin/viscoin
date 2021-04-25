@@ -1,5 +1,4 @@
 {
-    "EOL": "\n",
     "HTTPApi": {
         "autoRetry": 1000,
         "get": {
@@ -30,6 +29,7 @@
         "connectToNetwork": true,
         "sync": true,
         "syncBlocksPerRequest": 2,
+        "banTimeout": 60000,
         "queue": {
             "blocks": 1000,
             "transactions": 1000

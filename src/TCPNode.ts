@@ -5,11 +5,10 @@ import * as configNetwork from '../config/network.json'
 import * as crypto from 'crypto'
 import protocol from './protocol'
 import Peer from './Peer'
-import * as fs from 'fs'
+import Model_Node from './mongoose/model/node'
 interface TCPNode {
     hashes: Array<{ hash: Buffer, timestamp: number }>
     peers: Set<Peer>
-    banned: Set<String>
     server: net.Server
 }
 class TCPNode extends events.EventEmitter {
@@ -17,11 +16,6 @@ class TCPNode extends events.EventEmitter {
         super()
         this.hashes = []
         this.peers = new Set()
-        this.banned = new Set()
-        if (configSettings.logs.use && fs.existsSync(`${configSettings.logs.path}/banned.txt`)) {
-            this.banned = new Set(fs.readFileSync(`${configSettings.logs.path}/banned.txt`).toString().split(configSettings.EOL))
-            this.banned.delete('')
-        }
         this.server = new net.Server()
         this.server.maxConnections = configSettings.TCPNode.maxConnectionsIn
         this.server
@@ -32,8 +26,8 @@ class TCPNode extends events.EventEmitter {
     }
     add(peer: Peer, server: boolean) {
         peer
-            .on('add', () => {
-                if (this.banned.has(peer.remoteAddress)) return peer.delete()
+            .on('add', async () => {
+                if ((await Model_Node.findOne({ host: peer.remoteAddress }).exec())?.banned > Date.now() - configSettings.Node.banTimeout) return peer.delete()
                 if (this.hasSocketWithRemoteAddress(peer) || this.peers.size >= configSettings.TCPNode.maxConnectionsOut) return peer.delete()
                 this.peers.add(peer)
                 this.emit('peer-connect', peer, server)
@@ -53,8 +47,7 @@ class TCPNode extends events.EventEmitter {
             .on('delete', () => {
                 if (this.peers.delete(peer)) this.emit('peer-disconnect', peer, server)
             })
-            .on('ban', () => {
-                this.banned.add(peer.remoteAddress)
+            .on('ban', async () => {
                 this.emit('peer-ban', peer, server)
             })
         for (const type of protocol.types) {
@@ -101,42 +94,34 @@ class TCPNode extends events.EventEmitter {
         }
         return arr
     }
-    static verifyNode({ port, address }: { port: number, address: string }) {
-        if (port === undefined && address === undefined) return 6
-        if (typeof port !== 'number') return 1
-        if (typeof address !== 'string') return 2
-        if (address !== 'localhost') {
-            if (Buffer.byteLength(Buffer.from(address.split('.'))) !== 4
-            && Buffer.byteLength(Buffer.from(address.split(':'))) > 8) return 3
+    static verifyHostname(host: string) {
+        if (typeof host !== 'string') return 2
+        if (host !== 'localhost') {
+            if (host.includes('.')) {
+                if (Buffer.byteLength(Buffer.from(host.split('.').filter(e => e))) !== 4) return 3
+            }
+            else if (host.includes(':')) {
+                if (Buffer.byteLength(Buffer.from(host.split(':').filter(e => e))) > 8) return 4
+            }
+            else return 5
         }
-        if (port < 1024 || port > 49151) return 4
-        if (configSettings.TCPNode.allowConnectionsToSelf !== true
-        && port === configNetwork.TCPNode.port
-        && address === configNetwork.TCPNode.address) return 5
         return 0
     }
-    connectToNetwork(nodes: Array<{ port: number, address: string }>) {
-        nodes = TCPNode.shuffle(nodes)
-        for (const node of nodes) {
-            let code = TCPNode.verifyNode(node)
-            if (code === 4) {
-                node.port = configNetwork.TCPNode.port
-                code = TCPNode.verifyNode(node)
-            }
-            if (code !== 0) continue
-            const socket = net.connect(node.port, node.address)
+    connectToNetwork(hosts: Array<string>) {
+        hosts = TCPNode.shuffle(hosts)
+        for (const host of hosts) {
+            if (TCPNode.verifyHostname(host) !== 0) continue
+            if (configSettings.TCPNode.allowConnectionsToSelf !== true
+            && host === configNetwork.TCPNode.host) continue
+            const socket = net.connect(configNetwork.TCPNode.port, host)
             this.add(new Peer(socket), false)
         }
     }
-    connectToNode({ port, address }: { port: number, address: string }) {
-        let code = TCPNode.verifyNode({ port, address })
-        if (code === 4) {
-            port = configNetwork.TCPNode.port
-            code = TCPNode.verifyNode({ port, address })
-        }
-        if ([ 1, 2, 3 ].includes(code)) return 1
-        else if (code !== 0) return 2
-        const socket = net.connect(port, address)
+    connectToNode(host: string) {
+        if (TCPNode.verifyHostname(host) !== 0) return 2
+        if (configSettings.TCPNode.allowConnectionsToSelf !== true
+        && host === configNetwork.TCPNode.host) return 3
+        const socket = net.connect(configNetwork.TCPNode.port, host)
         this.add(new Peer(socket), false)
         return 0
     }
@@ -146,7 +131,7 @@ class TCPNode extends events.EventEmitter {
         }
     }
     start() {
-        this.server.listen(configNetwork.TCPNode.port, configNetwork.TCPNode.address)
+        this.server.listen(configNetwork.TCPNode.port, configNetwork.TCPNode.host)
     }
     stop() {
         this.server.close()

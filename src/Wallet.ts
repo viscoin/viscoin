@@ -45,10 +45,10 @@ class Wallet {
         return a
     }
     async balance() {
-        return await HTTPApi.getBalanceOfAddress({ host: configNetwork.HTTPApi.address, port: configNetwork.HTTPApi.port }, base58.encode(this.address))
+        return await HTTPApi.getBalanceOfAddress({ host: configNetwork.HTTPApi.host, port: configNetwork.HTTPApi.port }, base58.encode(this.address))
     }
     async transactions() {
-        return await HTTPApi.getTransactionsOfAddress({ host: configNetwork.HTTPApi.address, port: configNetwork.HTTPApi.port }, base58.encode(this.address))
+        return await HTTPApi.getTransactionsOfAddress({ host: configNetwork.HTTPApi.host, port: configNetwork.HTTPApi.port }, base58.encode(this.address))
     }
 }
 export default Wallet
