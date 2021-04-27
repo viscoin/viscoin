@@ -103,18 +103,19 @@ class Transaction {
                 || beautifyBigInt(amount) !== this.amount) return 6
         }
         else if (typeof this.to !== 'undefined') return 7
-        if (typeof this.signature !== 'object') return 8
-        if (this.signature instanceof Buffer === false) return 9
-        if (typeof this.timestamp !== 'number') return 10
-        if (this.timestamp > Date.now() + configSettings.maxDesync) return 11
-        if (typeof this.minerFee !== 'string') return 12
+        if (this.to === undefined && this.amount !== undefined) return 8
+        if (typeof this.signature !== 'object') return 9
+        if (this.signature instanceof Buffer === false) return 10
+        if (typeof this.timestamp !== 'number') return 11
+        if (this.timestamp > Date.now() + configSettings.maxDesync) return 12
+        if (typeof this.minerFee !== 'string') return 13
         const minerFee = parseBigInt(this.minerFee)
             if (minerFee === null
                 || minerFee < 0
-                || beautifyBigInt(minerFee) !== this.minerFee) return 13
-        if (typeof this.recoveryParam !== 'number') return 14
-        if (this.recoveryParam >> 2) return 15
-        if (this.verify() === false) return 16
+                || beautifyBigInt(minerFee) !== this.minerFee) return 14
+        if (typeof this.recoveryParam !== 'number') return 15
+        if (this.recoveryParam >> 2) return 16
+        if (this.verify() === false) return 17
         return 0
     }
     byteFee() {
