@@ -95,7 +95,8 @@ class TCPNode extends events.EventEmitter {
         return arr
     }
     static verifyHostname(host: string) {
-        if (typeof host !== 'string') return 2
+        if (typeof host !== 'string') return 1
+        if (host !== host.trim()) return 2
         if (host !== 'localhost') {
             if (host.includes('.')) {
                 if (Buffer.byteLength(Buffer.from(host.split('.').filter(e => e))) !== 4) return 3
