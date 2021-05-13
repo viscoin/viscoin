@@ -138,6 +138,7 @@ class Node extends events.EventEmitter {
             if (this.blockchain.height === null) return
             if (this.queue.blocks.size > configSettings.Node.queue.blocks
             || block.height < this.blockchain.height - configSettings.trustedAfterBlocks) return
+            if (!block.hash) return
             if (this.blockchain.hashes.current.includes(block.hash.toString('binary'))) return cb(0)
             if (this.queue.callbacks.has(block.hash)) return this.queue.callbacks.set(block.hash, [ ...this.queue.callbacks.get(block.hash), cb ])
             this.queue.callbacks.set(block.hash, [ cb ])
