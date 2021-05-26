@@ -108,3 +108,6 @@ dist
 
 # Keys
 wallets/*
+
+addresses.json
+keys.json
