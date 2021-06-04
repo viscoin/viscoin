@@ -146,7 +146,7 @@ const commands = {
             log: boolean = true
             setTimeout(async function loop() {
                 try {
-                    const code = await HTTPApi.send({ host: configNetwork.HTTPApi.host, port: configNetwork.HTTPApi.port }, transaction)
+                    const code = await HTTPApi.send({ host: configNetwork.Node.HTTPApi.host, port: configNetwork.Node.HTTPApi.port }, transaction)
                     if (log === true) {
                         if (code === 0) console.log(chalk.greenBright('Transaction accepted'))
                         else console.log(chalk.redBright(`Transaction not accepted, code ${code}`))
@@ -199,7 +199,7 @@ const commands = {
             return commands.commands()
         }
         try {
-            const balance = res.address === undefined ? await wallet.balance() : await HTTPApi.getBalanceOfAddress({ host: configNetwork.HTTPApi.host, port: configNetwork.HTTPApi.port }, res.address)
+            const balance = res.address === undefined ? await wallet.balance() : await HTTPApi.getBalanceOfAddress({ host: configNetwork.Node.HTTPApi.host, port: configNetwork.Node.HTTPApi.port }, res.address)
             console.log(chalk.yellowBright(balance))
         }
         catch {
@@ -449,12 +449,12 @@ const commands = {
             return commands.commands()
         }
         try {
-            const transactions = (res.address === undefined ? await wallet.transactions() : await HTTPApi.getTransactionsOfAddress({ host: configNetwork.HTTPApi.host, port: configNetwork.HTTPApi.port }, res.address))
+            const transactions = (res.address === undefined ? await wallet.transactions() : await HTTPApi.getTransactionsOfAddress({ host: configNetwork.Node.HTTPApi.host, port: configNetwork.Node.HTTPApi.port }, res.address))
                 .sort((a, b) => a.timestamp - b.timestamp)
-            const latestBlock = await HTTPApi.getLatestBlock({ host: configNetwork.HTTPApi.host, port: configNetwork.HTTPApi.port })
+            const latestBlock = await HTTPApi.getLatestBlock({ host: configNetwork.Node.HTTPApi.host, port: configNetwork.Node.HTTPApi.port })
             const blocks = [ latestBlock ]
             for (let i = latestBlock.height - 1; i >= latestBlock.height + 1 - configSettings.confirmations && i >= 0; i--) {
-                blocks.push(await HTTPApi.getBlockByHeight({ host: configNetwork.HTTPApi.host, port: configNetwork.HTTPApi.port }, i))
+                blocks.push(await HTTPApi.getBlockByHeight({ host: configNetwork.Node.HTTPApi.host, port: configNetwork.Node.HTTPApi.port }, i))
             }
             if (transactions.length) {
                 for (const transaction of transactions) {

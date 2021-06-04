@@ -6,6 +6,8 @@ import * as crypto from 'crypto'
 import protocol from './protocol'
 import Peer from './Peer'
 import Model_Node from './mongoose/model/node'
+import isValidHostname from './isValidHostname'
+
 interface TCPNode {
     hashes: Array<{ hash: Buffer, timestamp: number }>
     peers: Set<Peer>
@@ -40,7 +42,7 @@ class TCPNode extends events.EventEmitter {
                 else {
                     this.broadcast(protocol.constructBuffer('node', {
                         address: peer.remoteAddress,
-                        port: configNetwork.TCPNode.port
+                        port: configNetwork.Node.TCPNode.port
                     }))
                 }
             })
@@ -94,35 +96,21 @@ class TCPNode extends events.EventEmitter {
         }
         return arr
     }
-    static verifyHostname(host: string) {
-        if (typeof host !== 'string') return 1
-        if (host !== host.trim()) return 2
-        if (host !== 'localhost') {
-            if (host.includes('.')) {
-                if (Buffer.byteLength(Buffer.from(host.split('.').filter(e => e))) !== 4) return 3
-            }
-            else if (host.includes(':')) {
-                if (Buffer.byteLength(Buffer.from(host.split(':').filter(e => e))) > 8) return 4
-            }
-            else return 5
-        }
-        return 0
-    }
     connectToNetwork(hosts: Array<string>) {
         hosts = TCPNode.shuffle(hosts)
         for (const host of hosts) {
-            if (TCPNode.verifyHostname(host) !== 0) continue
+            if (isValidHostname(host) !== 0) continue
             if (configSettings.TCPNode.allowConnectionsToSelf !== true
-            && host === configNetwork.TCPNode.host) continue
-            const socket = net.connect(configNetwork.TCPNode.port, host)
+            && host === configNetwork.Node.TCPNode.host) continue
+            const socket = net.connect(configNetwork.Node.TCPNode.port, host)
             this.add(new Peer(socket), false)
         }
     }
     connectToNode(host: string) {
-        if (TCPNode.verifyHostname(host) !== 0) return 2
+        if (isValidHostname(host) !== 0) return 2
         if (configSettings.TCPNode.allowConnectionsToSelf !== true
-        && host === configNetwork.TCPNode.host) return 3
-        const socket = net.connect(configNetwork.TCPNode.port, host)
+        && host === configNetwork.Node.TCPNode.host) return 3
+        const socket = net.connect(configNetwork.Node.TCPNode.port, host)
         this.add(new Peer(socket), false)
         return 0
     }
@@ -132,7 +120,7 @@ class TCPNode extends events.EventEmitter {
         }
     }
     start() {
-        this.server.listen(configNetwork.TCPNode.port, configNetwork.TCPNode.host)
+        this.server.listen(configNetwork.Node.TCPNode.port, configNetwork.Node.TCPNode.host)
     }
     stop() {
         this.server.close()

@@ -1,14 +1,26 @@
 {
-    "HTTPApi": {
-        "host": "localhost",
-        "port": 80
+    "Miner": {
+        "HTTPApi": {
+            "host": "localhost",
+            "port": 80
+        },
+        "TCPApi": {
+            "host": "localhost",
+            "port": 9332
+        }
     },
-    "TCPApi": {
-        "host": "localhost",
-        "port": 9332
-    },
-    "TCPNode": {
-        "host": "localhost",
-        "port": 9333
+    "Node": {
+        "HTTPApi": {
+            "host": "localhost",
+            "port": 80
+        },
+        "TCPApi": {
+            "host": "localhost",
+            "port": 9332
+        },
+        "TCPNode": {
+            "host": "localhost",
+            "port": 9333
+        }
     }
 }

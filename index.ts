@@ -22,20 +22,20 @@ if (isMainThread) {
         console.log(info)
     })
     if (configSettings.Node.TCPNode === true && configSettings.log.TCPNode === true) {
-        node.tcpNode.on('listening', () => console.log(`${LTS()} ${chalk.cyanBright(`Node (${chalk.cyan('TCP')})`)} ${chalk.cyan('listening on')} ${chalk.blueBright(`${configNetwork.TCPNode.host}:${configNetwork.TCPNode.port}`)}`))
-        node.tcpNode.on('error', e => console.log(`${LTS()} ${chalk.cyanBright(`Node (${chalk.cyan('TCP')})`)} ${chalk.redBright('error')} ${chalk.blueBright(`${configNetwork.TCPNode.host}:${configNetwork.TCPNode.port}`)} ${chalk.redBright(e?.code)}`))
+        node.tcpNode.on('listening', () => console.log(`${LTS()} ${chalk.cyanBright(`Node (${chalk.cyan('TCP')})`)} ${chalk.cyan('listening on')} ${chalk.blueBright(`${configNetwork.Node.TCPNode.host}:${configNetwork.Node.TCPNode.port}`)}`))
+        node.tcpNode.on('error', e => console.log(`${LTS()} ${chalk.cyanBright(`Node (${chalk.cyan('TCP')})`)} ${chalk.redBright('error')} ${chalk.blueBright(`${configNetwork.Node.TCPNode.host}:${configNetwork.Node.TCPNode.port}`)} ${chalk.redBright(e?.code)}`))
         node.tcpNode.on('peer-connect', peer => console.log(`${LTS()} ${chalk.cyanBright('Peer')} ${chalk.cyan('connected')} ${chalk.blueBright(`${peer.remoteAddress}:${peer.remotePort} ${chalk.cyan('-')} ${peer.address}:${peer.port}`)} ${chalk.cyan('Total')} ${chalk.yellowBright(node.tcpNode.peers.size)}`))
         node.tcpNode.on('peer-disconnect', peer => console.log(`${LTS()} ${chalk.cyanBright('Peer')} ${chalk.cyan('disconnected')} ${chalk.blueBright(`${peer.remoteAddress}:${peer.remotePort} ${chalk.cyan('-')} ${peer.address}:${peer.port}`)} ${chalk.cyan('Total')} ${chalk.yellowBright(node.tcpNode.peers.size)}`))
         node.tcpNode.on('peer-ban', peer => console.log(`${LTS()} ${chalk.cyanBright('Peer')} ${chalk.redBright('banned')} ${chalk.blueBright(`${peer.remoteAddress}:${peer.remotePort} ${chalk.cyan('-')} ${peer.address}:${peer.port}`)}`))
     }
     if (configSettings.Node.TCPApi === true && configSettings.log.TCPApi === true) {
-        node.tcpApi.on('listening', () => console.log(`${LTS()} ${chalk.cyanBright(`API (${chalk.cyan('TCP')})`)} ${chalk.cyan('listening on')} ${chalk.blueBright(`${configNetwork.TCPApi.host}:${configNetwork.TCPApi.port}`)}`))
-        node.tcpApi.on('error', e => console.log(`${LTS()} ${chalk.cyanBright(`API (${chalk.cyan('TCP')})`)} ${chalk.redBright('error')} ${chalk.blueBright(`${configNetwork.TCPApi.host}:${configNetwork.TCPApi.port}`)} ${chalk.redBright(e?.code)}`))
+        node.tcpApi.on('listening', () => console.log(`${LTS()} ${chalk.cyanBright(`API (${chalk.cyan('TCP')})`)} ${chalk.cyan('listening on')} ${chalk.blueBright(`${configNetwork.Node.TCPApi.host}:${configNetwork.Node.TCPApi.port}`)}`))
+        node.tcpApi.on('error', e => console.log(`${LTS()} ${chalk.cyanBright(`API (${chalk.cyan('TCP')})`)} ${chalk.redBright('error')} ${chalk.blueBright(`${configNetwork.Node.TCPApi.host}:${configNetwork.Node.TCPApi.port}`)} ${chalk.redBright(e?.code)}`))
         node.tcpApi.on('connection', (port, address) => console.log(`${LTS()} ${chalk.cyanBright(`API (${chalk.cyan('TCP')})`)} ${chalk.cyan('connection')} ${chalk.blueBright(`${address}:${port}`)}`))
     }
     if (configSettings.Node.HTTPApi === true && configSettings.log.HTTPApi === true) {
-        node.httpApi.on('listening', () => console.log(`${LTS()} ${chalk.cyanBright(`API (${chalk.cyan('HTTP')})`)} ${chalk.cyan('listening on')} ${chalk.blueBright(`${configNetwork.HTTPApi.host}:${configNetwork.HTTPApi.port}`)}`))
-        node.httpApi.on('error', e => console.log(`${LTS()} ${chalk.cyanBright(`API (${chalk.cyan('HTTP')})`)} ${chalk.redBright('error')} ${chalk.blueBright(`${configNetwork.HTTPApi.host}:${configNetwork.HTTPApi.port}`)} ${chalk.redBright(e?.code)}`))
+        node.httpApi.on('listening', () => console.log(`${LTS()} ${chalk.cyanBright(`API (${chalk.cyan('HTTP')})`)} ${chalk.cyan('listening on')} ${chalk.blueBright(`${configNetwork.Node.HTTPApi.host}:${configNetwork.Node.HTTPApi.port}`)}`))
+        node.httpApi.on('error', e => console.log(`${LTS()} ${chalk.cyanBright(`API (${chalk.cyan('HTTP')})`)} ${chalk.redBright('error')} ${chalk.blueBright(`${configNetwork.Node.HTTPApi.host}:${configNetwork.Node.HTTPApi.port}`)} ${chalk.redBright(e?.code)}`))
     }
     node.on('transaction', (transaction, code) => {
         if (code === 0 && configSettings.log.transaction === true) console.log(`${LTS()} ${chalk.cyanBright('new')} ${chalk.cyan('Transaction')} ${chalk.blueBright(base58.encode(transaction.from))}`)

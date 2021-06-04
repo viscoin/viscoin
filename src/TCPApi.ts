@@ -29,7 +29,7 @@ class Server extends events.EventEmitter {
             .on('close', () => {})
     }
     start() {
-        this.server.listen(configNetwork.TCPApi.port, configNetwork.TCPApi.host)
+        this.server.listen(configNetwork.Node.TCPApi.port, configNetwork.Node.TCPApi.host)
     }
     stop() {
         this.server.close()

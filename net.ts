@@ -3,6 +3,7 @@ import * as prompts from 'prompts'
 import TCPNode from './src/TCPNode'
 import Model_Node from './src/mongoose/model/node'
 import * as configSettings from './config/settings.json'
+import isValidHostname from './src/isValidHostname'
 
 init(false)
 const commands = {
@@ -32,8 +33,8 @@ const commands = {
             name: 'host',
             message: 'Enter host',
             validate: async host => {
-                const code = TCPNode.verifyHostname(host)
-                if (code !== 0) return `Invalid host ${code}` 
+                const code = isValidHostname(host)
+                if (code !== 0) return `Invalid host ${code}`
                 if (await Model_Node.exists({ host })) return 'Host already exists'
                 return true
             }

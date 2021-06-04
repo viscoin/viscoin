@@ -21,7 +21,7 @@ class Miner extends events.EventEmitter {
     constructor(miningRewardAddress: Buffer) {
         super()
         this.tcpClient = TCPApi.createClient()
-        this.tcpClient.connect(configNetwork.TCPApi.port, configNetwork.TCPApi.host, true)
+        this.tcpClient.connect(configNetwork.Miner.TCPApi.port, configNetwork.Miner.TCPApi.host, true)
         this.tcpClient.on('block', () => this.start())
         this.tcpClient.on('transaction', () => this.start())
         this.workers = []
@@ -41,10 +41,10 @@ class Miner extends events.EventEmitter {
         this.previousBlock = null
     }
     async start() {
-        const block = await HTTPApi.getNewBlock({ host: configNetwork.HTTPApi.host, port: configNetwork.HTTPApi.port }, this.miningRewardAddress)
+        const block = await HTTPApi.getNewBlock({ host: configNetwork.Miner.HTTPApi.host, port: configNetwork.Miner.HTTPApi.port }, this.miningRewardAddress)
         if (block === null) return setTimeout(() => this.start(), configSettings.HTTPApi.autoRetry)
         if (this.previousBlock === null
-        || this.previousBlock.hash?.equals(block.previousHash) === false) this.previousBlock = await HTTPApi.getLatestBlock({ host: configNetwork.HTTPApi.host, port: configNetwork.HTTPApi.port })
+        || this.previousBlock.hash?.equals(block.previousHash) === false) this.previousBlock = await HTTPApi.getLatestBlock({ host: configNetwork.Miner.HTTPApi.host, port: configNetwork.Miner.HTTPApi.port })
         if (this.previousBlock === null
         || this.previousBlock.hash?.equals(block.previousHash) === false) return setTimeout(() => this.start(), configSettings.HTTPApi.autoRetry)
         this.emitThreadsMineNewBlock(block, this.previousBlock)
@@ -63,7 +63,7 @@ class Miner extends events.EventEmitter {
     }
     async postBlock(block: Block) {
         try {
-            const code = await HTTPApi.postBlock({ host: configNetwork.HTTPApi.host, port: configNetwork.HTTPApi.port }, block)
+            const code = await HTTPApi.postBlock({ host: configNetwork.Miner.HTTPApi.host, port: configNetwork.Miner.HTTPApi.port }, block)
             this.emit('mined', block, code)
             if (code !== 0) await this.start()
         }
