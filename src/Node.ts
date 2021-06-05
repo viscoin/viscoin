@@ -79,6 +79,11 @@ class Node extends events.EventEmitter {
                     ...unconfirmed_transactions.map(e => Transaction.minify(e))
                 ])
             })
+            this.httpApi.on('get-peers', async cb => {
+                const arr = []
+                for (const peer of this.tcpNode.peers) arr.push(`${peer.remoteAddress}:${peer.remotePort}`)
+                cb(arr)
+            })
         }
         if (configSettings.Node.TCPApi === true) {
             this.tcpApi = TCPApi.createServer()

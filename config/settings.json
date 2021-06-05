@@ -9,7 +9,8 @@
             "/block/new/:address": true,
             "/transactions/:address": true,
             "/balance/:address": true,
-            "/block/transaction/:signature": true
+            "/block/transaction/:signature": true,
+            "/peers": true
         },
         "post": {
             "/transaction": true,
@@ -50,11 +51,11 @@
         "socket": {
             "maxBytesRead1s": 1048576,
             "maxBytesWritten1s": 1048576,
-            "setTimeout": 60000
+            "setTimeout": 120000
         },
         "hashes": {
-            "length": 60000,
-            "timeToLive": 60000,
+            "length": 1000,
+            "timeToLive": 15000,
             "interval": 1000
         },
         "maxBytesInMemory": 131072,

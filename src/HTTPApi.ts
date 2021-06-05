@@ -77,6 +77,7 @@ class HTTPApi extends events.EventEmitter {
                 res.status(400).end()
             }
         })
+        if (configSettings.HTTPApi.get['/peers'] === true) app.get('/peers', (req, res) => this.emit('get-peers', peers => HTTPApi.resEndJSON(res, peers)))
         if (configSettings.HTTPApi.post['/transaction'] === true) app.post('/transaction', (req, res) => {
             try {
                 const transaction = new Transaction(Transaction.beautify(req.body))
