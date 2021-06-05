@@ -126,7 +126,7 @@ const commands = {
         })
         const { node_tcp_host } = await prompts({
             type: 'text',
-            name: 'tcp_host',
+            name: 'node_tcp_host',
             message: `Enter ${chalk.magentaBright('Node')} ${chalk.yellow('TCP')} ${chalk.cyanBright('Host')}`,
             validate: async host => {
                 const code = isValidHostname(host)
@@ -136,7 +136,7 @@ const commands = {
         })
         const { node_tcp_port } = await prompts({
             type: 'text',
-            name: 'tcp_port',
+            name: 'node_tcp_port',
             message: `Enter ${chalk.magentaBright('Node')} ${chalk.yellow('TCP')} ${chalk.blueBright('Port')} ${chalk.gray('(default 9333)')}`,
             validate: async port => {
                 if (isNaN(parseInt(port))) return 'Invalid port'
