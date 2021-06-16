@@ -1,8 +1,8 @@
 {
   "name": "viscoin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "./lib/index.js",
   "scripts": {
     "c": "tsc",
     "build": "tsc --p tsconfig.module.json"
