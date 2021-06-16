@@ -15,6 +15,9 @@ npm run c
 
 ## Usage
 ```
+node setup
+```
+```
 node wallet
 ```
 ```
@@ -24,7 +27,7 @@ node miner
 node net
 ```
 ```
-node .
+node fullnode
 ```
 
 ## Contributing

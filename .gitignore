@@ -111,3 +111,6 @@ wallets/*
 
 addresses.json
 keys.json
+
+# Lib
+/lib
