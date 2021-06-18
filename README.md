@@ -1,11 +1,12 @@
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/viscoin/viscoin?style=for-the-badge)
-![Discord](https://img.shields.io/discord/840244262615515148?label=discord&logo=discord&style=for-the-badge)
-
 # Viscoin
 
-#### Viscoin is an experimental digital currency that enables instant payments to anyone, anywhere in the world.
+Official Typescript implementation of the Viscoin protocol.
 
-#### This is the core implementation for the Viscoin protocol.
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/viscoin/viscoin?style=for-the-badge)
+[![Discord](https://img.shields.io/discord/840244262615515148?label=Viscoin&logo=discord&style=for-the-badge)](https://discord.gg/viscoin)
+
+## What is Viscoin?
+Viscoin is an experimental digital currency that enables instant payments to anyone, anywhere in the world. Viscoin uses peer-to-peer technology to operate with no central authority: managing transactions and issuing money are carried out collectively by the network.
 
 ### Coin Specifications
 | Specification | Value |
