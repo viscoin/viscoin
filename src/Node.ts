@@ -37,7 +37,7 @@ interface Node {
 class Node extends events.EventEmitter {
     constructor() {
         super()
-        this.syncTimeoutMS = configSettings.Peer.hashes.timeToLive
+        this.syncTimeoutMS = 1000 / configSettings.Peer.maxRequestsPerSecond.sync
         this.hashes = new Set()
         this.queue = {
             blocks: new Set(),
@@ -96,7 +96,7 @@ class Node extends events.EventEmitter {
                 if (code === 0) {
                     if (this.hashes.delete(block.previousHash.toString('binary'))) {
                         this.hashes.add(block.hash.toString('binary'))
-                        this.syncTimeoutMS /= 4
+                        this.syncTimeoutMS /= 1.11
                         if (this.syncTimeoutMS < 1) this.syncTimeoutMS = 1
                     }
                 }
@@ -295,7 +295,7 @@ class Node extends events.EventEmitter {
         for (const hash of this.hashes) {
             this.tcpNode.broadcast(protocol.constructBuffer('sync', Buffer.from(hash, 'binary')), true)
         }
-        this.syncTimeoutMS *= 2
+        this.syncTimeoutMS *= 1.1
         if (this.syncTimeoutMS > configSettings.Peer.hashes.timeToLive) this.syncTimeoutMS = configSettings.Peer.hashes.timeToLive
         this.syncTimeout = setTimeout(this.sync.bind(this), this.syncTimeoutMS)
     }

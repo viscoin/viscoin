@@ -82,23 +82,6 @@
     },
     "addressList": "./config/addresses.txt",
     "confirmations": 6,
-    "log": {
-        "thread": true,
-        "sync": true,
-        "block": true,
-        "transaction": true,
-        "hardware": true,
-        "hashrate": true,
-        "verifyrate": true,
-        "loading": true,
-        "loaded": true,
-        "starting": true,
-        "mined": true,
-        "connect": true,
-        "TCPApi": true,
-        "HTTPApi": true,
-        "TCPNode": true
-    },
     "maxDesync": 30000,
     "minByteFee": {
         "bigint": "0",
@@ -109,5 +92,5 @@
         "chanceToNotUse": 0
     },
     "maxBlocksInCache": 10080,
-    "trustedAfterBlocks": 1440
+    "trustedAfterBlocks": 60
 }

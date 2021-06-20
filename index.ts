@@ -11,7 +11,6 @@ import HTTPApi from "./src/HTTPApi"
 import isValidAddress from "./src/isValidAddress"
 import isValidHostname from "./src/isValidHostname"
 import keygen from "./src/keygen"
-import logHardware from "./src/logHardware"
 import Miner from "./src/Miner"
 import MinerThread from "./src/MinerThread"
 import Node from "./src/Node"
@@ -44,7 +43,6 @@ export = {
     isValidAddress,
     isValidHostname,
     keygen,
-    logHardware,
     Miner,
     MinerThread,
     Node,
