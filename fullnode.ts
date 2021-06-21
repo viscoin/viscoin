@@ -36,7 +36,7 @@ if (isMainThread) {
     node.tcpNode.on('peer-ban', peer => logs.push(` ${chalk.cyanBright('Peer')} ${chalk.redBright('banned')} ${chalk.blueBright(`${peer.remoteAddress}:${peer.remotePort} ${chalk.cyan('-')} ${peer.address}:${peer.port}`)}`))
     node.on('thread', threadId => threads.add(threadId))
     node.on('verifyrate', ({ block, transaction }) => {
-        while (transaction.length > 5) transaction.shift()
+        while (transactions.length > 5) transactions.shift()
         while (blocks.length > 5) blocks.shift()
         while (sync.length > 5) sync.shift()
         while (logs.length > 10) logs.shift()
