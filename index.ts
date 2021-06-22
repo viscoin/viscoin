@@ -2,6 +2,7 @@ import * as config_core from "./config/core.json"
 import * as config_mongoose from "./config/mongoose.json"
 import * as config_network from "./config/network.json"
 import * as config_settings from "./config/settings.json"
+import Address from "./src/Address"
 import addressFromPublicKey from "./src/addressFromPublicKey"
 import base58 from "./src/base58"
 import beautifyBigInt from "./src/beautifyBigInt"
@@ -33,6 +34,7 @@ export = {
         network: config_network,
         settings: config_settings
     },
+    Address,
     addressFromPublicKey,
     base58,
     beautifyBigInt,

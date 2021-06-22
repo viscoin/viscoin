@@ -14,6 +14,7 @@ import * as configNetwork from './config/network.json'
 import walletPassphraseHash from './src/walletPassphraseHash'
 import addressFromPublicKey from './src/addressFromPublicKey'
 import publicKeyFromPrivateKey from './src/publicKeyFromPrivateKey'
+import Address from './src/Address'
 
 let wallet: Wallet | undefined = undefined,
 wallet_saved: boolean = false
@@ -23,7 +24,7 @@ const functions = {
         const iv = crypto.randomBytes(16)
         const cipher = crypto.createCipheriv('aes-256-cbc', await walletPassphraseHash(passphrase), iv)
         if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
-        fs.writeFileSync(`./wallets/${base58.encode(address)}.wallet`, Buffer.concat([
+        fs.writeFileSync(`./wallets/${base58.encode(Address.convertToChecksumAddress(address))}.wallet`, Buffer.concat([
             iv,
             cipher.update(privateKey),
             cipher.final()
@@ -31,7 +32,7 @@ const functions = {
     },
     log_wallet_info: (privateKey: Buffer) => {
         const address = addressFromPublicKey(publicKeyFromPrivateKey(privateKey))
-        console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.cyanBright(base58.encode(address))}`)
+        console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.cyanBright(base58.encode(Address.convertToChecksumAddress(address)))}`)
         console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.cyan(base58.encode(privateKey))}`)
     },
     log_unable_to_connect_to_api: () => {
@@ -41,7 +42,7 @@ const functions = {
 const commands = {
     commands: async () => {
         const block = await HTTPApi.getLatestBlock({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port })
-        if (block === null) console.log(chalk.redBright(`${configNetwork.Wallet.HTTPApi.host}:${configNetwork.Wallet.HTTPApi.port}`))
+        if (block === null) console.log(chalk.redBright(`${chalk.cyanBright('API')} ${chalk.cyan('TCP')} ${configNetwork.Wallet.HTTPApi.host}:${configNetwork.Wallet.HTTPApi.port}`))
         else {
             console.log(`${chalk.cyanBright('API')} ${chalk.cyan('TCP')} ${chalk.greenBright(`${configNetwork.Wallet.HTTPApi.host}:${configNetwork.Wallet.HTTPApi.port}`)}`)
             console.log(`${chalk.yellow('Blockchain height')} ${chalk.yellowBright(block.height)}`)
@@ -61,7 +62,7 @@ const commands = {
                 { title: 'Wallet', description: `View wallet details (${chalk.redBright('Make sure no one is looking')})`, value: commands.info },
                 ...choices
             ]
-            console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${base58.encode(wallet.address)}.wallet`))))
+            console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${base58.encode(Address.convertToChecksumAddress(wallet.address))}.wallet`))))
             if (wallet_saved === false) {
                 console.log(chalk.grey(`${chalk.redBright('Temporarily')} loaded wallet ${chalk.white('(not saved)')}`))
                 choices = [
@@ -97,7 +98,8 @@ const commands = {
                 validate: to => {
                     if (to === '') return true
                     try {
-                        if (Buffer.byteLength(base58.decode(to)) === 20) return true
+                        const address = base58.decode(to)
+                        if (Address.verifyChecksumAddress(address)) return true
                         else return 'Invalid address'
                     }
                     catch {
@@ -143,8 +145,13 @@ const commands = {
             }
         ])
         if (res.confirm === true) {
+            let to
+            if (res.to) {
+                const address = base58.decode(res.to)
+                to = Address.convertToNormalAddress(address)
+            }
             const transaction = wallet.createTransaction({
-                to: res.to === undefined ? undefined : base58.decode(res.to),
+                to,
                 amount: res.amount === undefined ? undefined : beautifyBigInt(parseBigInt(res.amount)),
                 minerFee: beautifyBigInt(parseBigInt(res.minerFee))
             })
@@ -170,7 +177,7 @@ const commands = {
         commands.commands()
     },
     address: async () => {
-        console.log(chalk.blueBright(base58.encode(wallet.address)))
+        console.log(chalk.cyanBright(base58.encode(Address.convertToChecksumAddress(wallet.address))))
         await commands.pause()
         console.clear()
         commands.commands()
