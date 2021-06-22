@@ -9,6 +9,7 @@ const commands = {
         let choices: Array<{ title: string, description: string, value: Function }> = [
             { title: 'Miner', description: 'Setup Miner', value: commands.Miner },
             { title: 'Node', description: 'Setup Node', value: commands.Node },
+            { title: 'Wallet', description: 'Setup Wallet', value: commands.Wallet },
             { title: 'Exit', description: 'Exits', value: commands.exit }
         ]
         const res = await prompts({
@@ -152,6 +153,33 @@ const commands = {
         if (node_tcp_port) network.Node.TCPNode.port = parseInt(node_tcp_port)
         fs.writeFileSync('./config/network.json', JSON.stringify(network, null, 4))
         console.log(network.Node)
+        console.log('Done!')
+    },
+    Wallet: async () => {
+        const { http_host } = await prompts({
+            type: 'text',
+            name: 'http_host',
+            message: `Enter ${chalk.gray('API')} ${chalk.yellowBright('HTTP')} ${chalk.cyanBright('Host')}`,
+            validate: async host => {
+                const code = isValidHostname(host)
+                if (code !== 0) return `Invalid host ${code}`
+                return true
+            }
+        })
+        const { http_port } = await prompts({
+            type: 'text',
+            name: 'http_port',
+            message: `Enter ${chalk.gray('API')} ${chalk.yellowBright('HTTP')} ${chalk.blueBright('Port')} ${chalk.gray('(default 80)')}`,
+            validate: async port => {
+                if (isNaN(parseInt(port))) return 'Invalid port'
+                return true
+            }
+        })
+        const network = require('./config/network.json')
+        if (http_host) network.Miner.HTTPApi.host = http_host
+        if (http_port) network.Miner.HTTPApi.port = parseInt(http_port)
+        fs.writeFileSync('./config/network.json', JSON.stringify(network, null, 4))
+        console.log(network.Miner)
         console.log('Done!')
     },
     exit: () => {

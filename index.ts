@@ -26,7 +26,6 @@ import TCPNode from "./src/TCPNode"
 import Transaction from "./src/Transaction"
 import Wallet from "./src/Wallet"
 import walletPassphraseHash from "./src/walletPassphraseHash"
-import wordsToKey from "./src/wordsToKey"
 export = {
     config: {
         core: config_core,
@@ -57,6 +56,5 @@ export = {
     TCPNode,
     Transaction,
     Wallet,
-    walletPassphraseHash,
-    wordsToKey
+    walletPassphraseHash
 }

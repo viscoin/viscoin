@@ -1,11 +1,12 @@
-import * as elliptic from 'elliptic'
 import * as crypto from 'crypto'
 import addressFromPublicKey from './addressFromPublicKey'
 import * as configMongoose from '../config/mongoose.json'
 import * as configSettings from '../config/settings.json'
 import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
-const ec = new elliptic.ec('secp256k1')
+import * as secp256k1 from 'secp256k1'
+import publicKeyFromPrivateKey from './publicKeyFromPrivateKey'
+import * as Signature from 'elliptic/lib/elliptic/ec/signature'
 interface Transaction {
     from: Buffer
     to: Buffer
@@ -65,26 +66,29 @@ class Transaction {
         ).digest()
     }
     sign(privateKey: Buffer) {
-        const key = ec.keyFromPrivate(privateKey)
-        const pubPoint = key.getPublic()
-        const publicKey = Buffer.from(pubPoint.encode())
-        this.from = addressFromPublicKey(publicKey)
+        this.from = addressFromPublicKey(publicKeyFromPrivateKey(privateKey))
         const hash = Transaction.calculateHash(this)
-        const signature = key.sign(hash)
-        this.signature = Buffer.from(signature.toDER())
-        this.recoveryParam = signature.recoveryParam
+        const signature = secp256k1.ecdsaSign(hash, privateKey)
+        this.signature = Buffer.from(signature.signature)
+        this.recoveryParam = signature.recid
     }
     verify() {
         try {
             if (this.signature === undefined) return false
             if (typeof this.recoveryParam !== 'number' || this.recoveryParam >> 2) return false
             const hash = Transaction.calculateHash(this)
-            const pubPoint = ec.recoverPubKey(hash, this.signature, this.recoveryParam)
-            const publicKey = Buffer.from(pubPoint.encode())
+            let signature = this.signature
+            if (Buffer.byteLength(signature) !== 64) {
+                const _signature = new Signature(signature)
+                signature = Buffer.concat([
+                    _signature.r.toArrayLike(Buffer, 'be', 32),
+                    _signature.s.toArrayLike(Buffer, 'be', 32)
+                ])
+            }
+            const publicKey = secp256k1.ecdsaRecover(signature, this.recoveryParam, hash, false)
             const address = addressFromPublicKey(publicKey)
             if (!address.equals(this.from)) return false
-            const key = ec.keyFromPublic(pubPoint)
-            return key.verify(hash, this.signature)
+            return true
         }
         catch {
             return false

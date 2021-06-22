@@ -5,34 +5,34 @@ import * as fs from 'fs'
 import Wallet from './src/Wallet'
 import base58 from './src/base58'
 import * as path from 'path'
-import wordgen from './src/wordgen'
-import wordsToKey from './src/wordsToKey'
+import keygen from './src/keygen'
 import beautifyBigInt from './src/beautifyBigInt'
 import parseBigInt from './src/parseBigInt'
 import HTTPApi from './src/HTTPApi'
 import * as configSettings from './config/settings.json'
 import * as configNetwork from './config/network.json'
 import walletPassphraseHash from './src/walletPassphraseHash'
+import addressFromPublicKey from './src/addressFromPublicKey'
+import publicKeyFromPrivateKey from './src/publicKeyFromPrivateKey'
 
-let wallet: Wallet | undefined = undefined
+let wallet: Wallet | undefined = undefined,
+wallet_saved: boolean = false
 const functions = {
-    save_wallet: async (privateKey: Buffer, words: Array<string>, name: string, passphrase: string) => {
+    save_wallet: async (privateKey: Buffer, passphrase: string) => {
+        const address = addressFromPublicKey(publicKeyFromPrivateKey(privateKey))
         const iv = crypto.randomBytes(16)
         const cipher = crypto.createCipheriv('aes-256-cbc', await walletPassphraseHash(passphrase), iv)
         if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
-        fs.writeFileSync(`./wallets/${name}.wallet`, Buffer.concat([
+        fs.writeFileSync(`./wallets/${base58.encode(address)}.wallet`, Buffer.concat([
             iv,
-            cipher.update(JSON.stringify({
-                privateKey: privateKey.toString('binary'),
-                words
-            })),
+            cipher.update(privateKey),
             cipher.final()
         ]))
     },
-    log_wallet_info: (address: Buffer, privateKey: Buffer, words: Array<string>) => {
-        console.log(`${chalk.whiteBright.bold('Address')}        (${chalk.greenBright('SHARE')})  ${chalk.blueBright(base58.encode(address))}`)
-        console.log(`${chalk.whiteBright.bold('Private key')}    (${chalk.redBright('SECRET')}) ${chalk.blueBright(base58.encode(privateKey))}`)
-        console.log(`${chalk.whiteBright.bold('Recovery words')} (${chalk.redBright('SECRET')}) ${chalk.blueBright(words.join(' '))}`)
+    log_wallet_info: (privateKey: Buffer) => {
+        const address = addressFromPublicKey(publicKeyFromPrivateKey(privateKey))
+        console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.cyanBright(base58.encode(address))}`)
+        console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.cyan(base58.encode(privateKey))}`)
     },
     log_unable_to_connect_to_api: () => {
         console.log(chalk.redBright('Unable to connect to API'))
@@ -40,10 +40,16 @@ const functions = {
 }
 const commands = {
     commands: async () => {
+        const block = await HTTPApi.getLatestBlock({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port })
+        if (block === null) console.log(chalk.redBright(`${configNetwork.Wallet.HTTPApi.host}:${configNetwork.Wallet.HTTPApi.port}`))
+        else {
+            console.log(`${chalk.cyanBright('API')} ${chalk.cyan('TCP')} ${chalk.greenBright(`${configNetwork.Wallet.HTTPApi.host}:${configNetwork.Wallet.HTTPApi.port}`)}`)
+            console.log(`${chalk.yellow('Blockchain height')} ${chalk.yellowBright(block.height)}`)
+        }
         let choices: Array<{ title: string, description: string, value: Function }> = [
-            { title: 'Wallet', description: 'Select wallet', value: commands.select_wallet },
+            { title: 'Decrypt', description: 'Select wallet', value: commands.select_wallet },
             { title: 'Generate', description: 'Generate new wallet', value: commands.generate },
-            { title: 'Import', description: 'Import new wallet', value: commands.import_wallet },
+            { title: 'Import', description: 'Import new wallet', value: commands.import_privateKey },
             { title: 'Exit', description: 'Exits', value: commands.exit }
         ]
         if (wallet !== undefined) {
@@ -51,12 +57,12 @@ const commands = {
                 { title: 'Address', description: 'Show wallet address', value: commands.address },
                 { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
                 { title: 'Send', description: 'New transaction', value: commands.send },
-                { title: 'Transactions', description: 'Lists transaction history', value: commands.transactions },
-                { title: 'Info', description: `View sensitive details about wallet (${chalk.redBright('Make sure no one is looking')})`, value: commands.info },
+                { title: 'Transactions', description: 'Lists transaction history', value: commands.log_transactions },
+                { title: 'Wallet', description: `View wallet details (${chalk.redBright('Make sure no one is looking')})`, value: commands.info },
                 ...choices
             ]
-            if (wallet.name !== undefined) console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${wallet.name}.wallet`))))
-            else if (wallet.address !== undefined && wallet.privateKey !== undefined) {
+            console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${base58.encode(wallet.address)}.wallet`))))
+            if (wallet_saved === false) {
                 console.log(chalk.grey(`${chalk.redBright('Temporarily')} loaded wallet ${chalk.white('(not saved)')}`))
                 choices = [
                     { title: 'Save', description: 'Save wallet', value: commands.save },
@@ -77,7 +83,7 @@ const commands = {
         res.value()
     },
     info: async () => {
-        functions.log_wallet_info(wallet.address, wallet.privateKey, wallet.words)
+        functions.log_wallet_info(wallet.privateKey)
         await commands.pause()
         console.clear()
         commands.commands()
@@ -146,7 +152,7 @@ const commands = {
             log: boolean = true
             setTimeout(async function loop() {
                 try {
-                    const code = await HTTPApi.send({ host: configNetwork.Node.HTTPApi.host, port: configNetwork.Node.HTTPApi.port }, transaction)
+                    const code = await HTTPApi.send({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, transaction)
                     if (log === true) {
                         if (code === 0) console.log(chalk.greenBright('Transaction accepted'))
                         else console.log(chalk.redBright(`Transaction not accepted, code ${code}`))
@@ -199,7 +205,7 @@ const commands = {
             return commands.commands()
         }
         try {
-            const balance = res.address === undefined ? await wallet.balance() : await HTTPApi.getBalanceOfAddress({ host: configNetwork.Node.HTTPApi.host, port: configNetwork.Node.HTTPApi.port }, res.address)
+            const balance = res.address === undefined ? await HTTPApi.getBalanceOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, base58.encode(wallet.address)) : await HTTPApi.getBalanceOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, res.address)
             console.log(chalk.yellowBright(balance))
         }
         catch {
@@ -215,28 +221,10 @@ const commands = {
         process.exit(0)
     },
     generate: async () => {
-        const words = wordgen()
-        console.log(chalk.yellowBright('Write down the following words and store them somewhere safe.'))
-        console.log(chalk.yellowBright('The words can be used to recover / regenerate your private key.'))
-        console.log(chalk.redBright(`Do ${chalk.bold('not')} share this with anyone as they can get access to your wallet!`))
-        for (let i = 0; i < words.length; i++) {
-            console.log(`${chalk.whiteBright(i + 1)}${chalk.white('.')} ${chalk.greenBright.bold(words[i])}`)
-        }
-        await commands.pause()
-        console.clear()
-        const { words_confirm } = await prompts({
-            type: 'text',
-            name: 'words_confirm',
-            message: 'Confirm words 1 - 12 (space separated)',
-            validate: words_confirm => words_confirm.trim().split(' ').join('') === words.join('') ? true : "Words don't match"
-        })
-        if (words_confirm === undefined) {
-            console.clear()
-            return commands.commands()
-        }
-        const { privateKey, address } = await wordsToKey(words)
-        functions.log_wallet_info(address, privateKey, words)
-        wallet = new Wallet(Wallet.import({ name: '', privateKey, words }))
+        const privateKey = keygen()
+        wallet = new Wallet(privateKey)
+        wallet_saved = false
+        functions.log_wallet_info(privateKey)
         const { save } = await prompts({
             type: 'toggle',
             name: 'save',
@@ -249,30 +237,22 @@ const commands = {
             console.clear()
             return commands.commands()
         }
-        const { name, passphrase } = await prompts([
-            {
-                type: 'text',
-                name: 'name',
-                message: 'Name wallet',
-                validate: name => fs.existsSync(`./wallets/${name}.wallet`) ? 'Wallet already exists' : true
-            },
-            {
-                type: 'password',
-                name: 'passphrase',
-                message: 'Enter passphrase'
-            }
-        ])
+        const { passphrase } = await prompts({
+            type: 'password',
+            name: 'passphrase',
+            message: 'Enter passphrase'
+        })
         if (passphrase === undefined || passphrase === undefined) {
             console.clear()
             return commands.commands()
         }
-        functions.save_wallet(privateKey, words, name, passphrase)
-        wallet.name = name
+        functions.save_wallet(privateKey, passphrase)
+        wallet_saved = true
         console.clear()
         commands.commands()
     },
     save: async () => {
-        functions.log_wallet_info(wallet.address, wallet.privateKey, wallet.words)
+        functions.log_wallet_info(wallet.privateKey)
         const { save } = await prompts({
             type: 'toggle',
             name: 'save',
@@ -285,34 +265,26 @@ const commands = {
             console.clear()
             return commands.commands()
         }
-        const { name, passphrase } = await prompts([
-            {
-                type: 'text',
-                name: 'name',
-                message: 'Name wallet',
-                validate: name => fs.existsSync(`./wallets/${name}.wallet`) ? 'Wallet already exists' : true
-            },
-            {
-                type: 'password',
-                name: 'passphrase',
-                message: 'Enter passphrase'
-            }
-        ])
+        const { passphrase } = await prompts({
+            type: 'password',
+            name: 'passphrase',
+            message: 'Enter passphrase'
+        })
         if (passphrase === undefined || passphrase === undefined) {
             console.clear()
             return commands.commands()
         }
-        functions.save_wallet(wallet.privateKey, wallet.words, name, passphrase)
-        wallet.name = name
+        functions.save_wallet(wallet.privateKey, passphrase)
+        wallet_saved = true
         console.clear()
         commands.commands()
     },
-    load_wallet: async (name) => {
-        if (!fs.existsSync(`./wallets/${name}.wallet`)) {
+    decrypt_wallet: async (address) => {
+        if (!fs.existsSync(`./wallets/${address}.wallet`)) {
             console.log(chalk.redBright('Wallet not found'))
             return commands.select_wallet()
         }
-        const data = fs.readFileSync(`./wallets/${name}.wallet`)
+        const data = fs.readFileSync(`./wallets/${address}.wallet`)
         await prompts({
             type: 'password',
             name: 'passphrase',
@@ -320,13 +292,12 @@ const commands = {
             validate: async passphrase => {
                 try {
                     const decipher = crypto.createDecipheriv('aes-256-cbc', await walletPassphraseHash(passphrase), data.slice(0, 16))
-                    const decrypted = JSON.parse(String(Buffer.concat([
+                    const privateKey = Buffer.concat([
                         decipher.update(data.slice(16)),
                         decipher.final()
-                    ])))
-                    const privateKey = Buffer.from(decrypted.privateKey, 'binary')
-                    const words = decrypted.words
-                    wallet = new Wallet(Wallet.import({ name, privateKey, words }))
+                    ])
+                    wallet = new Wallet(privateKey)
+                    wallet_saved = true
                     return true
                 }
                 catch {
@@ -355,13 +326,13 @@ const commands = {
                 value: e.slice(0, e.length - '.wallet'.length)
             }
         })
-        const { name } = await prompts({
+        const { address } = await prompts({
             type: 'autocomplete',
-            name: 'name',
+            name: 'address',
             message: 'Select wallet',
             choices
         })
-        commands.load_wallet(name)
+        commands.decrypt_wallet(address)
     },
     pause: () => {
         return new Promise <void> (resolve => {
@@ -370,21 +341,29 @@ const commands = {
             process.stdin.once('data', () => resolve())
         })
     },
-    import_wallet: async () => {
+    import_privateKey: async () => {
         const res = await prompts({
             type: 'text',
-            name: 'words',
-            message: 'Enter the 12 word recovery passphrase 1 - 12 (space separated)',
-            validate: words => words.trim().split(' ').length === 12 ? true : 'Invalid length'
+            name: 'privateKey',
+            message: 'Enter privateKey (base58)',
+            validate: async privateKey => {
+                try {
+                    new Wallet(base58.decode(privateKey))
+                    return true
+                }
+                catch {
+                    return 'Invalid privateKey'
+                }
+            }
         })
-        if (res.words === undefined) {
+        if (res.privateKey === undefined) {
             console.clear()
             return commands.commands()
         }
-        const words = res.words.split(' ')
-        const { address, privateKey } = await wordsToKey(words)
-        functions.log_wallet_info(address, privateKey, words)
-        wallet = new Wallet(Wallet.import({ name: '', privateKey, words }))
+        const privateKey = base58.decode(res.privateKey)
+        functions.log_wallet_info(privateKey)
+        wallet = new Wallet(privateKey)
+        wallet_saved = false
         const { save } = await prompts({
             type: 'toggle',
             name: 'save',
@@ -397,29 +376,21 @@ const commands = {
             console.clear()
             return commands.commands()
         }
-        const { name, passphrase } = await prompts([
-            {
-                type: 'text',
-                name: 'name',
-                message: 'Name wallet',
-                validate: name => fs.existsSync(`./wallets/${name}.wallet`) ? 'Wallet already exists' : true
-            },
-            {
-                type: 'password',
-                name: 'passphrase',
-                message: 'Enter passphrase'
-            }
-        ])
+        const { passphrase } = await prompts({
+            type: 'password',
+            name: 'passphrase',
+            message: 'Enter passphrase'
+        })
         if (passphrase === undefined || passphrase === undefined) {
             console.clear()
             return commands.commands()
         }
-        functions.save_wallet(privateKey, words, name, passphrase)
-        wallet.name = name
+        functions.save_wallet(privateKey, passphrase)
+        wallet_saved = true
         console.clear()
         commands.commands()
     },
-    transactions: async () => {
+    log_transactions: async () => {
         const res = await prompts([
             {
                 type: 'toggle',
@@ -449,12 +420,12 @@ const commands = {
             return commands.commands()
         }
         try {
-            const transactions = (res.address === undefined ? await wallet.transactions() : await HTTPApi.getTransactionsOfAddress({ host: configNetwork.Node.HTTPApi.host, port: configNetwork.Node.HTTPApi.port }, res.address))
+            const transactions = (res.address === undefined ? await HTTPApi.getTransactionsOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, base58.encode(wallet.address)) : await HTTPApi.getTransactionsOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, res.address))
                 .sort((a, b) => a.timestamp - b.timestamp)
-            const latestBlock = await HTTPApi.getLatestBlock({ host: configNetwork.Node.HTTPApi.host, port: configNetwork.Node.HTTPApi.port })
+            const latestBlock = await HTTPApi.getLatestBlock({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port })
             const blocks = [ latestBlock ]
             for (let i = latestBlock.height - 1; i >= latestBlock.height + 1 - configSettings.confirmations && i >= 0; i--) {
-                blocks.push(await HTTPApi.getBlockByHeight({ host: configNetwork.Node.HTTPApi.host, port: configNetwork.Node.HTTPApi.port }, i))
+                blocks.push(await HTTPApi.getBlockByHeight({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, i))
             }
             if (transactions.length) {
                 for (const transaction of transactions) {

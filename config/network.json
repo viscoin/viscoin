@@ -22,5 +22,11 @@
             "host": "localhost",
             "port": 9333
         }
+    },
+    "Wallet": {
+        "HTTPApi": {
+            "host": "localhost",
+            "port": 80
+        }
     }
 }

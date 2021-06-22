@@ -1,7 +1,4 @@
-import * as elliptic from 'elliptic'
-const ec = new elliptic.ec('secp256k1')
+import * as secp256k1 from 'secp256k1'
 export default (privateKey: Buffer) => {
-    const key = ec.keyFromPrivate(privateKey)
-    const pubPoint = key.getPublic()
-    return Buffer.from(pubPoint.encode())
+    return Buffer.from(secp256k1.publicKeyCreate(privateKey, false))
 }

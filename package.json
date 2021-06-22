@@ -1,6 +1,6 @@
 {
   "name": "viscoin",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "",
   "main": "./lib/index.js",
   "scripts": {
@@ -36,6 +36,7 @@
     "express": "^4.17.1",
     "express-rate-limit": "^5.2.6",
     "mongoose": "^5.10.9",
-    "prompts": "^2.4.0"
+    "prompts": "^2.4.0",
+    "secp256k1": "^4.0.2"
   }
 }
