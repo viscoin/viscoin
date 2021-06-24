@@ -62,7 +62,7 @@ const commands = {
                 { title: 'Wallet', description: `View wallet details (${chalk.redBright('Make sure no one is looking')})`, value: commands.info },
                 ...choices
             ]
-            console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${base58.encode(Address.convertToChecksumAddress(wallet.address))}.wallet`))))
+            console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${base58.encode(wallet.address)}.wallet`))))
             if (wallet_saved === false) {
                 console.log(chalk.grey(`${chalk.redBright('Temporarily')} loaded wallet ${chalk.white('(not saved)')}`))
                 choices = [
@@ -98,8 +98,7 @@ const commands = {
                 validate: to => {
                     if (to === '') return true
                     try {
-                        const address = base58.decode(to)
-                        if (Address.verifyChecksumAddress(address)) return true
+                        if (Address.verifyChecksumAddress(base58.decode(to))) return true
                         else return 'Invalid address'
                     }
                     catch {
@@ -177,7 +176,7 @@ const commands = {
         commands.commands()
     },
     address: async () => {
-        console.log(chalk.cyanBright(base58.encode(Address.convertToChecksumAddress(wallet.address))))
+        console.log(chalk.cyanBright(base58.encode(wallet.address)))
         await commands.pause()
         console.clear()
         commands.commands()
@@ -198,7 +197,7 @@ const commands = {
                 message: 'Address',
                 validate: address => {
                     try {
-                        if (Buffer.byteLength(base58.decode(address)) === 20) return true
+                        if (Address.verifyChecksumAddress(base58.decode(address))) return true
                         else return 'Invalid address'
                     }
                     catch {
@@ -212,7 +211,7 @@ const commands = {
             return commands.commands()
         }
         try {
-            const balance = res.address === undefined ? await HTTPApi.getBalanceOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, base58.encode(wallet.address)) : await HTTPApi.getBalanceOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, res.address)
+            const balance = res.address === undefined ? await HTTPApi.getBalanceOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, base58.encode(wallet._address)) : await HTTPApi.getBalanceOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, base58.encode(Address.convertToNormalAddress(base58.decode(res.address))))
             console.log(chalk.yellowBright(balance))
         }
         catch {
@@ -413,7 +412,7 @@ const commands = {
                 message: 'Address',
                 validate: address => {
                     try {
-                        if (Buffer.byteLength(base58.decode(address)) === 20) return true
+                        if (Address.verifyChecksumAddress(base58.decode(address))) return true
                         else return 'Invalid address'
                     }
                     catch {
@@ -427,7 +426,7 @@ const commands = {
             return commands.commands()
         }
         try {
-            const transactions = (res.address === undefined ? await HTTPApi.getTransactionsOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, base58.encode(wallet.address)) : await HTTPApi.getTransactionsOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, res.address))
+            const transactions = (res.address === undefined ? await HTTPApi.getTransactionsOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, base58.encode(wallet._address)) : await HTTPApi.getTransactionsOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, base58.encode(Address.convertToNormalAddress(base58.decode(res.address)))))
                 .sort((a, b) => a.timestamp - b.timestamp)
             const latestBlock = await HTTPApi.getLatestBlock({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port })
             const blocks = [ latestBlock ]
@@ -448,22 +447,22 @@ const commands = {
                         }
                     }
                     if (transaction.from !== undefined) {
-                        if (transaction.from.equals(wallet.address)) {
-                            str = `${str} ${chalk.blueBright(base58.encode(transaction.from))}`
+                        if (transaction.from.equals(wallet._address)) {
+                            str = `${str} ${chalk.blueBright(base58.encode(Address.convertToChecksumAddress(transaction.from)))}`
                         }
                         else {
-                            str = `${str} ${base58.encode(transaction.from)}`
+                            str = `${str} ${base58.encode(Address.convertToChecksumAddress(transaction.from))}`
                         }
                         if (transaction.amount) str = `${str} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee))}`)}`
                         else str = `${str} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.minerFee))}`)}`
                     }
                     if (transaction.to !== undefined) {
                         if (transaction.from !== undefined) str = `${str} ${chalk.blueBright('-->')}`
-                        if (transaction.to.equals(wallet.address)) {
-                            str = `${str} ${chalk.blueBright(base58.encode(transaction.to))}`
+                        if (transaction.to.equals(wallet._address)) {
+                            str = `${str} ${chalk.blueBright(base58.encode(Address.convertToChecksumAddress(transaction.to)))}`
                         }
                         else {
-                            str = `${str} ${base58.encode(transaction.to)}`
+                            str = `${str} ${base58.encode(Address.convertToChecksumAddress(transaction.to))}`
                         }
                         if (transaction.amount !== undefined) str = `${str} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}`
                     }

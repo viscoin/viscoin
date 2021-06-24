@@ -1,16 +1,21 @@
 import Transaction from './Transaction'
 import addressFromPublicKey from './addressFromPublicKey'
 import publicKeyFromPrivateKey from './publicKeyFromPrivateKey'
+import Address from './Address'
+import keygen from './keygen'
 interface Wallet {
     privateKey: Buffer
     publicKey: Buffer
+    _address: Buffer
     address: Buffer
 }
 class Wallet {
-    constructor(privateKey: Buffer) {
+    constructor(privateKey: Buffer | undefined = undefined) {
+        if (privateKey === undefined) privateKey = keygen()
         this.privateKey = privateKey
         this.publicKey = publicKeyFromPrivateKey(this.privateKey)
-        this.address = addressFromPublicKey(this.publicKey)
+        this._address = addressFromPublicKey(this.publicKey)
+        this.address = Address.convertToChecksumAddress(this._address)
     }
     createTransaction({ to, amount, minerFee }: { to: Buffer | undefined, amount: string | undefined, minerFee: string }) {
         const transaction = new Transaction({

@@ -20,13 +20,21 @@ Viscoin is an experimental digital currency that enables instant payments to any
 
 ## Installation
 
+### Wallet
+1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
+2. Install dependencies. `npm i`
+3. Compile typescript. `npm run c`
+4. Run the setup script `node setup` and select Wallet.
+5. Start using the wallet. `node wallet`
+
 ### Running a node
 1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
 2. Install dependencies. `npm i`
 3. Compile typescript. `npm run c`
-4. Run the setup script `node setup` and select Node.
-5. Add a starting point, a first node to connect to. `node net`
-6. Run the node. `node fullnode`
+4. Install [mongoDB](https://www.mongodb.com/try/download/community) to the local machine. Optionally the connection string in `mongoose.json` could be changed to connect to a remote db.
+5. Run the setup script `node setup` and select Node.
+6. Add a starting point, a first node to connect to. `node net`
+7. Run the node. `node fullnode`
 
 ### Mining
 1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
@@ -50,27 +58,23 @@ npm install viscoin
 
 ###### Generating a wallet
 ```typescript
-import * as crypto from 'crypto'
-import { publicKeyFromPrivateKey, addressFromPublicKey, base58 } from 'viscoin'
+import { Wallet, base58 } from 'viscoin'
 
-const privateKey = crypto.randomBytes(32)
-const publicKey = publicKeyFromPrivateKey(privateKey)
-const address = addressFromPublicKey(publicKey)
-console.log(base58.encode(address))
+const wallet = new Wallet()
+console.log(base58.encode(wallet.address))
+console.log(base58.encode(wallet.privateKey))
 ```
 
 ###### Building a transaction
 ```typescript
-import { Transaction } from 'viscoin'
+import { Wallet, base58 } from 'viscoin'
 
-const privateKey = Buffer.alloc(32, 0xff)
-const transaction = new Transaction({
-    to: 'visC6571qoyNNzepeCLpy4EmhqD',
+const wallet = new Wallet()
+const transaction = wallet.createTransaction({
+    to: base58.decode('visC6571qoyNNzepeCLpy4EmhqD'),
     amount: '69',
-    minerFee: '0.000000000000000001',
-    timestamp: Date.now()
+    minerFee: '0.000000000000000001'
 })
-transaction.sign(privateKey)
 console.log(transaction)
 ```
 

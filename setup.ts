@@ -176,10 +176,10 @@ const commands = {
             }
         })
         const network = require('./config/network.json')
-        if (http_host) network.Miner.HTTPApi.host = http_host
-        if (http_port) network.Miner.HTTPApi.port = parseInt(http_port)
+        if (http_host) network.Wallet.HTTPApi.host = http_host
+        if (http_port) network.Wallet.HTTPApi.port = parseInt(http_port)
         fs.writeFileSync('./config/network.json', JSON.stringify(network, null, 4))
-        console.log(network.Miner)
+        console.log(network.Wallet)
         console.log('Done!')
     },
     exit: () => {
