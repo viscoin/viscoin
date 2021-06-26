@@ -9,6 +9,7 @@ import Transaction from './Transaction'
 import * as events from 'events'
 import { Mongoose } from 'mongoose'
 import Address from './Address'
+import * as crypto from 'crypto'
 
 interface PaymentProcessor {
     privateKey: Buffer
@@ -111,10 +112,10 @@ class PaymentProcessor extends events.EventEmitter {
         const charges = await this.model_charge.countDocuments({})
         const buffer = Buffer.alloc(4)
         buffer.writeUInt32BE(charges)
-        const privateKey = Buffer.concat([
+        const privateKey = crypto.createHash('sha256').update(Buffer.concat([
             this.privateKey,
             buffer
-        ])
+        ])).digest()
         return {
             address: base58.encode(Address.convertToChecksumAddress(addressFromPublicKey(publicKeyFromPrivateKey(privateKey)))),
             privateKey: base58.encode(privateKey)
