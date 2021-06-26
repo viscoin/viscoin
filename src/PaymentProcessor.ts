@@ -8,7 +8,6 @@ import beautifyBigInt from './beautifyBigInt'
 import Transaction from './Transaction'
 import * as events from 'events'
 import { Mongoose } from 'mongoose'
-import Address from './Address'
 import * as crypto from 'crypto'
 
 interface PaymentProcessor {
@@ -28,6 +27,7 @@ class PaymentProcessor extends events.EventEmitter {
         const options = {
             status: String,
             amount: String,
+            address: String,
             privateKey: String,
             created: Number,
             expires: Number,
@@ -117,7 +117,7 @@ class PaymentProcessor extends events.EventEmitter {
             buffer
         ])).digest()
         return {
-            address: base58.encode(Address.convertToChecksumAddress(addressFromPublicKey(publicKeyFromPrivateKey(privateKey)))),
+            address: base58.encode(addressFromPublicKey(publicKeyFromPrivateKey(privateKey))),
             privateKey: base58.encode(privateKey)
         }
     }
@@ -163,7 +163,8 @@ class PaymentProcessor extends events.EventEmitter {
             const balance = await HTTPApi.getBalanceOfAddress(this.httpApi, address)
             if (!balance) return
             const fee = await this.getFee()
-            const minerFee = !fee?.avg ? 1n : fee.avg
+            let minerFee = !fee?.avg ? 1n : fee.avg
+            if (fee.transactions < 10) minerFee = 1n
             if (maxFee !== 0n && minerFee > maxFee) return {
                 code: null,
                 transaction: null
@@ -231,7 +232,8 @@ class PaymentProcessor extends events.EventEmitter {
             const fee = {
                 max: 0n,
                 avg: 0n,
-                min: 0n
+                min: 0n,
+                transactions: transactions.length
             }
             for (const transaction of transactions) {
                 const minerFee = parseBigInt(transaction.minerFee)
