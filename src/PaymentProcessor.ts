@@ -8,10 +8,10 @@ import beautifyBigInt from './beautifyBigInt'
 import Transaction from './Transaction'
 import * as events from 'events'
 import { Mongoose } from 'mongoose'
+import Address from './Address'
 
 interface PaymentProcessor {
-    privateKey: string
-    address: string
+    privateKey: Buffer
     httpApi: {
         port: number
         host: string
@@ -22,12 +22,11 @@ interface PaymentProcessor {
     sendBackToMainWallet: boolean
 }
 class PaymentProcessor extends events.EventEmitter {
-    constructor(privateKey: string, confirmations: number, httpApi: { port: number, host: string }, tcpClient: TCPApi['Client'], mongoose: Mongoose, model_charge_options: object, sendBackToMainWallet: boolean) {
+    constructor(privateKey: Buffer, confirmations: number, httpApi: { port: number, host: string }, tcpClient: TCPApi['Client'], mongoose: Mongoose, model_charge_options: object, sendBackToMainWallet: boolean) {
         super()
         const options = {
             status: String,
             amount: String,
-            address: String,
             privateKey: String,
             created: Number,
             expires: Number,
@@ -36,7 +35,6 @@ class PaymentProcessor extends events.EventEmitter {
         }
         this.model_charge = mongoose.model("Charge", new mongoose.Schema(options, { collection: 'charges', versionKey: false }))
         this.privateKey = privateKey
-        this.address = base58.encode(addressFromPublicKey(publicKeyFromPrivateKey(base58.decode(this.privateKey))))
         this.confirmations = confirmations
         this.sendBackToMainWallet = sendBackToMainWallet
         this.httpApi = httpApi
@@ -106,17 +104,19 @@ class PaymentProcessor extends events.EventEmitter {
             catch {}
         })
     }
+    address() {
+        return addressFromPublicKey(publicKeyFromPrivateKey(this.privateKey))
+    }
     async getNewAddress() {
         const charges = await this.model_charge.countDocuments({})
         const buffer = Buffer.alloc(4)
         buffer.writeUInt32BE(charges)
         const privateKey = Buffer.concat([
-            base58.decode(this.privateKey),
+            this.privateKey,
             buffer
         ])
-        const address = base58.encode(addressFromPublicKey(publicKeyFromPrivateKey(privateKey)))
         return {
-            address,
+            address: base58.encode(Address.convertToChecksumAddress(addressFromPublicKey(publicKeyFromPrivateKey(privateKey)))),
             privateKey: base58.encode(privateKey)
         }
     }
@@ -167,7 +167,7 @@ class PaymentProcessor extends events.EventEmitter {
                 code: null,
                 transaction: null
             }
-            const to = base58.decode(this.address)
+            const to = this.address()
             const amount = beautifyBigInt(parseBigInt(balance) - minerFee)
             const transaction = new Transaction({
                 to,
