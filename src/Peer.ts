@@ -1,4 +1,4 @@
-import * as configSettings from '../config/settings.json'
+import * as config_settings from '../config/settings.json'
 import * as net from 'net'
 import * as events from 'events'
 import * as crypto from 'crypto'
@@ -40,8 +40,8 @@ class Peer extends events.EventEmitter {
         }
         this.hashes = []
         setInterval(this.interval['1s'].bind(this), 1000)
-        setInterval(this.interval.hashes.bind(this), configSettings.Peer.hashes.interval)
-        this.socket.setTimeout(configSettings.Peer.socket.setTimeout)
+        setInterval(this.interval.hashes.bind(this), config_settings.Peer.hashes.interval)
+        this.socket.setTimeout(config_settings.Peer.socket.setTimeout)
         if (this.socket.connecting === false) setImmediate(() => this.emit('add'))
         this.socket
             .on('connect', () => this.emit('add'))
@@ -71,7 +71,7 @@ class Peer extends events.EventEmitter {
             }
         },
         hashes: () => {
-            this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - configSettings.Peer.hashes.timeToLive)
+            this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - config_settings.Peer.hashes.timeToLive)
         }
     }
     delete() {
@@ -79,9 +79,9 @@ class Peer extends events.EventEmitter {
         this.socket.destroy()
     }
     onData(chunk: Buffer) {
-        if (this.socket.bytesRead - this.bytesRead > configSettings.Peer.socket.maxBytesRead1s) return this.emit('ban')
+        if (this.socket.bytesRead - this.bytesRead > config_settings.Peer.socket.maxBytesRead1s) return this.emit('ban')
         this.buffer = Buffer.concat([ this.buffer, chunk ])
-        if (Buffer.byteLength(this.buffer) > configSettings.Peer.maxBytesInMemory) return this.emit('ban')
+        if (Buffer.byteLength(this.buffer) > config_settings.Peer.maxBytesInMemory) return this.emit('ban')
         this.extract()
     }
     extract() {
@@ -98,7 +98,7 @@ class Peer extends events.EventEmitter {
             const parsed = protocol.parse(d)
             if (parsed === null) continue
             const { type, data } = parsed
-            if (this.requests[type]++ > configSettings.Peer.maxRequestsPerSecond[type]) continue
+            if (this.requests[type]++ > config_settings.Peer.maxRequestsPerSecond[type]) continue
             this.addHash(hash)
             this.emit(type, data, b, res => {
                 if (res === 1) this.emit('ban')
@@ -107,7 +107,7 @@ class Peer extends events.EventEmitter {
         }
     }
     write(buffer: Buffer, cb) {
-        if (this.socket.bytesWritten + Buffer.byteLength(buffer) - this.bytesWritten > configSettings.Peer.socket.maxBytesWritten1s) return cb()
+        if (this.socket.bytesWritten + Buffer.byteLength(buffer) - this.bytesWritten > config_settings.Peer.socket.maxBytesWritten1s) return cb()
         this.socket.write(buffer, () => cb())
     }
     compareHash(hash: Buffer) {
@@ -115,7 +115,7 @@ class Peer extends events.EventEmitter {
     }
     addHash(hash: Buffer) {
         this.hashes.push({ hash, timestamp: Date.now() })
-        if (this.hashes.length > configSettings.Peer.hashes.length) this.hashes.shift()
+        if (this.hashes.length > config_settings.Peer.hashes.length) this.hashes.shift()
     }
 }
 export default Peer

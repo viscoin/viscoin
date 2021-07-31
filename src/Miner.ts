@@ -1,13 +1,22 @@
-import * as configSettings from '../config/settings.json'
-import * as configNetwork from '../config/network.json'
+import * as config_settings from '../config/settings.json'
 import Block from './Block'
 import { Worker } from 'worker_threads'
 import { cpus } from 'os'
 import * as events from 'events'
 import HTTPApi from './HTTPApi'
 import TCPApi from './TCPApi'
+import log from './log'
+import * as config_default_env from '../config/default_env.json'
 
 interface Miner {
+    HTTP_API: {
+        host: string
+        port: number
+    }
+    TCP_API: {
+        host: string
+        port: number
+    }
     workers: Array<Worker>
     threads: number
     threadsReady: number
@@ -20,33 +29,46 @@ interface Miner {
 class Miner extends events.EventEmitter {
     constructor(miningRewardAddress: Buffer) {
         super()
+        const TCP_API = process.env.TCP_API || config_default_env.TCP_API
+        this.TCP_API = {
+            host: TCP_API.split(':').slice(0, -1).join(':'),
+            port: parseInt(TCP_API.split(':').reverse()[0])
+        }
+        if (process.env.TCP_API) log.info('Using TCP_API:', this.TCP_API)
+        else log.warn('Unset environment value! Using default value for TCP_API:', this.TCP_API)
+        const HTTP_API = process.env.HTTP_API || config_default_env.HTTP_API
+        this.HTTP_API = {
+            host: HTTP_API.split(':').slice(0, -1).join(':'),
+            port: parseInt(HTTP_API.split(':').reverse()[0])
+        }
+        if (process.env.HTTP_API) log.info('Using HTTP_API:', this.HTTP_API)
+        else log.warn('Unset environment value! Using default value for HTTP_API:', this.HTTP_API)
         this.tcpClient = TCPApi.createClient()
-        this.tcpClient.connect(configNetwork.Miner.TCPApi.port, configNetwork.Miner.TCPApi.host, true)
+        this.tcpClient.connect(this.TCP_API.port, this.TCP_API.host, true)
         this.tcpClient.on('block', () => this.start())
         this.tcpClient.on('transaction', () => this.start())
         this.workers = []
         this.threads = cpus().length
-        if (configSettings.Miner.threads) this.threads = configSettings.Miner.threads
+        if (config_settings.Miner.threads) this.threads = config_settings.Miner.threads
         this.threadsReady = 0
         this.hashrate = 0
         setInterval(() => {
-            this.emit('hashrate', this.hashrate)
+            log.debug(1, 'Hashrate', this.hashrate)
             this.hashrate = 0
             if (this.mining === false) this.start()
         }, 1000)
         this.miningRewardAddress = miningRewardAddress
-        this.once('ready', () => this.start())
-        this.setMaxListeners(configSettings.Miner.maxListeners)
+        this.setMaxListeners(config_settings.Miner.maxListeners)
         this.mining = false
         this.previousBlock = null
     }
     async start() {
-        const block = await HTTPApi.getNewBlock({ host: configNetwork.Miner.HTTPApi.host, port: configNetwork.Miner.HTTPApi.port }, this.miningRewardAddress)
-        if (block === null) return setTimeout(() => this.start(), configSettings.HTTPApi.autoRetry)
+        const block = await HTTPApi.getNewBlock({ host: this.HTTP_API.host, port: this.HTTP_API.port }, this.miningRewardAddress)
+        if (block === null) return setTimeout(() => this.start(), config_settings.HTTPApi.autoRetry)
         if (this.previousBlock === null
-        || this.previousBlock.hash?.equals(block.previousHash) === false) this.previousBlock = await HTTPApi.getLatestBlock({ host: configNetwork.Miner.HTTPApi.host, port: configNetwork.Miner.HTTPApi.port })
+        || this.previousBlock.hash?.equals(block.previousHash) === false) this.previousBlock = await HTTPApi.getLatestBlock({ host: this.HTTP_API.host, port: this.HTTP_API.port })
         if (this.previousBlock === null
-        || this.previousBlock.hash?.equals(block.previousHash) === false) return setTimeout(() => this.start(), configSettings.HTTPApi.autoRetry)
+        || this.previousBlock.hash?.equals(block.previousHash) === false) return setTimeout(() => this.start(), config_settings.HTTPApi.autoRetry)
         this.emitThreadsMineNewBlock(block, this.previousBlock)
     }
     emitThreadsMineNewBlock(block: Block, previousBlock: Block) {
@@ -63,23 +85,22 @@ class Miner extends events.EventEmitter {
     }
     async postBlock(block: Block) {
         try {
-            const code = await HTTPApi.postBlock({ host: configNetwork.Miner.HTTPApi.host, port: configNetwork.Miner.HTTPApi.port }, block)
+            const code = await HTTPApi.postBlock({ host: this.HTTP_API.host, port: this.HTTP_API.port }, block)
             this.emit('mined', block, code)
             if (code !== 0) await this.start()
         }
         catch {
-            setTimeout(() => this.postBlock(block), configSettings.HTTPApi.autoRetry)
+            setTimeout(() => this.postBlock(block), config_settings.HTTPApi.autoRetry)
         }
     }
     addWorker(worker: Worker) {
         this.workers.push(worker)
+        worker.on('error', e => log.error('Worker', e))
+        worker.on('exit', e => log.warn('Worker exit', e))
         worker.on('message', e => {
             e = JSON.parse(e)
+            log.debug(5, e)
             switch (e.e) {
-                case 'ready':
-                    if (++this.threadsReady === this.threads) this.emit('ready')
-                    this.emit('thread', e.threadId)
-                    break
                 case 'mined':
                     this.emitThreadsStop()
                     this.postBlock(new Block(e.block))
@@ -89,10 +110,11 @@ class Miner extends events.EventEmitter {
                     break
             }
         })
-        worker.on('error', e => console.log('error', e))
-        worker.on('exit', e => console.log('exit', e))
-        worker.on('messageerror', e => console.log('messageerror', e))
-        // worker.on('online', e => console.log('online', e))
+        worker.on('messageerror', e => log.error('Worker messageerror', e))
+        worker.on('online', () => {
+            log.info('Worker online:', worker.threadId)
+            if (++this.threadsReady === this.threads) this.start()
+        })
     }
 }
 export default Miner

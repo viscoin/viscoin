@@ -38,7 +38,6 @@ class MinerThread extends events.EventEmitter {
                     break
             }
         })
-        parentPort.postMessage(JSON.stringify({ e: 'ready', threadId }))
     }
     async mine() {
         if (this.stop === true) return this.mining = false

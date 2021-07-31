@@ -1,6 +1,5 @@
 import * as crypto from 'crypto'
 import * as prompts from 'prompts'
-import * as chalk from 'chalk'
 import * as fs from 'fs'
 import Wallet from './src/Wallet'
 import base58 from './src/base58'
@@ -9,12 +8,27 @@ import keygen from './src/keygen'
 import beautifyBigInt from './src/beautifyBigInt'
 import parseBigInt from './src/parseBigInt'
 import HTTPApi from './src/HTTPApi'
-import * as configSettings from './config/settings.json'
-import * as configNetwork from './config/network.json'
+import * as config_settings from './config/settings.json'
 import walletPassphraseHash from './src/walletPassphraseHash'
 import addressFromPublicKey from './src/addressFromPublicKey'
 import publicKeyFromPrivateKey from './src/publicKeyFromPrivateKey'
 import Address from './src/Address'
+import log from './src/log'
+import * as config_default_env from './config/default_env.json'
+
+const c = {
+    reset: '\x1b[0m',
+    red: '\x1b[31m',
+    green: '\x1b[32m',
+    blue: '\x1b[34m',
+    yellow: '\x1b[33m'
+}
+
+const HTTP_API = process.env.HTTP_API || config_default_env.HTTP_API
+const host = HTTP_API.split(':').slice(0, -1).join(':'),
+port = parseInt(HTTP_API.split(':').reverse()[0])
+if (process.env.HTTP_API) log.info('Using HTTP_API:', { host, port })
+else log.warn('Unset environment value! Using default value for HTTP_API:', { host, port })
 
 let wallet: Wallet | undefined = undefined,
 wallet_saved: boolean = false
@@ -32,21 +46,18 @@ const functions = {
     },
     log_wallet_info: (privateKey: Buffer) => {
         const address = addressFromPublicKey(publicKeyFromPrivateKey(privateKey))
-        console.log(`${chalk.whiteBright.bold('Address')}     (${chalk.greenBright('SHARE')})  ${chalk.cyanBright(base58.encode(Address.convertToChecksumAddress(address)))}`)
-        console.log(`${chalk.whiteBright.bold('Private key')} (${chalk.redBright('SECRET')}) ${chalk.cyan(base58.encode(privateKey))}`)
+        console.log(`Address     (${c.green}SHARE${c.reset})  ${base58.encode(Address.convertToChecksumAddress(address))}`)
+        console.log(`Private key (${c.red}SECRET${c.reset}) ${base58.encode(privateKey)}`)
     },
     log_unable_to_connect_to_api: () => {
-        console.log(chalk.redBright('Unable to connect to API'))
+        console.log('Unable to connect to API')
     }
 }
 const commands = {
     commands: async () => {
-        const block = await HTTPApi.getLatestBlock({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port })
-        if (block === null) console.log(chalk.redBright(`${chalk.cyanBright('API')} ${chalk.cyan('TCP')} ${configNetwork.Wallet.HTTPApi.host}:${configNetwork.Wallet.HTTPApi.port}`))
-        else {
-            console.log(`${chalk.cyanBright('API')} ${chalk.cyan('TCP')} ${chalk.greenBright(`${configNetwork.Wallet.HTTPApi.host}:${configNetwork.Wallet.HTTPApi.port}`)}`)
-            console.log(`${chalk.yellow('Blockchain height')} ${chalk.yellowBright(block.height)}`)
-        }
+        const block = await HTTPApi.getLatestBlock({ host: host, port: port })
+        if (block === null) console.log(`HTTP_API ${c.red}${host}:${port}${c.reset} - Offline!`)
+        else console.log(`HTTP_API ${c.green}${host}:${port}${c.reset} - Blockchain height: ${c.yellow}${block.height}${c.reset}`)
         let choices: Array<{ title: string, description: string, value: Function }> = [
             { title: 'Decrypt', description: 'Select wallet', value: commands.select_wallet },
             { title: 'Generate', description: 'Generate new wallet', value: commands.generate },
@@ -59,12 +70,12 @@ const commands = {
                 { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
                 { title: 'Send', description: 'New transaction', value: commands.send },
                 { title: 'Transactions', description: 'Lists transaction history', value: commands.log_transactions },
-                { title: 'Wallet', description: `View wallet details (${chalk.redBright('Make sure no one is looking')})`, value: commands.info },
+                { title: 'Wallet', description: `View wallet details (Make sure no one is looking)`, value: commands.info },
                 ...choices
             ]
-            console.log(chalk.grey(path.join(__dirname, 'wallets', chalk.blueBright(`${base58.encode(wallet.address)}.wallet`))))
+            console.log(path.join(__dirname, 'wallets', `${c.blue}${base58.encode(wallet.address)}.wallet${c.reset}`))
             if (wallet_saved === false) {
-                console.log(chalk.grey(`${chalk.redBright('Temporarily')} loaded wallet ${chalk.white('(not saved)')}`))
+                console.log(`Temporarily loaded wallet (${c.red}not saved${c.reset})`)
                 choices = [
                     { title: 'Save', description: 'Save wallet', value: commands.save },
                     ...choices
@@ -130,11 +141,11 @@ const commands = {
                 type: 'toggle',
                 name: 'confirm',
                 message: (prev, values) => {
-                    const transaction = `${chalk.whiteBright('Raw signed transaction copy/paste')}\n${chalk.blueBright(JSON.stringify(wallet.createTransaction({
+                    const transaction = `Raw signed transaction copy/paste\n\n${JSON.stringify(wallet.createTransaction({
                         to: values.to === undefined ? undefined : base58.decode(values.to),
                         amount: values.amount === undefined ? undefined : beautifyBigInt(parseBigInt(values.amount)),
                         minerFee: beautifyBigInt(parseBigInt(values.minerFee))
-                    })))}`
+                    }))}`
                     if (values.amount !== undefined) return `Sum: ${beautifyBigInt(parseBigInt(values.amount))} + ${beautifyBigInt(parseBigInt(values.minerFee))} = ${beautifyBigInt(parseBigInt(values.amount) + parseBigInt(values.minerFee))}\n\n${transaction}\n\nBroadcast transaction?`
                     else return `Sum: ${values.minerFee}\n\n${transaction}\n\nBroadcast transaction?`
                 },
@@ -158,12 +169,12 @@ const commands = {
             log: boolean = true
             setTimeout(async function loop() {
                 try {
-                    const code = await HTTPApi.send({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, transaction)
+                    const code = await HTTPApi.send({ host: host, port: port }, transaction)
                     if (log === true) {
-                        if (code === 0) console.log(chalk.greenBright('Transaction accepted'))
-                        else console.log(chalk.redBright(`Transaction not accepted, code ${code}`))
+                        if (code === 0) console.log('Transaction accepted')
+                        else console.log(`Transaction not accepted, code ${code}`)
                     }
-                    if (++i < configSettings.Wallet.timesToRepeatBroadcastTransaction) setTimeout(loop, Math.pow(i, 2) * 1000)
+                    if (++i < config_settings.Wallet.timesToRepeatBroadcastTransaction) setTimeout(loop, Math.pow(i, 2) * 1000)
                 }
                 catch {
                     functions.log_unable_to_connect_to_api()
@@ -176,7 +187,7 @@ const commands = {
         commands.commands()
     },
     address: async () => {
-        console.log(chalk.cyanBright(base58.encode(wallet.address)))
+        console.log(base58.encode(wallet.address))
         await commands.pause()
         console.clear()
         commands.commands()
@@ -211,8 +222,8 @@ const commands = {
             return commands.commands()
         }
         try {
-            const balance = res.address === undefined ? await HTTPApi.getBalanceOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, base58.encode(wallet._address)) : await HTTPApi.getBalanceOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, base58.encode(Address.convertToNormalAddress(base58.decode(res.address))))
-            console.log(chalk.yellowBright(balance))
+            const balance = res.address === undefined ? await HTTPApi.getBalanceOfAddress({ host: host, port: port }, base58.encode(wallet._address)) : await HTTPApi.getBalanceOfAddress({ host: host, port: port }, base58.encode(Address.convertToNormalAddress(base58.decode(res.address))))
+            console.log(balance)
         }
         catch {
             functions.log_unable_to_connect_to_api()
@@ -287,7 +298,7 @@ const commands = {
     },
     decrypt_wallet: async (address) => {
         if (!fs.existsSync(`./wallets/${address}.wallet`)) {
-            console.log(chalk.redBright('Wallet not found'))
+            console.log('Wallet not found')
             return commands.select_wallet()
         }
         const data = fs.readFileSync(`./wallets/${address}.wallet`)
@@ -321,7 +332,7 @@ const commands = {
         let files = fs.readdirSync('./wallets')
         files = files.filter(e => e.endsWith('.wallet'))
         if (!files.length) {
-            console.log(chalk.redBright('No stored wallets found'))
+            console.log('No stored wallets found')
             await commands.pause()
             console.clear()
             return commands.commands()
@@ -426,51 +437,51 @@ const commands = {
             return commands.commands()
         }
         try {
-            const transactions = (res.address === undefined ? await HTTPApi.getTransactionsOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, base58.encode(wallet._address)) : await HTTPApi.getTransactionsOfAddress({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, base58.encode(Address.convertToNormalAddress(base58.decode(res.address)))))
+            const transactions = (res.address === undefined ? await HTTPApi.getTransactionsOfAddress({ host: host, port: port }, base58.encode(wallet._address)) : await HTTPApi.getTransactionsOfAddress({ host: host, port: port }, base58.encode(Address.convertToNormalAddress(base58.decode(res.address)))))
                 .sort((a, b) => a.timestamp - b.timestamp)
-            const latestBlock = await HTTPApi.getLatestBlock({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port })
+            const latestBlock = await HTTPApi.getLatestBlock({ host: host, port: port })
             const blocks = [ latestBlock ]
-            for (let i = latestBlock.height - 1; i >= latestBlock.height + 1 - configSettings.confirmations && i >= 0; i--) {
-                blocks.push(await HTTPApi.getBlockByHeight({ host: configNetwork.Wallet.HTTPApi.host, port: configNetwork.Wallet.HTTPApi.port }, i))
+            for (let i = latestBlock.height - 1; i >= latestBlock.height + 1 - config_settings.confirmations && i >= 0; i--) {
+                blocks.push(await HTTPApi.getBlockByHeight({ host: host, port: port }, i))
             }
             if (transactions.length) {
                 for (const transaction of transactions) {
-                    let str = chalk.magentaBright(new Date(transaction.timestamp).toLocaleString())
+                    let str = new Date(transaction.timestamp).toLocaleString(undefined, { hour12: false })
                     for (let i = 0; i < blocks.length; i++) {
                         if (transaction.timestamp >= blocks[i].timestamp) {
                             if (transaction.from !== undefined) {
-                                if (i === 0) str = `${str} ${chalk.redBright(0)}`
-                                else if (configSettings.confirmations > 0) str = `${str} ${chalk.yellowBright(i)}`
+                                if (i === 0) str = `${str} ${0}`
+                                else if (config_settings.confirmations > 0) str = `${str} ${i}`
                             }
-                            else if (configSettings.confirmations > 0) str = `${str} ${chalk.yellowBright(i + 1)}`
+                            else if (config_settings.confirmations > 0) str = `${str} ${i + 1}`
                             break
                         }
                     }
                     if (transaction.from !== undefined) {
                         if (transaction.from.equals(wallet._address)) {
-                            str = `${str} ${chalk.blueBright(base58.encode(Address.convertToChecksumAddress(transaction.from)))}`
+                            str = `${str} ${c.blue}${base58.encode(Address.convertToChecksumAddress(transaction.from))}${c.reset}`
                         }
                         else {
                             str = `${str} ${base58.encode(Address.convertToChecksumAddress(transaction.from))}`
                         }
-                        if (transaction.amount) str = `${str} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee))}`)}`
-                        else str = `${str} ${chalk.redBright.bold(`-${beautifyBigInt(parseBigInt(transaction.minerFee))}`)}`
+                        if (transaction.amount) str = `${str} ${c.red}-${beautifyBigInt(parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee))}${c.reset}`
+                        else str = `${str} ${c.red}-${beautifyBigInt(parseBigInt(transaction.minerFee))}${c.reset}`
                     }
                     if (transaction.to !== undefined) {
-                        if (transaction.from !== undefined) str = `${str} ${chalk.blueBright('-->')}`
+                        if (transaction.from !== undefined) str = `${str} ${c.yellow}-->${c.reset}`
                         if (transaction.to.equals(wallet._address)) {
-                            str = `${str} ${chalk.blueBright(base58.encode(Address.convertToChecksumAddress(transaction.to)))}`
+                            str = `${str} ${c.blue}${base58.encode(Address.convertToChecksumAddress(transaction.to))}${c.reset}`
                         }
                         else {
                             str = `${str} ${base58.encode(Address.convertToChecksumAddress(transaction.to))}`
                         }
-                        if (transaction.amount !== undefined) str = `${str} ${chalk.greenBright.bold(`+${beautifyBigInt(parseBigInt(transaction.amount))}`)}`
+                        if (transaction.amount !== undefined) str = `${str} ${c.green}+${beautifyBigInt(parseBigInt(transaction.amount))}${c.reset}`
                     }
                     console.log(str)
                 }
             }
             else {
-                console.log(chalk.redBright('No transactions'))
+                console.log('No transactions')
             }
         }
         catch {

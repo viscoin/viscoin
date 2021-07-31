@@ -2,8 +2,8 @@ import Blockchain from "./Blockchain"
 import TCPNode from "./TCPNode"
 import TCPApi from "./TCPApi"
 import HTTPApi from "./HTTPApi"
-import * as configSettings from '../config/settings.json'
-import * as configMongoose from '../config/mongoose.json'
+import * as config_settings from '../config/settings.json'
+import * as config_mongoose from '../config/mongoose.json'
 import * as events from 'events'
 import protocol from './protocol'
 import Block from './Block'
@@ -12,6 +12,7 @@ import beautifyBigInt from "./beautifyBigInt"
 import { Worker } from 'worker_threads'
 import { cpus } from 'os'
 import Model_Node from './mongoose/model/node'
+import log from './log'
 
 interface Node {
     workersReady: Set<Worker>
@@ -37,7 +38,7 @@ interface Node {
 class Node extends events.EventEmitter {
     constructor() {
         super()
-        this.syncTimeoutMS = 1000 / configSettings.Peer.maxRequestsPerSecond.sync
+        this.syncTimeoutMS = 1000 / config_settings.Peer.maxRequestsPerSecond.sync
         this.hashes = new Set()
         this.queue = {
             blocks: new Set(),
@@ -49,12 +50,12 @@ class Node extends events.EventEmitter {
         this.workersReady = new Set()
         this.workersBusy = new Set()
         this.threads = cpus().length
-        if (configSettings.Node.threads) this.threads = configSettings.Node.threads
+        if (config_settings.Node.threads) this.threads = config_settings.Node.threads
         this.blockchain = new Blockchain()
-        if (configSettings.Node.HTTPApi === true) {
+        if (config_settings.Node.HTTPApi === true) {
             this.httpApi = new HTTPApi()
             this.httpApi.start()
-            this.httpApi.on('get-config', cb => cb(configSettings))
+            this.httpApi.on('get-config', cb => cb(config_settings))
             this.httpApi.on('get-transactions-pending', cb => cb(this.blockchain.pendingTransactions.map(e => Transaction.minify(e))))
             this.httpApi.on('get-block-transaction-signature', async (signature, cb) => cb(Block.minify(await this.blockchain.getBlockByTransactionSignature(signature))))
             this.httpApi.on('get-block-height', async (height, cb) => cb(Block.minify(await this.blockchain.getBlockByHeight(height))))
@@ -66,12 +67,12 @@ class Node extends events.EventEmitter {
             this.httpApi.on('block', async (block, cb) => this.emit('add-block', block, code => cb(code)))
             this.httpApi.on('get-transactions-address', async (address, cb) => {
                 const projection = `
-                    ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.to.name}
-                    ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.from.name}
-                    ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.amount.name}
-                    ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.minerFee.name}
-                    ${configMongoose.schema.block.transactions.name}.${configMongoose.schema.transaction.timestamp.name}
-                    ${configMongoose.schema.block.timestamp.name}
+                    ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.to.name}
+                    ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.from.name}
+                    ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.amount.name}
+                    ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.minerFee.name}
+                    ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.timestamp.name}
+                    ${config_mongoose.block.timestamp.name}
                 `
                 const { transactions, unconfirmed_transactions } = await this.blockchain.getTransactionsOfAddress(address, projection)
                 cb([
@@ -85,11 +86,11 @@ class Node extends events.EventEmitter {
                 cb(arr)
             })
         }
-        if (configSettings.Node.TCPApi === true) {
+        if (config_settings.Node.TCPApi === true) {
             this.tcpApi = TCPApi.createServer()
             this.tcpApi.start()
         }
-        if (configSettings.Node.TCPNode === true) {
+        if (config_settings.Node.TCPNode === true) {
             this.tcpNode = new TCPNode()
             this.tcpNode.start()
             this.tcpNode.on('block', (block, cb) => this.emit('add-block', block, code => {
@@ -104,10 +105,10 @@ class Node extends events.EventEmitter {
             }))
             this.tcpNode.on('transaction', (transaction, cb) => this.emit('add-transaction', transaction, code => cb(code)))
             this.tcpNode.on('node', (node, cb) => {
-                if (configSettings.Node.connectToNetwork) cb(this.tcpNode.connectToNode(node))
+                if (config_settings.Node.connectToNetwork) cb(this.tcpNode.connectToNode(node))
             })
             this.tcpNode.on('sync', async (hash, cb) => {
-                for (let i = 0; i < configSettings.Node.syncBlocksPerRequest; i++) {
+                for (let i = 0; i < config_settings.Node.syncBlocksPerRequest; i++) {
                     const block = await this.blockchain.getBlockByPreviousHash(hash)
                     if (block === null) return
                     cb(Block.minify(block))
@@ -128,7 +129,7 @@ class Node extends events.EventEmitter {
                 const doc = await Model_Node.findOne({
                     host: peer.remoteAddress
                 }).exec()
-                console.log(doc)
+                log.debug(2, doc)
                 if (doc) {
                     doc.banned = Date.now()
                     await doc.save()
@@ -136,13 +137,19 @@ class Node extends events.EventEmitter {
             })
         }
         this.blockchain.on('loaded', () => {
-            if (configSettings.Node.connectToNetwork === true) this.reconnect()
-            if (configSettings.Node.sync === true) this.sync()
+            if (config_settings.Node.connectToNetwork === true) {
+                log.info('Connecting to other nodes')
+                this.reconnect()
+            }
+            if (config_settings.Node.sync === true) {
+                log.info('Starting sync')
+                this.sync()
+            }
         })
         this.on('add-block', async (block: Block, cb: Function) => {
             if (this.blockchain.height === null) return
-            if (this.queue.blocks.size > configSettings.Node.queue.blocks
-            || block.height < this.blockchain.height - configSettings.trustedAfterBlocks) return
+            if (this.queue.blocks.size > config_settings.Node.queue.blocks
+            || block.height < this.blockchain.height - config_settings.trustedAfterBlocks) return
             if (!block.hash) return
             if (this.blockchain.hashes.current.includes(block.hash.toString('binary'))) return cb(0)
             if (this.queue.callbacks.has(block.hash)) return this.queue.callbacks.set(block.hash, [ ...this.queue.callbacks.get(block.hash), cb ])
@@ -150,7 +157,7 @@ class Node extends events.EventEmitter {
             this.queue.blocks.add(block)
         })
         this.on('add-transaction', async (transaction: Transaction, cb: Function) => {
-            if (this.queue.transactions.size > configSettings.Node.queue.transactions) return
+            if (this.queue.transactions.size > config_settings.Node.queue.transactions) return
             if (this.queue.callbacks.has(transaction.signature)) return this.queue.callbacks.set(transaction.signature, [ ...this.queue.callbacks.get(transaction.signature), cb ])
             this.queue.callbacks.set(transaction.signature, [ cb ])
             this.queue.transactions.add(transaction)
@@ -159,20 +166,21 @@ class Node extends events.EventEmitter {
             if (code !== 0) return
             const buffer = protocol.constructBuffer('block', Block.minify(block))
             this.tcpNode.broadcast(buffer)
-            if (configSettings.Node.TCPApi === true) this.tcpApi.broadcast(buffer)
+            if (config_settings.Node.TCPApi === true) this.tcpApi.broadcast(buffer)
         })
         this.on('transaction', (transaction, code) => {
             if (code !== 0) return
             const buffer = protocol.constructBuffer('transaction', Transaction.minify(transaction))
             this.tcpNode.broadcast(buffer)
-            if (configSettings.Node.TCPApi === true) this.tcpApi.broadcast(buffer)
+            if (config_settings.Node.TCPApi === true) this.tcpApi.broadcast(buffer)
         })
         this.verifyrate = {
             transaction: 0,
             block: 0
         }
         setInterval(() => {
-            this.emit('verifyrate', this.verifyrate)
+            // this.emit('verifyrate', this.verifyrate)
+            log.debug(1, 'Verifyrate', this.verifyrate)
             this.verifyrate = {
                 transaction: 0,
                 block: 0
@@ -182,30 +190,22 @@ class Node extends events.EventEmitter {
     async getNodes() {
         return (await Model_Node.find({
             banned: {
-                $lt: Date.now() - configSettings.Node.banTimeout
+                $lt: Date.now() - config_settings.Node.banTimeout
             }
         }, 'host', { lean: true }).exec()).map(e => e.host)
     }
     async reconnect() {
+        log.debug(3, 'Reconnecting to other nodes')
         this.tcpNode.connectToNetwork(await this.getNodes())
-        if (configSettings.Node.autoReconnect) setTimeout(this.reconnect.bind(this), configSettings.Node.autoReconnect)
+        if (config_settings.Node.autoReconnect) setTimeout(this.reconnect.bind(this), config_settings.Node.autoReconnect)
     }
     addWorker(worker: Worker) {
         this.workersBusy.add(worker)
-        worker.once('message', e => {
-            e = JSON.parse(e)
-            switch (e.e) {
-                case 'ready':
-                    this.workersBusy.delete(worker)
-                    this.workersReady.add(worker)
-                    this.emit('thread', e.threadId)
-                    break
-            }
-        })
-        worker.on('error', () => {})
-        worker.on('exit', () => {})
+        worker.on('error', e => log.error('Worker', e))
+        worker.on('exit', e => log.warn('Worker exit', e))
         worker.on('message', e => {
             e = JSON.parse(e)
+            log.debug(5, e)
             switch (e.e) {
                 case 'verifyrate':
                     this.verifyrate.transaction += e.verifyrate.transaction
@@ -213,8 +213,12 @@ class Node extends events.EventEmitter {
                     break
             }
         })
-        worker.on('messageerror', () => {})
-        worker.on('online', () => {})
+        worker.on('messageerror', e => log.error('Worker messageerror', e))
+        worker.on('online', () => {
+            log.info('Worker online:', worker.threadId)
+            this.workersBusy.delete(worker)
+            this.workersReady.add(worker)
+        })
     }
     assignJob(e: object) {
         return <any> new Promise((resolve, reject) => {
@@ -258,7 +262,8 @@ class Node extends events.EventEmitter {
             for (const cb of cbs) cb(code)
             this.queue.callbacks.delete(block.hash)
         }
-        this.emit('block', block, code)
+        // this.emit('block', block, code)
+        log.debug(2, 'Block:', block.hash.toString('hex'), block.height, code)
         setImmediate(this.nextBlock.bind(this))
     }
     async nextTransaction() {
@@ -281,22 +286,24 @@ class Node extends events.EventEmitter {
             for (const cb of cbs) cb(code)
             this.queue.callbacks.delete(transaction.signature)
         }
-        this.emit('transaction', transaction, code)
+        // this.emit('transaction', transaction, code)
+        log.debug(2, 'Transaction:', code)
         setImmediate(this.nextTransaction.bind(this))
     }
     async sync() {
         if (this.hashes.size === 0) {
             const latestBlock = await this.blockchain.getLatestBlock()
-            let block = await this.blockchain.getBlockByHeight(latestBlock.height - configSettings.trustedAfterBlocks)
+            let block = await this.blockchain.getBlockByHeight(latestBlock.height - config_settings.trustedAfterBlocks)
             if (block === null) block = await this.blockchain.createGenesisBlock()
             if (block !== null) this.hashes.add(block.hash.toString('binary'))
         }
-        if (this.tcpNode.peers.size > 0) this.emit('sync')
+        // if (this.tcpNode.peers.size > 0) this.emit('sync')
+        log.debug(4, 'Sync:', [...this.hashes].map(e => Buffer.from(e, 'binary').toString('hex')))
         for (const hash of this.hashes) {
             this.tcpNode.broadcast(protocol.constructBuffer('sync', Buffer.from(hash, 'binary')), true)
         }
         this.syncTimeoutMS *= 1.1
-        if (this.syncTimeoutMS > configSettings.Peer.hashes.timeToLive) this.syncTimeoutMS = configSettings.Peer.hashes.timeToLive
+        if (this.syncTimeoutMS > config_settings.Peer.hashes.timeToLive) this.syncTimeoutMS = config_settings.Peer.hashes.timeToLive
         this.syncTimeout = setTimeout(this.sync.bind(this), this.syncTimeoutMS)
     }
 }

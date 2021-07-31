@@ -1,7 +1,7 @@
 import * as crypto from 'crypto'
 import addressFromPublicKey from './addressFromPublicKey'
-import * as configMongoose from '../config/mongoose.json'
-import * as configSettings from '../config/settings.json'
+import * as config_mongoose from '../config/mongoose.json'
+import * as config_settings from '../config/settings.json'
 import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
 import * as secp256k1 from 'secp256k1'
@@ -36,9 +36,9 @@ class Transaction {
     static minify(input: Transaction) {
         const output: object = {}
         for (const property in input) {
-            if (configMongoose.schema.transaction[property] !== undefined) {
-                if (input[property] instanceof Buffer) output[configMongoose.schema.transaction[property].name] = input[property].toString('binary')
-                else output[configMongoose.schema.transaction[property].name] = input[property]
+            if (config_mongoose.transaction[property] !== undefined) {
+                if (input[property] instanceof Buffer) output[config_mongoose.transaction[property].name] = input[property].toString('binary')
+                else output[config_mongoose.transaction[property].name] = input[property]
             }
         }
         return output
@@ -46,8 +46,8 @@ class Transaction {
     static beautify(input: object) {
         const output = {}
         for (const property in input) {
-            for (const _property in configMongoose.schema.transaction) {
-                if (property === configMongoose.schema.transaction[_property].name.toString()) {
+            for (const _property in config_mongoose.transaction) {
+                if (property === config_mongoose.transaction[_property].name.toString()) {
                     output[_property] = input[property]
                 }
             }
@@ -111,7 +111,7 @@ class Transaction {
         if (typeof this.signature !== 'object') return 9
         if (this.signature instanceof Buffer === false) return 10
         if (typeof this.timestamp !== 'number') return 11
-        if (this.timestamp > Date.now() + configSettings.maxDesync) return 12
+        if (this.timestamp > Date.now() + config_settings.maxDesync) return 12
         if (typeof this.minerFee !== 'string') return 13
         const minerFee = parseBigInt(this.minerFee)
             if (minerFee === null

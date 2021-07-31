@@ -36,7 +36,6 @@ class NodeThread {
                     break
             }
         })
-        parentPort.postMessage(JSON.stringify({ e: 'ready', threadId }))
     }
 }
 export default NodeThread

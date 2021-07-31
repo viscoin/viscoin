@@ -1,0 +1,24 @@
+version: '3'
+services:
+    mongo:
+        container_name: mongo
+        image: mongo
+        command: --logpath /dev/null
+    viscoin:
+        container_name: viscoin
+        restart: always
+        build: .
+        environment:
+            - HTTP_API=:80
+            - TCP_API=:9332
+            - TCP_NODE=:9333
+            - CONNECTION_STRING=mongodb://mongo:27017/viscoin
+            - DEBUG=0
+        ports:
+            - 80:80
+            - 9332:9332
+            - 9333:9333
+        links:
+            - mongo
+        depends_on:
+            - mongo

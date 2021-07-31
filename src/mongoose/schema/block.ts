@@ -1,17 +1,17 @@
 import * as mongoose from 'mongoose'
-import * as configMongoose from '../../../config/mongoose.json'
+import * as config_mongoose from '../../../config/mongoose.json'
 import schema_transaction from './transaction'
 const options = {}
-for (const property in configMongoose.schema.block) {
-    switch (configMongoose.schema.block[property].type) {
+for (const property in config_mongoose.block) {
+    switch (config_mongoose.block[property].type) {
         case 'String':
-            options[configMongoose.schema.block[property].name] = String
+            options[config_mongoose.block[property].name] = String
             break
         case 'Number':
-            options[configMongoose.schema.block[property].name] = Number
+            options[config_mongoose.block[property].name] = Number
             break
         case '[transaction]':
-            options[configMongoose.schema.block[property].name] = [schema_transaction]
+            options[config_mongoose.block[property].name] = [schema_transaction]
             break
     }
 }

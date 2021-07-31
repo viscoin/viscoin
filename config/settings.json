@@ -23,7 +23,6 @@
         }
     },
     "Miner": {
-        "miningRewardAddress": "visC6571qoyNNzepeCLpy4EmhqD",
         "restartDelay": 1000,
         "maxListeners": 500,
         "threads": 0

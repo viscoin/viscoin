@@ -1,8 +1,8 @@
 import Transaction from './Transaction'
 import model_block from './mongoose/model/block'
-import * as configCore from '../config/core.json'
-import * as configMongoose from '../config/mongoose.json'
-import * as configSettings from '../config/settings.json'
+import * as config_core from '../config/core.json'
+import * as config_mongoose from '../config/mongoose.json'
+import * as config_settings from '../config/settings.json'
 import proofOfWorkHash from './proofOfWorkHash'
 import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
@@ -49,7 +49,7 @@ class Block {
         return await proofOfWorkHash(block.header + block.nonce)
     }
     static getDifficultyBuffer(difficulty: number) {
-        difficulty = difficulty >> configCore.smoothness
+        difficulty = difficulty >> config_core.smoothness
         const index = Math.floor(difficulty / 8),
         remainder = difficulty % 8
         return Buffer.alloc(32).fill(Math.pow(2, 7 - remainder), index, index + 1)
@@ -65,7 +65,7 @@ class Block {
         return true
     }
     hasValidTransactions() {
-        let amount = parseBigInt(configCore.blockReward)
+        let amount = parseBigInt(config_core.blockReward)
         if (!this.transactions.length) return 1
         const hashes = []
         for (let i = 0; i < this.transactions.length; i++) {
@@ -102,10 +102,10 @@ class Block {
         if (!input) return null
         const output: object = {}
         for (const property in input) {
-            if (configMongoose.schema.block[property] !== undefined) {
-                if (input[property] instanceof Buffer) output[configMongoose.schema.block[property].name] = input[property].toString('binary')
-                else if (property === 'transactions') output[configMongoose.schema.block[property].name] = <Array<Transaction>> input[property].map(e => Transaction.minify(e))
-                else output[configMongoose.schema.block[property].name] = input[property]
+            if (config_mongoose.block[property] !== undefined) {
+                if (input[property] instanceof Buffer) output[config_mongoose.block[property].name] = input[property].toString('binary')
+                else if (property === 'transactions') output[config_mongoose.block[property].name] = <Array<Transaction>> input[property].map(e => Transaction.minify(e))
+                else output[config_mongoose.block[property].name] = input[property]
             }
         }
         return output
@@ -114,8 +114,8 @@ class Block {
         if (!input) return null
         const output = {}
         for (const property in input) {
-            for (const _property in configMongoose.schema.block) {
-                if (property === configMongoose.schema.block[_property].name.toString()) {
+            for (const _property in config_mongoose.block) {
+                if (property === config_mongoose.block[_property].name.toString()) {
                     if (_property === 'transactions') output[_property] = input[property].map(e => Transaction.beautify(e))
                     else output[_property] = input[property]
                 }
@@ -160,8 +160,8 @@ class Block {
     async isValid() {
         const code = this.seemsValid()
         if (code !== 0) return code
-        if (this.timestamp > Date.now() + configSettings.maxDesync) return 10
-        if (Buffer.byteLength(JSON.stringify(Block.minify(this))) > configCore.maxBlockSize) return 11
+        if (this.timestamp > Date.now() + config_settings.maxDesync) return 10
+        if (Buffer.byteLength(JSON.stringify(Block.minify(this))) > config_core.maxBlockSize) return 11
         if (this.hash.equals(await Block.calculateHash(this)) === false) return 12
         if (this.meetsDifficulty() === false) return 13
         if (this.hasValidTransactions() !== 0) return 14

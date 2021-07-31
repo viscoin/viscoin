@@ -1,30 +1,43 @@
 import * as net from 'net'
 import * as events from 'events'
-import * as configNetwork from '../config/network.json'
-import * as configSettings from '../config/settings.json'
+import * as config_settings from '../config/settings.json'
 import * as http from 'http'
 import * as express from 'express'
 import Transaction from './Transaction'
 import base58 from './base58'
 import Block from './Block'
 import * as rateLimit from 'express-rate-limit'
+import log from './log'
+import * as config_default_env from '../config/default_env.json'
+
 interface HTTPApi {
     server: net.Server
+    HTTP_API: {
+        host: string
+        port: number
+    }
 }
 interface Address {
-    host: string,
+    host: string
     port: number
 }
 class HTTPApi extends events.EventEmitter {
     constructor() {
         super()
+        const HTTP_API = process.env.HTTP_API || config_default_env.HTTP_API
+        this.HTTP_API = {
+            host: HTTP_API.split(':').slice(0, -1).join(':'),
+            port: parseInt(HTTP_API.split(':').reverse()[0])
+        }
+        if (process.env.HTTP_API) log.info('Using HTTP_API:', this.HTTP_API)
+        else log.warn('Unset environment value! Using default value for HTTP_API:', this.HTTP_API)
         const app = express()
         app.use(express.json({ limit: '2mb' }))
-        app.use(rateLimit(configSettings.HTTPApi.rateLimit))
-        if (configSettings.HTTPApi.get['/config'] === true) app.get('/config', (req, res) => this.emit('get-config', config => HTTPApi.resEndJSON(res, config)))
-        if (configSettings.HTTPApi.get['/block'] === true) app.get('/block', (req, res) => this.emit('get-block-latest', block => HTTPApi.resEndJSON(res, block)))
-        if (configSettings.HTTPApi.get['/transactions/pending'] === true) app.get('/transactions/pending', (req, res) => this.emit('get-transactions-pending', transactions => HTTPApi.resEndJSON(res, transactions)))
-        if (configSettings.HTTPApi.get['/block/:h'] === true) app.get('/block/:h', (req, res) => {
+        app.use(rateLimit(config_settings.HTTPApi.rateLimit))
+        if (config_settings.HTTPApi.get['/config'] === true) app.get('/config', (req, res) => this.emit('get-config', config => HTTPApi.resEndJSON(res, config)))
+        if (config_settings.HTTPApi.get['/block'] === true) app.get('/block', (req, res) => this.emit('get-block-latest', block => HTTPApi.resEndJSON(res, block)))
+        if (config_settings.HTTPApi.get['/transactions/pending'] === true) app.get('/transactions/pending', (req, res) => this.emit('get-transactions-pending', transactions => HTTPApi.resEndJSON(res, transactions)))
+        if (config_settings.HTTPApi.get['/block/:h'] === true) app.get('/block/:h', (req, res) => {
             if (req.params.h === parseInt(req.params.h).toString()) {
                 const height = parseInt(req.params.h)
                 if (isNaN(height)) return res.status(400).end()
@@ -41,7 +54,7 @@ class HTTPApi extends events.EventEmitter {
                 }
             }
         })
-        if (configSettings.HTTPApi.get['/block/new/:address'] === true) app.get('/block/new/:address', (req, res) => {
+        if (config_settings.HTTPApi.get['/block/new/:address'] === true) app.get('/block/new/:address', (req, res) => {
             try {
                 const address = base58.decode(req.params.address)
                 this.emit('get-block-new', address, block => HTTPApi.resEndJSON(res, block))
@@ -50,7 +63,7 @@ class HTTPApi extends events.EventEmitter {
                 res.status(400).end()
             }
         })
-        if (configSettings.HTTPApi.get['/transactions/:address'] === true) app.get('/transactions/:address', (req, res) => {
+        if (config_settings.HTTPApi.get['/transactions/:address'] === true) app.get('/transactions/:address', (req, res) => {
             try {
                 const address = base58.decode(req.params.address)
                 this.emit('get-transactions-address', address, transactions => HTTPApi.resEndJSON(res, transactions))
@@ -59,7 +72,7 @@ class HTTPApi extends events.EventEmitter {
                 res.status(400).end()
             }
         })
-        if (configSettings.HTTPApi.get['/balance/:address'] === true) app.get('/balance/:address', (req, res) => {
+        if (config_settings.HTTPApi.get['/balance/:address'] === true) app.get('/balance/:address', (req, res) => {
             try {
                 const address = base58.decode(req.params.address)
                 this.emit('get-balance-address', address, balance => HTTPApi.resEndJSON(res, balance))
@@ -68,7 +81,7 @@ class HTTPApi extends events.EventEmitter {
                 res.status(400).end()
             }
         })
-        if (configSettings.HTTPApi.get['/block/transaction/:signature'] === true) app.get('/block/transaction/:signature', (req, res) => {
+        if (config_settings.HTTPApi.get['/block/transaction/:signature'] === true) app.get('/block/transaction/:signature', (req, res) => {
             try {
                 const signature = base58.decode(req.params.signature)
                 this.emit('get-block-transaction-signature', signature, block => HTTPApi.resEndJSON(res, block))
@@ -77,8 +90,8 @@ class HTTPApi extends events.EventEmitter {
                 res.status(400).end()
             }
         })
-        if (configSettings.HTTPApi.get['/peers'] === true) app.get('/peers', (req, res) => this.emit('get-peers', peers => HTTPApi.resEndJSON(res, peers)))
-        if (configSettings.HTTPApi.post['/transaction'] === true) app.post('/transaction', (req, res) => {
+        if (config_settings.HTTPApi.get['/peers'] === true) app.get('/peers', (req, res) => this.emit('get-peers', peers => HTTPApi.resEndJSON(res, peers)))
+        if (config_settings.HTTPApi.post['/transaction'] === true) app.post('/transaction', (req, res) => {
             try {
                 const transaction = new Transaction(Transaction.beautify(req.body))
                 this.emit('transaction', transaction, code => HTTPApi.resEndJSON(res, code))
@@ -87,7 +100,7 @@ class HTTPApi extends events.EventEmitter {
                 res.status(400).end()
             }
         })
-        if (configSettings.HTTPApi.post['/block'] === true) app.post('/block', (req, res) => {
+        if (config_settings.HTTPApi.post['/block'] === true) app.post('/block', (req, res) => {
             try {
                 const block = new Block(Block.beautify(req.body))
                 this.emit('block', block, code => HTTPApi.resEndJSON(res, code))
@@ -98,15 +111,15 @@ class HTTPApi extends events.EventEmitter {
         })
         this.server = http.createServer(app)
         this.server
-            .on('listening', () => this.emit('listening'))
-            .on('error', e => this.emit('error', e))
-            .on('close', () => {})
+            .on('listening', () => log.info('HTTP_API listening', this.server.address()))
+            .on('error', e => log.error('HTTP_API', e))
+            .on('close', () => log.warn('HTTP_API close'))
     }
     static resEndJSON(res, data) {
         res.end(JSON.stringify(data, null, 4))
     }
     start() {
-        this.server.listen(configNetwork.Node.HTTPApi.port, configNetwork.Node.HTTPApi.host)
+        this.server.listen(this.HTTP_API.port, this.HTTP_API.host)
     }
     stop() {
         this.server.close()

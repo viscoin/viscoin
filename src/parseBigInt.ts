@@ -1,4 +1,4 @@
-import * as configCore from '../config/core.json'
+import * as config_core from '../config/core.json'
 export default (str: string) => {
     if (str === null) return null
     const signs = [ '.', ',' ].filter(e => str.includes(e))
@@ -7,12 +7,12 @@ export default (str: string) => {
     if (sign) {
         if (str.replace(sign, '').includes(sign)) return null
         const index = str.indexOf(sign)
-        while (str.slice(index).length <= configCore.decimalPrecision) {
+        while (str.slice(index).length <= config_core.decimalPrecision) {
             str += '0'
         }
         str = str.replace(sign, '')
     }
-    else str += new Array(configCore.decimalPrecision).fill('0').join('')
+    else str += new Array(config_core.decimalPrecision).fill('0').join('')
     try {
         return BigInt(str)
     }

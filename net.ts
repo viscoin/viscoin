@@ -1,11 +1,10 @@
 import init from './src/mongoose/init'
 import * as prompts from 'prompts'
-import TCPNode from './src/TCPNode'
 import Model_Node from './src/mongoose/model/node'
-import * as configSettings from './config/settings.json'
-import isValidHostname from './src/isValidHostname'
+import * as config_settings from './config/settings.json'
+import isValidHost from './src/isValidHost'
 
-init(false)
+init()
 const commands = {
     commands: async () => {
         let choices: Array<{ title: string, description: string, value: Function }> = [
@@ -33,7 +32,7 @@ const commands = {
             name: 'host',
             message: 'Enter host',
             validate: async host => {
-                const code = isValidHostname(host)
+                const code = isValidHost(host)
                 if (code !== 0) return `Invalid host ${code}`
                 if (await Model_Node.exists({ host })) return 'Host already exists'
                 return true
@@ -86,7 +85,7 @@ const commands = {
     list_banned: async () => {
         const docs = await Model_Node.find({
             banned: {
-                $gt: Date.now() - configSettings.Node.banTimeout
+                $gt: Date.now() - config_settings.Node.banTimeout
             }
         }, 'host banned', { lean: true }).exec()
         const hosts = docs.map(e => `${e.host} ${e.banned}`)

@@ -1,7 +1,7 @@
 import * as config_core from "./config/core.json"
 import * as config_mongoose from "./config/mongoose.json"
-import * as config_network from "./config/network.json"
 import * as config_settings from "./config/settings.json"
+import * as config_default_env from "./config/default_env.json"
 import Address from "./src/Address"
 import addressFromPublicKey from "./src/addressFromPublicKey"
 import base58 from "./src/base58"
@@ -10,7 +10,7 @@ import Block from "./src/Block"
 import Blockchain from "./src/Blockchain"
 import HTTPApi from "./src/HTTPApi"
 import isValidAddress from "./src/isValidAddress"
-import isValidHostname from "./src/isValidHostname"
+import isValidHost from "./src/isValidHost"
 import keygen from "./src/keygen"
 import Miner from "./src/Miner"
 import MinerThread from "./src/MinerThread"
@@ -31,8 +31,8 @@ export = {
     config: {
         core: config_core,
         mongoose: config_mongoose,
-        network: config_network,
-        settings: config_settings
+        settings: config_settings,
+        default_env: config_default_env
     },
     Address,
     addressFromPublicKey,
@@ -42,7 +42,7 @@ export = {
     Blockchain,
     HTTPApi,
     isValidAddress,
-    isValidHostname,
+    isValidHost,
     keygen,
     Miner,
     MinerThread,

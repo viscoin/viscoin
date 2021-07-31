@@ -22,26 +22,24 @@ Viscoin is an experimental digital currency that enables instant payments to any
 
 ### Wallet
 1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
+2. Change directory into viscoin. `cd viscoin`
 2. Install dependencies. `npm i`
 3. Compile typescript. `npm run c`
-4. Run the setup script `node setup` and select Wallet.
 5. Start using the wallet. `node wallet`
 
-### Running a node
+### Running a node using 
 1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
-2. Install dependencies. `npm i`
-3. Compile typescript. `npm run c`
-4. Install [mongoDB](https://www.mongodb.com/try/download/community) to the local machine. Optionally the connection string in `mongoose.json` could be changed to connect to a remote db.
-5. Run the setup script `node setup` and select Node.
-6. Add a starting point, a first node to connect to. `node net`
-7. Run the node. `node fullnode`
+2. Change directory into viscoin. `cd viscoin`
+3. Start the node. `docker-compose up -d`
+4. `docker exec -it viscoin bash`
+5. Add the ip of another running node. `node net`
 
 ### Mining
 1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
+2. Change directory into viscoin. `cd viscoin`
 2. Install dependencies. `npm i`
 3. Compile typescript. `npm run c`
-4. Run the setup script `node setup` and select Miner.
-5. Start mining. `node miner`
+4. Start mining. `node miner`
 
 #### Important
 If your system clock is off by more than `30 seconds` the network will reject your blocks.

@@ -1,9 +1,9 @@
 import * as mongoose from 'mongoose'
-import * as configMongoose from '../../../config/mongoose.json'
+import * as config_mongoose from '../../../config/mongoose.json'
 const options = {
     _id: String
 }
-for (const property in configMongoose.schema.transaction) {
-    options[configMongoose.schema.transaction[property].name] = configMongoose.schema.transaction[property].type
+for (const property in config_mongoose.transaction) {
+    options[config_mongoose.transaction[property].name] = config_mongoose.transaction[property].type
 }
 export default new mongoose.Schema(options)
