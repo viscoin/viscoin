@@ -114,3 +114,6 @@ keys.json
 
 # Lib
 /lib
+
+# db
+db

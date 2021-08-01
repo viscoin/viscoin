@@ -4,6 +4,8 @@ services:
         container_name: mongo
         image: mongo
         command: --logpath /dev/null
+        volumes:
+            - ./db:/data/db
     viscoin:
         container_name: viscoin
         restart: always
