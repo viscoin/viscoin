@@ -2,6 +2,7 @@ version: '3'
 services:
     mongo:
         container_name: mongo
+        restart: always
         image: mongo
         command: --logpath /dev/null
         volumes:
