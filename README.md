@@ -31,7 +31,7 @@ Viscoin is an experimental digital currency that enables instant payments to any
 1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
 2. Change directory into viscoin. `cd viscoin`
 3. Start the node. `docker-compose up -d`
-4. `docker exec -it viscoin bash`
+4. `docker exec -it viscoin sh`
 5. Add the ip of another running node. `node net`
 
 ### Mining
