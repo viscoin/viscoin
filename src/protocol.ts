@@ -5,7 +5,8 @@ const types = [
     'block',
     'transaction',
     'node',
-    'sync'
+    'sync',
+    'blocks'
 ] as const
 type types_string = typeof types[number]
 export default {
@@ -34,9 +35,12 @@ export default {
             const type = this.getType(buffer[0])
             let data = type === 'sync' ? buffer.slice(1) : JSON.parse(buffer.slice(1).toString('binary'))
             switch (type) {
+                case 'blocks':
+                    data = data.map(e => new Block(Block.beautify(e)))
+                    break
                 case 'block':
                     data = new Block(Block.beautify(data))
-                    if (data.seemsValid() !== 0) return null
+                    // if (data.seemsValid() !== 0) return null
                     break
                 case 'transaction':
                     data = new Transaction(Transaction.beautify(data))
@@ -64,6 +68,8 @@ export default {
     end: Buffer.concat([
         Buffer.alloc(32, 0),
         Buffer.alloc(32, 0xff)
+        // Buffer.alloc(16, 0),
+        // Buffer.alloc(16, 0xff)
     ]),
     getEndIndex(data: Buffer) {
         return data.indexOf(this.end)

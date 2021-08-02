@@ -102,7 +102,7 @@ class Peer extends events.EventEmitter {
             this.addHash(hash)
             this.emit(type, data, b, res => {
                 if (res === 1) this.emit('ban')
-                if (type === 'sync' && res !== null) this.write(protocol.constructBuffer('block', res), () => {})
+                if (type === 'sync' && res !== null) this.write(protocol.constructBuffer('blocks', res), () => {})
             })
         }
     }

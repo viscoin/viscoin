@@ -71,7 +71,7 @@ class Blockchain extends events.EventEmitter {
         if (block.height === 0) return
         let height
         const interval = setInterval(() => {
-            log.info('Loading hashes:', `${Blockchain.getLoadPercent(block.height, this.latestBlock.height)}%`)
+            if (block) log.info('Loading hashes:', `${Blockchain.getLoadPercent(block.height, this.latestBlock.height)}%`)
         }, 1000)
         while (block) {
             this.hashes.current.unshift(block.hash.toString('binary'))

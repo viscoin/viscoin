@@ -33,7 +33,8 @@
         "TCPNode": true,
         "connectToNetwork": true,
         "sync": true,
-        "syncBlocksPerRequest": 2,
+        "syncBlocks": 16,
+        "syncTimeout": 30000,
         "banTimeout": 60000,
         "queue": {
             "blocks": 1000,

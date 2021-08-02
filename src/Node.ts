@@ -26,27 +26,30 @@ interface Node {
         transaction: number
         block: number
     }
-    syncTimeout: NodeJS.Timeout
     queue: {
         blocks: Set<Block>
         transactions: Set<Transaction>
         callbacks: Map<Buffer, Array<Function>>
     }
     hashes: Set<string>
-    syncTimeoutMS: number
+    sync: {
+        timeout: number
+        timestamp: number
+    }
 }
 class Node extends events.EventEmitter {
     constructor() {
         super()
-        this.syncTimeoutMS = 1000 / config_settings.Peer.maxRequestsPerSecond.sync
-        this.hashes = new Set()
+        this.sync = {
+            timeout: 0,
+            timestamp: Date.now()
+        }
+        // this.hashes = new Set()
         this.queue = {
             blocks: new Set(),
             transactions: new Set(),
             callbacks: new Map()
         }
-        this.nextBlock()
-        this.nextTransaction()
         this.workersReady = new Set()
         this.workersBusy = new Set()
         this.threads = cpus().length
@@ -97,8 +100,6 @@ class Node extends events.EventEmitter {
                 if (code === 0) {
                     if (this.hashes.delete(block.previousHash.toString('binary'))) {
                         this.hashes.add(block.hash.toString('binary'))
-                        this.syncTimeoutMS /= 1.11
-                        if (this.syncTimeoutMS < 1) this.syncTimeoutMS = 1
                     }
                 }
                 cb(code)
@@ -108,12 +109,27 @@ class Node extends events.EventEmitter {
                 if (config_settings.Node.connectToNetwork) cb(this.tcpNode.connectToNode(node))
             })
             this.tcpNode.on('sync', async (hash, cb) => {
-                for (let i = 0; i < config_settings.Node.syncBlocksPerRequest; i++) {
+                const blocks = []
+                for (let i = 0; i < config_settings.Node.syncBlocks; i++) {
                     const block = await this.blockchain.getBlockByPreviousHash(hash)
-                    if (block === null) return
-                    cb(Block.minify(block))
+                    if (block === null) break
+                    blocks.push(Block.minify(block))
                     hash = block.hash
                 }
+                cb(blocks)
+            })
+            this.tcpNode.on('blocks', (blocks, cb) => {
+                for (const block of blocks) {
+                    this.emit('add-block', block, code => {
+                        if (code === 0) {
+                            if (this.hashes.delete(block.previousHash.toString('binary'))) {
+                                this.hashes.add(block.hash.toString('binary'))
+                            }
+                        }
+                        cb(code)
+                    })
+                }
+                this.sync.timeout = 0
             })
             this.tcpNode.on('peer-connect', async peer => {
                 if (!peer.remoteAddress) return
@@ -136,14 +152,20 @@ class Node extends events.EventEmitter {
                 }
             })
         }
-        this.blockchain.on('loaded', () => {
+        this.blockchain.on('loaded', async () => {
             if (config_settings.Node.connectToNetwork === true) {
                 log.info('Connecting to other nodes')
                 this.reconnect()
             }
             if (config_settings.Node.sync === true) {
                 log.info('Starting sync')
-                this.sync()
+                this.hashes = new Set()
+                const latestBlock = await this.blockchain.getLatestBlock()
+                let block = await this.blockchain.getBlockByHeight(latestBlock.height - config_settings.trustedAfterBlocks)
+                if (block === null) block = await this.blockchain.createGenesisBlock()
+                if (block !== null) this.hashes.add(block.hash.toString('binary'))
+                this.nextBlock()
+                this.nextTransaction()
             }
         })
         this.on('add-block', async (block: Block, cb: Function) => {
@@ -243,8 +265,13 @@ class Node extends events.EventEmitter {
         })
     }
     async nextBlock() {
+        log.debug(5, 'nextBlock')
         const block = [...this.queue.blocks].sort((a, b) => a.height - b.height)[0]
-        if (block === undefined || this.workersReady.size === 0) return setImmediate(this.nextBlock.bind(this))
+        if (block === undefined) {
+            this.nextSync()
+            return setTimeout(this.nextBlock.bind(this), 10)
+        }
+        if (this.workersReady.size === 0) return setImmediate(this.nextBlock.bind(this))
         this.queue.blocks.delete(block)
         let code = 0
         try {
@@ -267,8 +294,10 @@ class Node extends events.EventEmitter {
         setImmediate(this.nextBlock.bind(this))
     }
     async nextTransaction() {
+        log.debug(5, 'nextTransaction')
         const transaction = [...this.queue.transactions].sort((a, b) => a.timestamp - b.timestamp)[0]
-        if (transaction === undefined || this.workersReady.size === 0) return setImmediate(this.nextTransaction.bind(this))
+        if (transaction === undefined) return setTimeout(this.nextTransaction.bind(this), 10)
+        if (this.workersReady.size === 0) return setImmediate(this.nextTransaction.bind(this))
         this.queue.transactions.delete(transaction)
         let code = 0
         try {
@@ -290,21 +319,16 @@ class Node extends events.EventEmitter {
         log.debug(2, 'Transaction:', code)
         setImmediate(this.nextTransaction.bind(this))
     }
-    async sync() {
-        if (this.hashes.size === 0) {
-            const latestBlock = await this.blockchain.getLatestBlock()
-            let block = await this.blockchain.getBlockByHeight(latestBlock.height - config_settings.trustedAfterBlocks)
-            if (block === null) block = await this.blockchain.createGenesisBlock()
-            if (block !== null) this.hashes.add(block.hash.toString('binary'))
+    async nextSync() {
+        if (this.sync.timestamp > Date.now() - this.sync.timeout) return
+        this.sync = {
+            timeout: config_settings.Node.syncTimeout,
+            timestamp: Date.now()
         }
-        // if (this.tcpNode.peers.size > 0) this.emit('sync')
         log.debug(4, 'Sync:', [...this.hashes].map(e => Buffer.from(e, 'binary').toString('hex')))
         for (const hash of this.hashes) {
             this.tcpNode.broadcast(protocol.constructBuffer('sync', Buffer.from(hash, 'binary')), true)
         }
-        this.syncTimeoutMS *= 1.1
-        if (this.syncTimeoutMS > config_settings.Peer.hashes.timeToLive) this.syncTimeoutMS = config_settings.Peer.hashes.timeToLive
-        this.syncTimeout = setTimeout(this.sync.bind(this), this.syncTimeoutMS)
     }
 }
 export default Node
