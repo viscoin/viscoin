@@ -2,7 +2,7 @@ import init from './src/mongoose/init'
 import * as prompts from 'prompts'
 import Model_Node from './src/mongoose/model/node'
 import * as config_settings from './config/settings.json'
-import isValidHost from './src/isValidHost'
+import * as net from 'net'
 
 init()
 const commands = {
@@ -32,8 +32,7 @@ const commands = {
             name: 'host',
             message: 'Enter host',
             validate: async host => {
-                const code = isValidHost(host)
-                if (code !== 0) return `Invalid host ${code}`
+                if (net.isIP(host) === 0) return 'Invalid IP address'
                 if (await Model_Node.exists({ host })) return 'Host already exists'
                 return true
             }

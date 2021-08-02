@@ -7,7 +7,6 @@ import { hostname } from 'os'
 import protocol from './protocol'
 import Peer from './Peer'
 import Model_Node from './mongoose/model/node'
-import isValidHost from './isValidHost'
 import log from './log'
 import * as config_default_env from '../config/default_env.json'
 
@@ -122,7 +121,7 @@ class TCPNode extends events.EventEmitter {
     connectToNetwork(hosts: Array<string>) {
         hosts = TCPNode.shuffle(hosts)
         for (const host of hosts) {
-            if (isValidHost(host) !== 0) continue
+            if (net.isIP(host) === 0) continue
             if (config_settings.TCPNode.allowConnectionsToSelf !== true
             && host === this.host) continue
             const socket = net.connect(9333, host)
@@ -130,7 +129,7 @@ class TCPNode extends events.EventEmitter {
         }
     }
     connectToNode(host: string) {
-        if (isValidHost(host) !== 0) return 2
+        if (net.isIP(host) === 0) return 2
         if (config_settings.TCPNode.allowConnectionsToSelf !== true
         && host === this.host) return 3
         const socket = net.connect(9333, host)
