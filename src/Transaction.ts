@@ -110,7 +110,7 @@ class Transaction {
         if (this.to === undefined && this.amount !== undefined) return 8
         if (typeof this.signature !== 'object') return 9
         if (this.signature instanceof Buffer === false) return 10
-        if (typeof this.timestamp !== 'number') return 11
+        if (!Number.isInteger(this.timestamp) || !Number.isFinite(this.timestamp)) return 11
         if (this.timestamp > Date.now() + config_settings.maxDesync) return 12
         if (typeof this.minerFee !== 'string') return 13
         const minerFee = parseBigInt(this.minerFee)

@@ -170,7 +170,7 @@ class Blockchain extends events.EventEmitter {
         return block
     }
     async setLatestBlock() {
-        let block = await Block.load(null, null, { sort: { [config_mongoose.block.height.name]: -1, [config_mongoose.block.difficulty.name]: -1 }, lean: true })
+        let block = await Block.load({ [config_mongoose.block.timestamp.name]: { $lte: Date.now() } }, null, { sort: { [config_mongoose.block.height.name]: -1, [config_mongoose.block.difficulty.name]: -1 }, lean: true })
         if (block === null) block = await this.createGenesisBlock()
         this.latestBlock = block
         return block
@@ -508,7 +508,7 @@ class Blockchain extends events.EventEmitter {
                 to: address,
                 amount: beautifyBigInt(parseBigInt(config_core.blockReward))
             }),
-            ...this.pendingTransactions
+            ...this.pendingTransactions.filter(transaction => transaction.timestamp < Date.now())
         ]
         const block = new Block({
             transactions,

@@ -155,16 +155,17 @@ class Block {
         if (this.hash instanceof Buffer === false) return 7
         if (this.previousHash instanceof Buffer === false) return 8
         if (Array.isArray(this.transactions) === false) return 9
+        if (!Number.isInteger(this.timestamp) || !Number.isFinite(this.timestamp)) return 10
         return 0
     }
     async isValid() {
         const code = this.seemsValid()
         if (code !== 0) return code
-        if (this.timestamp > Date.now() + config_settings.maxDesync) return 10
-        if (Buffer.byteLength(JSON.stringify(Block.minify(this))) > config_core.maxBlockSize) return 11
-        if (this.hash.equals(await Block.calculateHash(this)) === false) return 12
-        if (this.meetsDifficulty() === false) return 13
-        if (this.hasValidTransactions() !== 0) return 14
+        if (this.timestamp > Date.now() + config_settings.maxDesync) return 11
+        if (Buffer.byteLength(JSON.stringify(Block.minify(this))) > config_core.maxBlockSize) return 12
+        if (this.hash.equals(await Block.calculateHash(this)) === false) return 13
+        if (this.meetsDifficulty() === false) return 14
+        if (this.hasValidTransactions() !== 0) return 15
         return 0
     }
 }
