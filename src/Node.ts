@@ -289,7 +289,7 @@ class Node extends events.EventEmitter {
             for (const cb of cbs) cb(code)
             this.queue.callbacks.delete(block.hash)
         }
-        // this.emit('block', block, code)
+        this.emit('block', block, code)
         log.debug(2, 'Block:', block.hash.toString('hex'), block.height, code)
         setImmediate(this.nextBlock.bind(this))
     }
@@ -315,7 +315,7 @@ class Node extends events.EventEmitter {
             for (const cb of cbs) cb(code)
             this.queue.callbacks.delete(transaction.signature)
         }
-        // this.emit('transaction', transaction, code)
+        this.emit('transaction', transaction, code)
         log.debug(2, 'Transaction:', code)
         setImmediate(this.nextTransaction.bind(this))
     }
