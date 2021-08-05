@@ -79,7 +79,7 @@ class Client extends events.EventEmitter {
         socket.data = Buffer.alloc(0)
         socket.on('connect', () => {
             this.sockets.add(socket)
-            log.info('TCP_API Socket connect', socket.address())
+            log.info('TCP_API Socket connect', `${socket.remoteAddress}:${socket.remotePort}`)
         })
         socket.on('error', e => log.error('TCP_API Socket', e))
         socket.on('close', () => {
