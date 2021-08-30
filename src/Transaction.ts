@@ -52,7 +52,7 @@ class Transaction {
                 }
             }
         }
-        return <Transaction> output
+        return <any> output
     }
     static calculateHash(transaction: Transaction) {
         let buf = Buffer.alloc(0)

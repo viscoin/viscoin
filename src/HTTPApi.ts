@@ -32,6 +32,8 @@ class HTTPApi extends events.EventEmitter {
         if (process.env.HTTP_API) log.info('Using HTTP_API:', this.HTTP_API)
         else log.warn('Unset environment value! Using default value for HTTP_API:', this.HTTP_API)
         const app = express()
+        app.use(express.urlencoded())
+        // app.use(express.urlencoded({ limit: '2mb' }))
         app.use(express.json({ limit: '2mb' }))
         app.use(rateLimit(config_settings.HTTPApi.rateLimit))
         if (config_settings.HTTPApi.get['/config'] === true) app.get('/config', (req, res) => this.emit('get-config', config => HTTPApi.resEndJSON(res, config)))
@@ -93,7 +95,10 @@ class HTTPApi extends events.EventEmitter {
         if (config_settings.HTTPApi.get['/peers'] === true) app.get('/peers', (req, res) => this.emit('get-peers', peers => HTTPApi.resEndJSON(res, peers)))
         if (config_settings.HTTPApi.post['/transaction'] === true) app.post('/transaction', (req, res) => {
             try {
-                const transaction = new Transaction(Transaction.beautify(req.body))
+                const beautified = Transaction.beautify(req.body)
+                if (beautified.timestamp) beautified.timestamp = parseInt(beautified.timestamp)
+                if (beautified.recoveryParam) beautified.recoveryParam = parseInt(beautified.recoveryParam)
+                const transaction = new Transaction(beautified)
                 this.emit('transaction', transaction, code => HTTPApi.resEndJSON(res, code))
             }
             catch {
