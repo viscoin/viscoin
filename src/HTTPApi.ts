@@ -9,6 +9,7 @@ import Block from './Block'
 import * as rateLimit from 'express-rate-limit'
 import log from './log'
 import * as config_default_env from '../config/default_env.json'
+import Address from './Address'
 
 interface HTTPApi {
     server: net.Server
@@ -17,7 +18,7 @@ interface HTTPApi {
         port: number
     }
 }
-interface Address {
+interface IP_Address {
     host: string
     port: number
 }
@@ -58,7 +59,7 @@ class HTTPApi extends events.EventEmitter {
         })
         if (config_settings.HTTPApi.get['/block/new/:address'] === true) app.get('/block/new/:address', (req, res) => {
             try {
-                const address = base58.decode(req.params.address)
+                const address = Address.toBuffer(req.params.address)
                 this.emit('get-block-new', address, block => HTTPApi.resEndJSON(res, block))
             }
             catch {
@@ -67,7 +68,7 @@ class HTTPApi extends events.EventEmitter {
         })
         if (config_settings.HTTPApi.get['/transactions/:address'] === true) app.get('/transactions/:address', (req, res) => {
             try {
-                const address = base58.decode(req.params.address)
+                const address = Address.toBuffer(req.params.address)
                 this.emit('get-transactions-address', address, transactions => HTTPApi.resEndJSON(res, transactions))
             }
             catch {
@@ -76,7 +77,7 @@ class HTTPApi extends events.EventEmitter {
         })
         if (config_settings.HTTPApi.get['/balance/:address'] === true) app.get('/balance/:address', (req, res) => {
             try {
-                const address = base58.decode(req.params.address)
+                const address = Address.toBuffer(req.params.address)
                 this.emit('get-balance-address', address, balance => HTTPApi.resEndJSON(res, balance))
             }
             catch {
@@ -129,7 +130,7 @@ class HTTPApi extends events.EventEmitter {
     stop() {
         this.server.close()
     }
-    static get({ host, port }: Address, path: string) {
+    static get({ host, port }: IP_Address, path: string) {
         return <any> new Promise((resolve, reject) => {
             const req = http.request({
                 host,
@@ -155,7 +156,7 @@ class HTTPApi extends events.EventEmitter {
             req.end()
         })
     }
-    static post({ host, port }: Address, path: string, data: string) {
+    static post({ host, port }: IP_Address, path: string, data: string) {
         return <any> new Promise((resolve, reject) => {
             const req = http.request({
                 host,
@@ -186,7 +187,7 @@ class HTTPApi extends events.EventEmitter {
             req.end()
         })
     }
-    static async getBalanceOfAddress(address: Address, _address: string) {
+    static async getBalanceOfAddress(address: IP_Address, _address: string) {
         try {
             return await this.get(address, `/balance/${_address}`)
         }
@@ -194,7 +195,7 @@ class HTTPApi extends events.EventEmitter {
             return null
         }
     }
-    static async getTransactionsOfAddress(address: Address, _address: string) {
+    static async getTransactionsOfAddress(address: IP_Address, _address: string) {
         try {
             const transactions = await this.get(address, `/transactions/${_address}`)
             return transactions.map(e => new Transaction(Transaction.beautify(e)))
@@ -203,7 +204,7 @@ class HTTPApi extends events.EventEmitter {
             return null
         }
     }
-    static async send(address: Address, transaction: Transaction) {
+    static async send(address: IP_Address, transaction: Transaction) {
         try {
             return await this.post(address, '/transaction', JSON.stringify(Transaction.minify(transaction)))
         }
@@ -211,7 +212,7 @@ class HTTPApi extends events.EventEmitter {
             return null
         }
     }
-    static async getBlockByHeight(address: Address, height: number) {
+    static async getBlockByHeight(address: IP_Address, height: number) {
         try {
             const block = await this.get(address, `/block/${height}`)
             if (!block) return null
@@ -221,7 +222,7 @@ class HTTPApi extends events.EventEmitter {
             return null
         }
     }
-    static async getBlockByHash(address: Address, hash: Buffer) {
+    static async getBlockByHash(address: IP_Address, hash: Buffer) {
         try {
             const block = await this.get(address, `/block/${hash.toString('hex')}`)
             if (!block) return null
@@ -231,7 +232,7 @@ class HTTPApi extends events.EventEmitter {
             return null
         }
     }
-    static async getBlockByTransactionSignature(address: Address, signature: Buffer) {
+    static async getBlockByTransactionSignature(address: IP_Address, signature: Buffer) {
         try {
             const block = await this.get(address, `/block/transaction/${base58.encode(signature)}`)
             if (!block) return null
@@ -241,7 +242,7 @@ class HTTPApi extends events.EventEmitter {
             return null
         }
     }
-    static async getLatestBlock(address: Address) {
+    static async getLatestBlock(address: IP_Address) {
         try {
             const block = await this.get(address, '/block')
             if (!block) return null
@@ -251,7 +252,7 @@ class HTTPApi extends events.EventEmitter {
             return null
         }
     }
-    static async getPendingTransactions(address: Address) {
+    static async getPendingTransactions(address: IP_Address) {
         try {
             const transactions = await this.get(address, '/transactions/pending')
             return transactions.map(e => new Transaction(Transaction.beautify(e)))
@@ -260,9 +261,9 @@ class HTTPApi extends events.EventEmitter {
             return null
         }
     }
-    static async getNewBlock(address: Address, _address: Buffer) {
+    static async getNewBlock(address: IP_Address, _address: Buffer) {
         try {
-            const block = await this.get(address, `/block/new/${base58.encode(_address)}`)
+            const block = await this.get(address, `/block/new/${Address.toString(_address)}`)
             if (!block) return null
             return new Block(Block.beautify(block))
         }
@@ -270,7 +271,7 @@ class HTTPApi extends events.EventEmitter {
             return null
         }
     }
-    static async postBlock(address: Address, block: Block) {
+    static async postBlock(address: IP_Address, block: Block) {
         try {
             return await this.post(address, '/block', JSON.stringify(Block.minify(block)))
         }

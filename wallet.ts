@@ -34,11 +34,11 @@ let wallet: Wallet | undefined = undefined,
 wallet_saved: boolean = false
 const functions = {
     save_wallet: async (privateKey: Buffer, passphrase: string) => {
-        const address = addressFromPublicKey(publicKeyFromPrivateKey(privateKey))
+        const address = Address.fromPrivateKey(privateKey)
         const iv = crypto.randomBytes(16)
         const cipher = crypto.createCipheriv('aes-256-cbc', await walletPassphraseHash(passphrase), iv)
         if (!fs.existsSync('./wallets')) fs.mkdirSync('./wallets')
-        fs.writeFileSync(`./wallets/${base58.encode(Address.convertToChecksumAddress(address))}.wallet`, Buffer.concat([
+        fs.writeFileSync(`./wallets/${Address.toString(address)}.wallet`, Buffer.concat([
             iv,
             cipher.update(privateKey),
             cipher.final()
@@ -46,7 +46,7 @@ const functions = {
     },
     log_wallet_info: (privateKey: Buffer) => {
         const address = addressFromPublicKey(publicKeyFromPrivateKey(privateKey))
-        console.log(`Address     (${c.green}SHARE${c.reset})  ${base58.encode(Address.convertToChecksumAddress(address))}`)
+        console.log(`Address     (${c.green}SHARE${c.reset})  ${Address.toString(address)}`)
         console.log(`Private key (${c.red}SECRET${c.reset}) ${base58.encode(privateKey)}`)
     },
     log_unable_to_connect_to_api: () => {
@@ -73,7 +73,7 @@ const commands = {
                 { title: 'Wallet', description: `View wallet details (Make sure no one is looking)`, value: commands.info },
                 ...choices
             ]
-            console.log(path.join(__dirname, 'wallets', `${c.blue}${base58.encode(wallet.address)}.wallet${c.reset}`))
+            console.log(path.join(__dirname, 'wallets', `${c.blue}${wallet.address}.wallet${c.reset}`))
             if (wallet_saved === false) {
                 console.log(`Temporarily loaded wallet (${c.red}not saved${c.reset})`)
                 choices = [
@@ -156,10 +156,7 @@ const commands = {
         ])
         if (res.confirm === true) {
             let to
-            if (res.to) {
-                const address = base58.decode(res.to)
-                to = Address.convertToNormalAddress(address)
-            }
+            if (res.to) to = Address.toBuffer(res.to)
             const transaction = wallet.createTransaction({
                 to,
                 amount: res.amount === undefined ? undefined : beautifyBigInt(parseBigInt(res.amount)),
@@ -187,7 +184,7 @@ const commands = {
         commands.commands()
     },
     address: async () => {
-        console.log(base58.encode(wallet.address))
+        console.log(wallet.address)
         await commands.pause()
         console.clear()
         commands.commands()
@@ -222,8 +219,7 @@ const commands = {
             return commands.commands()
         }
         try {
-            const balance = res.address === undefined ? await HTTPApi.getBalanceOfAddress({ host: host, port: port }, base58.encode(wallet._address)) : await HTTPApi.getBalanceOfAddress({ host: host, port: port }, base58.encode(Address.convertToNormalAddress(base58.decode(res.address))))
-            console.log(balance)
+            console.log(await HTTPApi.getBalanceOfAddress({ host: host, port: port }, res.address === undefined ? wallet.address : res.address))
         }
         catch {
             functions.log_unable_to_connect_to_api()
@@ -437,7 +433,7 @@ const commands = {
             return commands.commands()
         }
         try {
-            const transactions = (res.address === undefined ? await HTTPApi.getTransactionsOfAddress({ host: host, port: port }, base58.encode(wallet._address)) : await HTTPApi.getTransactionsOfAddress({ host: host, port: port }, base58.encode(Address.convertToNormalAddress(base58.decode(res.address)))))
+            const transactions = (await HTTPApi.getTransactionsOfAddress({ host: host, port: port }, res.address === undefined ? wallet.address : res.address))
                 .sort((a, b) => a.timestamp - b.timestamp)
             const latestBlock = await HTTPApi.getLatestBlock({ host: host, port: port })
             const blocks = [ latestBlock ]
@@ -459,10 +455,10 @@ const commands = {
                     }
                     if (transaction.from !== undefined) {
                         if (transaction.from.equals(wallet._address)) {
-                            str = `${str} ${c.blue}${base58.encode(Address.convertToChecksumAddress(transaction.from))}${c.reset}`
+                            str = `${str} ${c.blue}${Address.toString(transaction.from)}${c.reset}`
                         }
                         else {
-                            str = `${str} ${base58.encode(Address.convertToChecksumAddress(transaction.from))}`
+                            str = `${str} ${Address.toString(transaction.from)}`
                         }
                         if (transaction.amount) str = `${str} ${c.red}-${beautifyBigInt(parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee))}${c.reset}`
                         else str = `${str} ${c.red}-${beautifyBigInt(parseBigInt(transaction.minerFee))}${c.reset}`
@@ -470,10 +466,10 @@ const commands = {
                     if (transaction.to !== undefined) {
                         if (transaction.from !== undefined) str = `${str} ${c.yellow}-->${c.reset}`
                         if (transaction.to.equals(wallet._address)) {
-                            str = `${str} ${c.blue}${base58.encode(Address.convertToChecksumAddress(transaction.to))}${c.reset}`
+                            str = `${str} ${c.blue}${Address.toString(transaction.to)}${c.reset}`
                         }
                         else {
-                            str = `${str} ${base58.encode(Address.convertToChecksumAddress(transaction.to))}`
+                            str = `${str} ${Address.toString(transaction.to)}`
                         }
                         if (transaction.amount !== undefined) str = `${str} ${c.green}+${beautifyBigInt(parseBigInt(transaction.amount))}${c.reset}`
                     }

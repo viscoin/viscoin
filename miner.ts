@@ -9,7 +9,7 @@ import log from './src/log'
 
 if (isMainThread) {
     const ADDRESS = process.env.ADDRESS || default_env.ADDRESS
-    const address = Address.convertToNormalAddress(base58.decode(ADDRESS))
+    const address = Address.toBuffer(ADDRESS)
     if (process.env.ADDRESS) log.info('Using ADDRESS:', ADDRESS, address)
     else log.warn('Unset environment value! Using default value for ADDRESS:', ADDRESS, address)
     if (!Address.verifyChecksumAddress(base58.decode(ADDRESS))) log.warn('Address has invalid checksum! Is the address or checksum incorrect?')

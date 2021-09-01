@@ -3,6 +3,7 @@ import addressFromPublicKey from './src/addressFromPublicKey'
 import base58 from './src/base58'
 import * as fs from 'fs'
 import * as prompts from 'prompts'
+import Address from './src/Address'
 
 (async () => {
     const { privateKey } = await prompts({
@@ -11,7 +12,7 @@ import * as prompts from 'prompts'
         message: 'Enter Master Private Key'
     })
     if (!privateKey) return
-    const address = base58.encode(addressFromPublicKey(publicKeyFromPrivateKey(base58.decode(privateKey))))
+    const address = Address.toString(Address.fromPrivateKey(privateKey))
     const { confirm } = await prompts({
         type: 'toggle',
         name: 'confirm',
@@ -44,10 +45,10 @@ import * as prompts from 'prompts'
     for (let i = 0; i < n; i++) {
         const buffer = Buffer.alloc(4)
         buffer.writeUInt32BE(i)
-        const address = base58.encode(addressFromPublicKey(publicKeyFromPrivateKey(Buffer.concat([
+        const address = Address.toString(Address.fromPrivateKey(Buffer.concat([
             base58.decode(privateKey),
             buffer
-        ]))))
+        ])))
         addresses.push(address)
         if (keys) privateKeys.push(base58.encode(Buffer.concat([
             base58.decode(privateKey),

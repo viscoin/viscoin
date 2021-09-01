@@ -9,6 +9,7 @@ import Transaction from './Transaction'
 import * as events from 'events'
 import { Mongoose } from 'mongoose'
 import * as crypto from 'crypto'
+import Address from './Address'
 
 interface PaymentProcessor {
     privateKey: Buffer
@@ -51,7 +52,7 @@ class PaymentProcessor extends events.EventEmitter {
                     if (charge.expires < Date.now()) charge.status = 'EXPIRED'
                     else {
                         for (const transaction of block.transactions) {
-                            if (charge.address !== base58.encode(transaction.to)) continue
+                            if (charge.address !== Address.toString(transaction.to)) continue
                             charge.payments.push({
                                 block: {
                                     hash: block.hash.toString('hex'),
@@ -95,7 +96,7 @@ class PaymentProcessor extends events.EventEmitter {
         })
         this.tcpClient.on('transaction', async transaction => {
             try {
-                const to = base58.encode(transaction.to)
+                const to = Address.toString(transaction.to)
                 const charge = await this.model_charge.findOne({ address: to, status: 'NEW' })
                 if (!charge) return
                 charge.status = 'PENDING'
@@ -117,7 +118,7 @@ class PaymentProcessor extends events.EventEmitter {
             buffer
         ])).digest()
         return {
-            address: base58.encode(addressFromPublicKey(publicKeyFromPrivateKey(privateKey))),
+            address: Address.toString(Address.fromPrivateKey(privateKey)),
             privateKey: base58.encode(privateKey)
         }
     }
@@ -159,7 +160,7 @@ class PaymentProcessor extends events.EventEmitter {
     }
     async withdrawAllBalance(privateKey: string, maxFee: bigint = 0n) {
         try {
-            const address = base58.encode(addressFromPublicKey(publicKeyFromPrivateKey(base58.decode(privateKey))))
+            const address = Address.toString(Address.fromPrivateKey(base58.decode(privateKey)))
             const balance = await HTTPApi.getBalanceOfAddress(this.httpApi, address)
             if (!balance) return
             const fee = await this.getFee()

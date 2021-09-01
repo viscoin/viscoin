@@ -7,7 +7,7 @@ interface Wallet {
     privateKey: Buffer
     publicKey: Buffer
     _address: Buffer
-    address: Buffer
+    address: string
 }
 class Wallet {
     constructor(privateKey: Buffer | undefined = undefined) {
@@ -15,7 +15,7 @@ class Wallet {
         this.privateKey = privateKey
         this.publicKey = publicKeyFromPrivateKey(this.privateKey)
         this._address = addressFromPublicKey(this.publicKey)
-        this.address = Address.convertToChecksumAddress(this._address)
+        this.address = Address.toString(this._address)
     }
     createTransaction({ to, amount, minerFee }: { to: Buffer | undefined, amount: string | undefined, minerFee: string }) {
         const transaction = new Transaction({
