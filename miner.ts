@@ -8,7 +8,14 @@ import { setPriority } from 'os'
 import log from './src/log'
 
 if (isMainThread) {
+    log.info('Starting Viscoin miner...')
+    log.info("If you see that your hashrate is stuck at 0 you most likely haven't properly configured HTTP_API & TCP_API in ./config/default_env.json")
+    log.info('Make sure that your system clock is synchronized with the world clock. You can check it here: https://time.is/')
     const ADDRESS = process.env.ADDRESS || default_env.ADDRESS
+    if (ADDRESS === 'your_mining_address') {
+        log.error('You must set your mining reward address!\nTo do so edit ./config/default_env.json and replace "your_mining_address" to your own address.')
+        process.exit()
+    }
     const address = Address.toBuffer(ADDRESS)
     if (process.env.ADDRESS) log.info('Using ADDRESS:', ADDRESS, address)
     else log.warn('Unset environment value! Using default value for ADDRESS:', ADDRESS, address)
