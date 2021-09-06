@@ -13,7 +13,7 @@ if (isMainThread) {
     log.info('Make sure that your system clock is synchronized with the world clock. You can check it here: https://time.is/')
     const ADDRESS = process.env.ADDRESS || default_env.ADDRESS
     if (ADDRESS === 'your_mining_address') {
-        log.error('You must set your mining reward address!\nTo do so edit ./config/default_env.json and replace "your_mining_address" to your own address.')
+        log.error('You must set your mining reward address!\nTo do so edit ./config/default_env.json and replace "your_mining_address" with your own address.')
         process.exit()
     }
     const address = Address.toBuffer(ADDRESS)
