@@ -1,7 +1,7 @@
-import * as config_core from "./config/core.json"
-import * as config_mongoose from "./config/mongoose.json"
-import * as config_settings from "./config/settings.json"
-import * as config_default_env from "./config/default_env.json"
+import * as core from "./config/core.json"
+import * as mongoose from "./config/mongoose.json"
+import * as settings from "./config/settings.json"
+import * as default_env from "./config/default_env.json"
 import Address from "./src/Address"
 import addressFromPublicKey from "./src/addressFromPublicKey"
 import base58 from "./src/base58"
@@ -26,13 +26,14 @@ import TCPNode from "./src/TCPNode"
 import Transaction from "./src/Transaction"
 import Wallet from "./src/Wallet"
 import walletPassphraseHash from "./src/walletPassphraseHash"
-export = {
-    config: {
-        core: config_core,
-        mongoose: config_mongoose,
-        settings: config_settings,
-        default_env: config_default_env
-    },
+const config = {
+    core,
+    mongoose,
+    settings,
+    default_env
+}
+export {
+    config,
     Address,
     addressFromPublicKey,
     base58,
