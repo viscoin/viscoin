@@ -18,21 +18,7 @@ Viscoin is an experimental digital currency that enables instant payments to any
 | Port | `9333` |
 
 
-## Installation
-
-### Wallet
-1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
-2. Change directory into viscoin. `cd viscoin`
-2. Install dependencies. `npm i`
-3. Compile typescript. `npm run c`
-5. Start using the wallet. `node wallet`
-
-### Running a node using 
-1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
-2. Change directory into viscoin. `cd viscoin`
-3. Start the node. `docker-compose up -d`
-4. `docker exec -it viscoin sh`
-5. Add the ip of another running node. `node net`
+## Setup & Installation
 
 ### Mining
 1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
@@ -40,6 +26,20 @@ Viscoin is an experimental digital currency that enables instant payments to any
 2. Install dependencies. `npm i`
 3. Compile typescript. `npm run c`
 4. Start mining. `node miner`
+
+### Running a node using docker
+1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
+2. Change directory into viscoin. `cd viscoin`
+3. Start the node. `docker-compose up -d`
+4. `docker exec -it viscoin sh`
+5. Add the ip of another running node. `node net`
+
+### Wallet
+1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
+2. Change directory into viscoin. `cd viscoin`
+2. Install dependencies. `npm i`
+3. Compile typescript. `npm run c`
+5. Start using the wallet. `node wallet`
 
 #### Important
 If your system clock is off by more than `30 seconds` the network will reject your blocks.
@@ -56,25 +56,39 @@ npm install viscoin
 
 ###### Generating a wallet
 ```typescript
-import { Wallet, base58 } from 'viscoin'
+import { Wallet } from 'viscoin'
 
 const wallet = new Wallet()
-console.log(base58.encode(wallet.address))
-console.log(base58.encode(wallet.privateKey))
+
+console.log(wallet.address)
 ```
 
 ###### Building a transaction
 ```typescript
-import { Wallet, base58 } from 'viscoin'
+import { Wallet, Transaction } from 'viscoin'
 
 const wallet = new Wallet()
-const transaction = wallet.createTransaction({
-    to: base58.decode('visC6571qoyNNzepeCLpy4EmhqD'),
-    amount: '69',
-    minerFee: '0.000000000000000001'
+
+const transaction = new Transaction({
+    to: 'BE2gMZkRS48NhyYRyKdTCCTskqhh4AjPQ',
+    amount: '420.69',
+    minerFee: '0.1'
 })
+transaction.sign(wallet.privateKey)
+
 console.log(transaction)
 ```
+
+###### Get latest block (HTTP Request)
+```typescript
+import { HTTPApi } from 'viscoin'
+
+(async () => {
+    const block = await HTTPApi.getLatestBlock({ host: 'localhost', port: 80 })
+    console.log(block)
+})()
+```
+Make sure the value of host is an IP address of a running viscoin node.
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
