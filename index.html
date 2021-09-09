@@ -99,29 +99,9 @@
 							<td align="left"><code>9333</code></td>
 						</tr>
 				</tbody></table>
-				<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
-					<h2>Installation</h2>
+				<a href="#setup-amp-installation" id="setup-amp-installation" style="color: inherit; text-decoration: none;">
+					<h2>Setup &amp; Installation</h2>
 				</a>
-				<a href="#wallet" id="wallet" style="color: inherit; text-decoration: none;">
-					<h3>Wallet</h3>
-				</a>
-				<ol>
-					<li>Clone this repository. <code>git clone https://github.com/viscoin/viscoin.git</code></li>
-					<li>Change directory into viscoin. <code>cd viscoin</code></li>
-					<li>Install dependencies. <code>npm i</code></li>
-					<li>Compile typescript. <code>npm run c</code></li>
-					<li>Start using the wallet. <code>node wallet</code></li>
-				</ol>
-				<a href="#running-a-node-using" id="running-a-node-using" style="color: inherit; text-decoration: none;">
-					<h3>Running a node using</h3>
-				</a>
-				<ol>
-					<li>Clone this repository. <code>git clone https://github.com/viscoin/viscoin.git</code></li>
-					<li>Change directory into viscoin. <code>cd viscoin</code></li>
-					<li>Start the node. <code>docker-compose up -d</code></li>
-					<li><code>docker exec -it viscoin sh</code></li>
-					<li>Add the ip of another running node. <code>node net</code></li>
-				</ol>
 				<a href="#mining" id="mining" style="color: inherit; text-decoration: none;">
 					<h3>Mining</h3>
 				</a>
@@ -132,6 +112,26 @@
 					<li>Compile typescript. <code>npm run c</code></li>
 					<li>Start mining. <code>node miner</code></li>
 				</ol>
+				<a href="#running-a-node-using-docker" id="running-a-node-using-docker" style="color: inherit; text-decoration: none;">
+					<h3>Running a node using docker</h3>
+				</a>
+				<ol>
+					<li>Clone this repository. <code>git clone https://github.com/viscoin/viscoin.git</code></li>
+					<li>Change directory into viscoin. <code>cd viscoin</code></li>
+					<li>Start the node. <code>docker-compose up -d</code></li>
+					<li><code>docker exec -it viscoin sh</code></li>
+					<li>Add the ip of another running node. <code>node net</code></li>
+				</ol>
+				<a href="#wallet" id="wallet" style="color: inherit; text-decoration: none;">
+					<h3>Wallet</h3>
+				</a>
+				<ol>
+					<li>Clone this repository. <code>git clone https://github.com/viscoin/viscoin.git</code></li>
+					<li>Change directory into viscoin. <code>cd viscoin</code></li>
+					<li>Install dependencies. <code>npm i</code></li>
+					<li>Compile typescript. <code>npm run c</code></li>
+					<li>Start using the wallet. <code>node wallet</code></li>
+				</ol>
 				<a href="#important" id="important" style="color: inherit; text-decoration: none;">
 					<h4>Important</h4>
 				</a>
@@ -140,7 +140,7 @@
 				<a href="#package-usage" id="package-usage" style="color: inherit; text-decoration: none;">
 					<h2>Package usage</h2>
 				</a>
-				<a href="#installation-1" id="installation-1" style="color: inherit; text-decoration: none;">
+				<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
 					<h4>Installation</h4>
 				</a>
 				<pre><code><span style="color: #001080">npm</span><span style="color: #000000"> </span><span style="color: #001080">install</span><span style="color: #000000"> </span><span style="color: #001080">viscoin</span>
@@ -151,25 +151,39 @@
 				<a href="#generating-a-wallet" id="generating-a-wallet" style="color: inherit; text-decoration: none;">
 					<h6>Generating a wallet</h6>
 				</a>
-				<pre><code class="language-typescript"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">Wallet</span><span style="color: #000000">, </span><span style="color: #001080">base58</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;viscoin&#039;</span>
+				<pre><code class="language-typescript"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">Wallet</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;viscoin&#039;</span>
 
 <span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">wallet</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Wallet</span><span style="color: #000000">()</span>
-<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">base58</span><span style="color: #000000">.</span><span style="color: #795E26">encode</span><span style="color: #000000">(</span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">))</span>
-<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">base58</span><span style="color: #000000">.</span><span style="color: #795E26">encode</span><span style="color: #000000">(</span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #001080">privateKey</span><span style="color: #000000">))</span>
+
+<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">)</span>
 </code></pre>
 				<a href="#building-a-transaction" id="building-a-transaction" style="color: inherit; text-decoration: none;">
 					<h6>Building a transaction</h6>
 				</a>
-				<pre><code class="language-typescript"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">Wallet</span><span style="color: #000000">, </span><span style="color: #001080">base58</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;viscoin&#039;</span>
+				<pre><code class="language-typescript"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">Wallet</span><span style="color: #000000">, </span><span style="color: #001080">Transaction</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;viscoin&#039;</span>
 
 <span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">wallet</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Wallet</span><span style="color: #000000">()</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">transaction</span><span style="color: #000000"> = </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">createTransaction</span><span style="color: #000000">({</span>
-<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #001080">base58</span><span style="color: #000000">.</span><span style="color: #795E26">decode</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;visC6571qoyNNzepeCLpy4EmhqD&#039;</span><span style="color: #000000">),</span>
-<span style="color: #000000">    </span><span style="color: #001080">amount:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;69&#039;</span><span style="color: #000000">,</span>
-<span style="color: #000000">    </span><span style="color: #001080">minerFee:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0.000000000000000001&#039;</span>
+
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">transaction</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Transaction</span><span style="color: #000000">({</span>
+<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;BE2gMZkRS48NhyYRyKdTCCTskqhh4AjPQ&#039;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">amount:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;420.69&#039;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">minerFee:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0.1&#039;</span>
 <span style="color: #000000">})</span>
+<span style="color: #001080">transaction</span><span style="color: #000000">.</span><span style="color: #795E26">sign</span><span style="color: #000000">(</span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #001080">privateKey</span><span style="color: #000000">)</span>
+
 <span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">transaction</span><span style="color: #000000">)</span>
 </code></pre>
+				<a href="#get-latest-block-http-request" id="get-latest-block-http-request" style="color: inherit; text-decoration: none;">
+					<h6>Get latest block (HTTP Request)</h6>
+				</a>
+				<pre><code class="language-typescript"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">HTTPApi</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;viscoin&#039;</span>
+
+<span style="color: #000000">(</span><span style="color: #0000FF">async</span><span style="color: #000000"> () </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">    </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">block</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">HTTPApi</span><span style="color: #000000">.</span><span style="color: #795E26">getLatestBlock</span><span style="color: #000000">({ </span><span style="color: #001080">host:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;localhost&#039;</span><span style="color: #000000">, </span><span style="color: #001080">port:</span><span style="color: #000000"> </span><span style="color: #098658">80</span><span style="color: #000000"> })</span>
+<span style="color: #000000">    </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">block</span><span style="color: #000000">)</span>
+<span style="color: #000000">})()</span>
+</code></pre>
+				<p>Make sure the value of host is an IP address of a running viscoin node.</p>
 				<a href="#contributing" id="contributing" style="color: inherit; text-decoration: none;">
 					<h2>Contributing</h2>
 				</a>
