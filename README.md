@@ -20,26 +20,21 @@ Viscoin is an experimental digital currency that enables instant payments to any
 
 ## Setup & Installation
 
-### Mining
-1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
-2. Change directory into viscoin. `cd viscoin`
-2. Install dependencies. `npm i`
-3. Compile typescript. `npm run c`
-4. Start mining. `node miner`
+1. `git clone https://github.com/viscoin/viscoin`
+2. `cd viscoin`
+
+### Mining & Wallet
+3. `npm install`
+4. `npm run c`
+5. `node wallet`
+6. `ADDRESS=your_mining_address node miner`
 
 ### Running a node using docker
-1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
-2. Change directory into viscoin. `cd viscoin`
-3. Start the node. `docker-compose up -d`
+3. `docker-compose up -d`
 4. `docker exec -it viscoin sh`
-5. Add the ip of another running node. `node net`
-
-### Wallet
-1. Clone this repository. `git clone https://github.com/viscoin/viscoin.git`
-2. Change directory into viscoin. `cd viscoin`
-2. Install dependencies. `npm i`
-3. Compile typescript. `npm run c`
-5. Start using the wallet. `node wallet`
+5. `node net`
+6. `Add`
+7. Enter IP address of node in Viscoin network.
 
 #### Important
 If your system clock is off by more than `30 seconds` the network will reject your blocks.
