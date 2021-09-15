@@ -13,3 +13,5 @@ services:
             - 80:80
             - 9332:9332
             - 9333:9333
+        volumes:
+            - ./db:/viscoin/db
