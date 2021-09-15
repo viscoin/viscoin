@@ -1,5 +1,4 @@
 import Transaction from './Transaction'
-import model_block from './mongoose/model/block'
 import * as config_core from '../config/core.json'
 import * as config_mongoose from '../config/mongoose.json'
 import * as config_settings from '../config/settings.json'
@@ -7,6 +6,7 @@ import proofOfWorkHash from './proofOfWorkHash'
 import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
 import * as crypto from 'crypto'
+import * as config_minify from '../config/minify.json'
 interface Block {
     nonce: number
     height: number
@@ -32,7 +32,7 @@ class Block {
         if (timestamp !== undefined) this.timestamp = timestamp
     }
     setTransactionsHash() {
-        this.transactionsHash = crypto.createHash('sha256').update(JSON.stringify(this.transactions.map(e => Transaction.minify(e)))).digest().toString('binary')
+        this.transactionsHash = crypto.createHash('sha256').update(JSON.stringify(this.transactions.map(e => Transaction.old_minify(e)))).digest().toString('binary')
     }
     setHeader() {
         if (this.transactionsHash === undefined) this.setTransactionsHash()
@@ -102,48 +102,26 @@ class Block {
         if (!input) return null
         const output: object = {}
         for (const property in input) {
-            if (config_mongoose.block[property] !== undefined) {
-                if (input[property] instanceof Buffer) output[config_mongoose.block[property].name] = input[property].toString('binary')
-                else if (property === 'transactions') output[config_mongoose.block[property].name] = <Array<Transaction>> input[property].map(e => Transaction.minify(e))
-                else output[config_mongoose.block[property].name] = input[property]
+            if (config_minify.block[property] !== undefined) {
+                if (input[property] instanceof Buffer) output[config_minify.block[property]] = input[property].toString('binary')
+                else if (property === 'transactions') output[config_minify.block[property]] = <Array<Transaction>> input[property].map(e => Transaction.minify(e))
+                else output[config_minify.block[property]] = input[property]
             }
         }
         return output
     }
-    static beautify(input: object) {
+    static beautify(input) {
         if (!input) return null
         const output = {}
         for (const property in input) {
-            for (const _property in config_mongoose.block) {
-                if (property === config_mongoose.block[_property].name.toString()) {
+            for (const _property in config_minify.block) {
+                if (property === config_minify.block[_property]) {
                     if (_property === 'transactions') output[_property] = input[property].map(e => Transaction.beautify(e))
                     else output[_property] = input[property]
                 }
             }
         }
-        return <Block> output
-    }
-    async save() {
-        return await new model_block(Block.minify(this)).save()
-    }
-    static async load(query: object | null, projection: string | null = null, options: object | null = null) {
-        const block = await model_block
-            .findOne(query, projection, options)
-            .exec()
-        if (!block) return null
-        return new Block(Block.beautify(block))
-        // const _block = new Block(Block.beautify(block))
-        // if (_block.seemsValid() !== 0) return null
-        // return _block
-    }
-    static async loadMany(query: object | null, projection: string | null = null, options: object | null = null) {
-        const blocks = await model_block
-            .find(query, projection, options)
-            .exec()
-        return blocks.map(e => new Block(Block.beautify(e)))
-    }
-    static async exists(query: object) {
-        return await model_block.exists(query)
+        return <any> output
     }
     seemsValid() {
         if (typeof this.nonce !== 'number') return 1

@@ -38,6 +38,7 @@
     "express": "^4.17.1",
     "express-rate-limit": "^5.2.6",
     "gh-pages": "^3.2.3",
+    "level": "^7.0.0",
     "mongoose": "^5.10.9",
     "prompts": "^2.4.0",
     "secp256k1": "^4.0.2",

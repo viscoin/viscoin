@@ -7,6 +7,7 @@ import beautifyBigInt from './beautifyBigInt'
 import * as secp256k1 from 'secp256k1'
 import publicKeyFromPrivateKey from './publicKeyFromPrivateKey'
 import * as Signature from 'elliptic/lib/elliptic/ec/signature'
+import * as config_minify from '../config/minify.json'
 interface Transaction {
     from: Buffer
     to: Buffer
@@ -36,6 +37,16 @@ class Transaction {
     static minify(input: Transaction) {
         const output: object = {}
         for (const property in input) {
+            if (config_minify.transaction[property] !== undefined) {
+                if (input[property] instanceof Buffer) output[config_minify.transaction[property]] = input[property].toString('binary')
+                else output[config_minify.transaction[property]] = input[property]
+            }
+        }
+        return output
+    }
+    static old_minify(input: Transaction) {
+        const output: object = {}
+        for (const property in input) {
             if (config_mongoose.transaction[property] !== undefined) {
                 if (input[property] instanceof Buffer) output[config_mongoose.transaction[property].name] = input[property].toString('binary')
                 else output[config_mongoose.transaction[property].name] = input[property]
@@ -43,17 +54,17 @@ class Transaction {
         }
         return output
     }
-    static beautify(input: object) {
+    static beautify(input) {
         const output = {}
-        for (const property in input) {
-            for (const _property in config_mongoose.transaction) {
-                if (property === config_mongoose.transaction[_property].name.toString()) {
-                    output[_property] = input[property]
+            for (const property in input) {
+                for (const _property in config_minify.transaction) {
+                    if (property === config_minify.transaction[_property]) {
+                        output[_property] = input[property]
+                    }
                 }
             }
-        }
         return <any> output
-    }
+    }    
     static calculateHash(transaction: Transaction) {
         let buf = Buffer.alloc(0)
         if (transaction.from) buf = Buffer.concat([ buf, transaction.from ])

@@ -11,6 +11,21 @@ import log from './log'
 import * as config_default_env from '../config/default_env.json'
 import Address from './Address'
 
+const beautify = (block) => {
+    block = new Block(Block.beautify(block))
+    for (const i in block) {
+        if (block[i] instanceof Buffer) block[i] = block[i].toString('hex')
+        if (i === 'transactions') block[i] = block[i].map(transaction => {
+            for (const i in transaction) {
+                if ([ 'to', 'from' ].includes(i)) transaction[i] = Address.toString(transaction[i])
+                else if (transaction[i] instanceof Buffer) transaction[i] = transaction[i].toString('hex')
+            }
+            return transaction
+        })
+    }
+    return block
+}
+
 interface HTTPApi {
     server: net.Server
     HTTP_API: {
@@ -38,19 +53,30 @@ class HTTPApi extends events.EventEmitter {
         app.use(express.json({ limit: '2mb' }))
         app.use(rateLimit(config_settings.HTTPApi.rateLimit))
         if (config_settings.HTTPApi.get['/config'] === true) app.get('/config', (req, res) => this.emit('get-config', config => HTTPApi.resEndJSON(res, config)))
-        if (config_settings.HTTPApi.get['/block'] === true) app.get('/block', (req, res) => this.emit('get-block-latest', block => HTTPApi.resEndJSON(res, block)))
+        if (config_settings.HTTPApi.get['/block'] === true) app.get('/block', (req, res) => {
+            this.emit('get-block-latest', block => {
+                if (req.query.b) block = beautify(block)
+                HTTPApi.resEndJSON(res, block)
+            })
+        })
         if (config_settings.HTTPApi.get['/transactions/pending'] === true) app.get('/transactions/pending', (req, res) => this.emit('get-transactions-pending', transactions => HTTPApi.resEndJSON(res, transactions)))
         if (config_settings.HTTPApi.get['/block/:h'] === true) app.get('/block/:h', (req, res) => {
             if (req.params.h === parseInt(req.params.h).toString()) {
                 const height = parseInt(req.params.h)
                 if (isNaN(height)) return res.status(400).end()
-                this.emit('get-block-height', height, block => HTTPApi.resEndJSON(res, block))
+                this.emit('get-block-height', height, block => {
+                    if (req.query.b) block = beautify(block)
+                    HTTPApi.resEndJSON(res, block)
+                })
             }
             else {
                 try {
                     const hash = Buffer.from(req.params.h, 'hex')
                     if (Buffer.byteLength(hash) !== 32) return res.status(400).end()
-                    this.emit('get-block-hash', hash, block => HTTPApi.resEndJSON(res, block))
+                    this.emit('get-block-hash', hash, block => {
+                        if (req.query.b) block = beautify(block)
+                        HTTPApi.resEndJSON(res, block)
+                    })
                 }
                 catch {
                     res.status(400).end()
@@ -60,7 +86,10 @@ class HTTPApi extends events.EventEmitter {
         if (config_settings.HTTPApi.get['/block/new/:address'] === true) app.get('/block/new/:address', (req, res) => {
             try {
                 const address = Address.toBuffer(req.params.address)
-                this.emit('get-block-new', address, block => HTTPApi.resEndJSON(res, block))
+                this.emit('get-block-new', address, block => {
+                    if (req.query.b) block = beautify(block)
+                    HTTPApi.resEndJSON(res, block)
+                })
             }
             catch {
                 res.status(400).end()

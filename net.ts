@@ -1,17 +1,16 @@
-import init from './src/mongoose/init'
 import * as prompts from 'prompts'
-import Model_Node from './src/mongoose/model/node'
-import * as config_settings from './config/settings.json'
 import * as net from 'net'
+import * as level from 'level'
+import * as fs from 'fs'
 
-init()
+if (!fs.existsSync('./db')) fs.mkdirSync('./db')
+const nodes = level('./db/nodes', { keyEncoding: 'utf8', valueEncoding: 'utf8' })
 const commands = {
     commands: async () => {
         let choices: Array<{ title: string, description: string, value: Function }> = [
             { title: 'Add', description: 'Add host', value: commands.add },
             { title: 'Delete', description: 'Delete host', value: commands.del },
             { title: 'List', description: 'List hosts', value: commands.list },
-            { title: 'Banned', description: 'List banned hosts', value: commands.list_banned },
             { title: 'Exit', description: 'Exits', value: commands.exit }
         ]
         const res = await prompts({
@@ -21,8 +20,7 @@ const commands = {
             choices
         })
         if (typeof res.value !== 'function') {
-            console.clear()
-            return commands.commands()
+            return console.clear()
         }
         res.value()
     },
@@ -31,23 +29,20 @@ const commands = {
             type: 'text',
             name: 'host',
             message: 'Enter host',
-            validate: async host => {
+            validate: host => {
+                console.log(host)
                 if (net.isIP(host) === 0) return 'Invalid IP address'
-                if (await Model_Node.exists({ host })) return 'Host already exists'
                 return true
             }
         })
         console.clear()
         if (res.host) {
-            const info = await new Model_Node({
-                host: res.host,
-                banned: 0
-            }).save()
-            if (info) {
-                console.log(`Added ${info.host}`)
-            }
+            nodes.put(res.host, '0', err => {
+                if (err) console.log(err)
+                else console.log('Added', res.host)
+                commands.commands()
+            })
         }
-        commands.commands()
     },
     del: async () => {
         const res = await prompts({
@@ -57,11 +52,11 @@ const commands = {
         })
         console.clear()
         if (res.host) {
-            const host = res.host.toLowerCase()
-            const info = await Model_Node.deleteOne({ host }).exec()
-            if (info.ok && info.deletedCount) console.log(`Deleted ${host}`)
+            nodes.del(res.host, () => {
+                console.log('Deleted', res.host)
+                commands.commands()
+            })
         }
-        commands.commands()
     },
     pause: () => {
         return new Promise <void> (resolve => {
@@ -70,35 +65,19 @@ const commands = {
             process.stdin.once('data', () => resolve())
         })
     },
-    list: async () => {
-        const docs = await Model_Node.find({}, 'host', { lean: true }).exec()
-        const hosts = docs.map(e => e.host)
-        if (!hosts.length) console.log('List is empty')
-        for (const host of hosts) {
-            console.log(host)
-        }
-        await commands.pause()
-        console.clear()
-        commands.commands()
+    list: () => {
+        const stream = nodes.createReadStream()
+        stream.on('data', data => {
+            console.log(data)
+        })
+        stream.on('end', async () => {
+            await commands.pause()
+            console.clear()
+            commands.commands()
+        })
     },
-    list_banned: async () => {
-        const docs = await Model_Node.find({
-            banned: {
-                $gt: Date.now() - config_settings.Node.banTimeout
-            }
-        }, 'host banned', { lean: true }).exec()
-        const hosts = docs.map(e => `${e.host} ${e.banned}`)
-        if (!hosts.length) console.log('List is empty')
-        for (const host of hosts) {
-            console.log(host)
-        }
-        await commands.pause()
+    exit: async () => {
         console.clear()
-        commands.commands()
-    },
-    exit: () => {
-        console.clear()
-        process.exit(0)
     }
 }
 commands.commands()

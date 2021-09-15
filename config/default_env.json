@@ -3,6 +3,5 @@
     "TCP_API": ":9332",
     "TCP_NODE": ":9333",
     "DEBUG": 1,
-    "CONNECTION_STRING": "mongodb://localhost:27017/viscoin",
     "ADDRESS": "your_mining_address"
 }

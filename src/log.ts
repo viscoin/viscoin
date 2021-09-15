@@ -10,10 +10,13 @@ const log = {
         console.log(`\x1b[33m${time()} WARN:\x1b[0m`, ...e)
     },
     error: (...e) => {
-        console.log(`\x1b[31m${time()} ERROR:\x1b[0m`, ...e)
+        console.trace(`\x1b[31m${time()} ERROR:\x1b[0m`, ...e)
     },
     debug: (level: number, ...e) => {
         if (DEBUG >= level) console.log(`\x1b[34m${time()} DEBUG:\x1b[0m`, ...e)
+    },
+    trace: (...e) => {
+        console.trace(`\x1b[35m${time()}\x1b[0m`, ...e)
     }
 }
 if (isMainThread) {

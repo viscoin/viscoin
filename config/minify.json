@@ -1,0 +1,25 @@
+{
+    "block": {
+        "hash": "a",
+        "previousHash": "b",
+        "height": "c",
+        "difficulty": "d",
+        "nonce": "e",
+        "timestamp": "f",
+        "transactions": "g"
+    },
+    "transaction": {
+        "to": "a",
+        "from": "b",
+        "amount": "c",
+        "timestamp": "d",
+        "minerFee": "e",
+        "signature": "f",
+        "recoveryParam": "g"
+    },
+    "address": {
+        "address": "a",
+        "balance": "b",
+        "hash": "c"
+    }
+}

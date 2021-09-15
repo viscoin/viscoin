@@ -6,11 +6,10 @@ import * as dns from 'dns'
 import { hostname } from 'os'
 import protocol from './protocol'
 import Peer from './Peer'
-import Model_Node from './mongoose/model/node'
 import log from './log'
 import * as config_default_env from '../config/default_env.json'
-
 interface TCPNode {
+    nodes: any
     host: string
     hashes: Array<{ hash: Buffer, timestamp: number }>
     peers: Set<Peer>
@@ -21,8 +20,9 @@ interface TCPNode {
     }
 }
 class TCPNode extends events.EventEmitter {
-    constructor() {
+    constructor(nodes) {
         super()
+        this.nodes = nodes
         const TCP_NODE = process.env.TCP_NODE || config_default_env.TCP_NODE
         this.TCP_NODE = {
             host: TCP_NODE.split(':').slice(0, -1).join(':'),
@@ -48,7 +48,10 @@ class TCPNode extends events.EventEmitter {
     add(peer: Peer, server: boolean) {
         peer
             .on('add', async () => {
-                if ((await Model_Node.findOne({ host: peer.remoteAddress }).exec())?.banned > Date.now() - config_settings.Node.banTimeout) return peer.delete()
+                // if ((await Model_Node.findOne({ host: peer.remoteAddress }).exec())?.banned > Date.now() - config_settings.Node.banTimeout) return peer.delete()
+                this.nodes.get(peer.remoteAddress, (err, bannedTimestamp) => {
+                    if (bannedTimestamp > Date.now() - config_settings.Node.banTimeout) return peer.delete()
+                })
                 if (this.hasSocketWithRemoteAddress(peer) || this.peers.size >= config_settings.TCPNode.maxConnectionsOut) return peer.delete()
                 this.peers.add(peer)
                 // this.emit('peer-connect', peer, server)
@@ -72,6 +75,7 @@ class TCPNode extends events.EventEmitter {
             })
             .on('ban', async () => {
                 // this.emit('peer-ban', peer, server)
+                if (!peer.remoteAddress) return log.warn('Peer', server ? 'incomming' : 'outgoing', 'connection failed')
                 log.warn('Peer banned', server ? 'incomming' : 'outgoing', `${peer.remoteAddress}:${peer.remotePort}`)
             })
         for (const type of protocol.types) {
