@@ -22,7 +22,7 @@ export default {
         }
         return null
     },
-    constructBuffer(type: types_string | number, data: object | Buffer) {
+    constructBuffer(type: types_string | number, data: object | number) {
         const buffer = data instanceof Buffer ? data : Buffer.from(JSON.stringify(data), 'binary')
         return Buffer.concat([
             Buffer.alloc(1, this.getType(type)),
@@ -33,7 +33,8 @@ export default {
     parse(buffer: Buffer) {
         try {
             const type = this.getType(buffer[0])
-            let data = type === 'sync' ? buffer.slice(1) : JSON.parse(buffer.slice(1).toString('binary'))
+            let data = JSON.parse(buffer.slice(1).toString('binary'))
+            // let data = type === 'sync' ? buffer.slice(1) : JSON.parse(buffer.slice(1).toString('binary'))
             switch (type) {
                 case 'blocks':
                     data = data.map(e => new Block(Block.beautify(e)))
@@ -52,6 +53,7 @@ export default {
                     }
                     break
                 case 'sync':
+                    data = parseInt(data)
                     break
                 default:
                     return null

@@ -122,13 +122,12 @@ class Node extends events.EventEmitter {
             this.tcpNode.on('node', (node, cb) => {
                 if (config_settings.Node.connectToNetwork) cb(this.tcpNode.connectToNode(node))
             })
-            this.tcpNode.on('sync', async (previousHash: Buffer, cb) => {
+            this.tcpNode.on('sync', async (height: number, cb) => {
                 const blocks = []
                 for (let i = 0; i < config_settings.Node.syncBlocks; i++) {
                     try {
-                        const block = await this.blockchain.getBlockByPreviousHash(previousHash)
+                        const block = await this.blockchain.getBlockByHeight(height + i)
                         blocks.push(Block.minify(block))
-                        previousHash = block.hash
                     }
                     catch {
                         break
@@ -199,10 +198,11 @@ class Node extends events.EventEmitter {
             if (!this.blockchain.loaded) return
             // console.log(block)
             if (!block.hash) return
-            if (this.blockchain.hashes.find(e => e.equals(block.hash))) {
-                // console.log(true)
-                return cb(0)
-            }
+            if (this.blockchain.hashes[block.height]?.equals(block.hash)) return cb(0)
+            // if (this.blockchain.hashes.find(e => e.equals(block.hash))) {
+            //     // console.log(true)
+            //     return cb(0)
+            // }
             // else console.log(false)
             if (this.queue.callbacks.has(block.hash.toString('hex'))) return this.queue.callbacks.set(block.hash.toString('hex'), [ ...this.queue.callbacks.get(block.hash.toString('hex')), cb ])
             this.queue.callbacks.set(block.hash.toString('hex'), [ cb ])
@@ -372,7 +372,8 @@ class Node extends events.EventEmitter {
         }
         log.debug(4, 'Sync:', [...this.hashes])
         for (const hash of this.hashes) {
-            this.tcpNode.broadcast(protocol.constructBuffer('sync', Buffer.from(hash, 'hex')), true)
+            const block = await this.blockchain.getBlockByHash(Buffer.from(hash, 'hex'))
+            this.tcpNode.broadcast(protocol.constructBuffer('sync', block.height + 1), true)
         }
     }
 }
