@@ -2,6 +2,7 @@ import * as core from "./config/core.json"
 import * as mongoose from "./config/mongoose.json"
 import * as settings from "./config/settings.json"
 import * as default_env from "./config/default_env.json"
+import * as minify from "./config/minify.json"
 import Address from "./src/Address"
 import addressFromPublicKey from "./src/addressFromPublicKey"
 import base58 from "./src/base58"
@@ -30,7 +31,8 @@ const config = {
     core,
     mongoose,
     settings,
-    default_env
+    default_env,
+    minify
 }
 export {
     config,
