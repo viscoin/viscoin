@@ -102,35 +102,27 @@
 				<a href="#setup-amp-installation" id="setup-amp-installation" style="color: inherit; text-decoration: none;">
 					<h2>Setup &amp; Installation</h2>
 				</a>
-				<a href="#mining" id="mining" style="color: inherit; text-decoration: none;">
-					<h3>Mining</h3>
-				</a>
 				<ol>
-					<li>Clone this repository. <code>git clone https://github.com/viscoin/viscoin.git</code></li>
-					<li>Change directory into viscoin. <code>cd viscoin</code></li>
-					<li>Install dependencies. <code>npm i</code></li>
-					<li>Compile typescript. <code>npm run c</code></li>
-					<li>Start mining. <code>node miner</code></li>
+					<li><code>git clone https://github.com/viscoin/viscoin</code></li>
+					<li><code>cd viscoin</code></li>
+					<li><code>npm install</code></li>
+					<li><code>npm run c</code></li>
 				</ol>
-				<a href="#running-a-node-using-docker" id="running-a-node-using-docker" style="color: inherit; text-decoration: none;">
-					<h3>Running a node using docker</h3>
+				<a href="#mining-amp-wallet" id="mining-amp-wallet" style="color: inherit; text-decoration: none;">
+					<h3>Mining &amp; Wallet</h3>
 				</a>
-				<ol>
-					<li>Clone this repository. <code>git clone https://github.com/viscoin/viscoin.git</code></li>
-					<li>Change directory into viscoin. <code>cd viscoin</code></li>
-					<li>Start the node. <code>docker-compose up -d</code></li>
-					<li><code>docker exec -it viscoin sh</code></li>
-					<li>Add the ip of another running node. <code>node net</code></li>
+				<ol start="5">
+					<li><code>node wallet</code></li>
+					<li><code>ADDRESS=your_mining_address node miner</code></li>
 				</ol>
-				<a href="#wallet" id="wallet" style="color: inherit; text-decoration: none;">
-					<h3>Wallet</h3>
+				<a href="#running-a-node" id="running-a-node" style="color: inherit; text-decoration: none;">
+					<h3>Running a node</h3>
 				</a>
-				<ol>
-					<li>Clone this repository. <code>git clone https://github.com/viscoin/viscoin.git</code></li>
-					<li>Change directory into viscoin. <code>cd viscoin</code></li>
-					<li>Install dependencies. <code>npm i</code></li>
-					<li>Compile typescript. <code>npm run c</code></li>
-					<li>Start using the wallet. <code>node wallet</code></li>
+				<ol start="5">
+					<li><code>node net</code></li>
+					<li><code>Add</code></li>
+					<li>Enter IP address of node in Viscoin network.</li>
+					<li><code>node fullnode</code></li>
 				</ol>
 				<a href="#important" id="important" style="color: inherit; text-decoration: none;">
 					<h4>Important</h4>
