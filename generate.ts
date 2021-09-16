@@ -1,9 +1,8 @@
-import publicKeyFromPrivateKey from './src/publicKeyFromPrivateKey'
-import addressFromPublicKey from './src/addressFromPublicKey'
 import base58 from './src/base58'
 import * as fs from 'fs'
 import * as prompts from 'prompts'
 import Address from './src/Address'
+import * as crypto from 'crypto'
 
 (async () => {
     const { privateKey } = await prompts({
@@ -12,7 +11,7 @@ import Address from './src/Address'
         message: 'Enter Master Private Key'
     })
     if (!privateKey) return
-    const address = Address.toString(Address.fromPrivateKey(privateKey))
+    const address = Address.toString(Address.fromPrivateKey(base58.decode(privateKey)))
     const { confirm } = await prompts({
         type: 'toggle',
         name: 'confirm',
@@ -39,21 +38,24 @@ import Address from './src/Address'
     if (!confirm) return
     console.clear()
     console.log(`Generating ${n} addresses...`)
-    const addresses = [],
-    privateKeys = []
+    const wallets = []
     let timestamp = Date.now()
     for (let i = 0; i < n; i++) {
         const buffer = Buffer.alloc(4)
         buffer.writeUInt32BE(i)
-        const address = Address.toString(Address.fromPrivateKey(Buffer.concat([
+        const hash = crypto.createHash('sha256').update(Buffer.concat([
             base58.decode(privateKey),
             buffer
-        ])))
-        addresses.push(address)
-        if (keys) privateKeys.push(base58.encode(Buffer.concat([
+        ])).digest()
+        const address = Address.toString(Address.fromPrivateKey(hash))
+        const wallet: any = {
+            address
+        }
+        if (keys) wallet.private = base58.encode(Buffer.concat([
             base58.decode(privateKey),
             buffer
-        ])))
+        ]))
+        wallets.push(wallet)
         if (i % (n / 100) === 0) {
             const dif = Date.now() - timestamp
             timestamp = Date.now()
@@ -61,10 +63,6 @@ import Address from './src/Address'
         }
     }
     console.log('Saving...')
-    fs.writeFileSync('./addresses.json', JSON.stringify(addresses, null, 4))
+    fs.writeFileSync('./wallets.json', JSON.stringify(wallets, null, 4))
     console.log('Successfully saved addresses to ./addresses.json')
-    if (keys) {
-        fs.writeFileSync('./keys.json', JSON.stringify(privateKeys, null, 4))
-        console.log('Successfully saved keys to ./keys.json')
-    }
 })()

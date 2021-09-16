@@ -109,8 +109,9 @@ dist
 # Keys
 wallets/*
 
-addresses.json
-keys.json
+# addresses.json
+# keys.json
+wallets.json
 
 # Lib
 /lib
