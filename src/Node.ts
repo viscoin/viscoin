@@ -112,9 +112,8 @@ class Node extends events.EventEmitter {
             this.tcpNode.on('block', (block, cb) => this.emit('add-block', block, code => {
                 // console.log(block)
                 if (code === 0) {
-                    if (this.hashes.delete(block.previousHash.toString('hex'))) {
-                        this.hashes.add(block.hash.toString('hex'))
-                    }
+                    this.hashes.delete(block.previousHash.toString('hex'))
+                    this.hashes.add(block.hash.toString('hex'))
                 }
                 cb(code)
             }))
@@ -141,9 +140,8 @@ class Node extends events.EventEmitter {
                         // console.log(block)
                         // console.log(code)
                         if (code === 0) {
-                            if (this.hashes.delete(block.previousHash.toString('hex'))) {
-                                this.hashes.add(block.hash.toString('hex'))
-                            }
+                            this.hashes.delete(block.previousHash.toString('hex'))
+                            this.hashes.add(block.hash.toString('hex'))
                         }
                         cb(code)
                     })
