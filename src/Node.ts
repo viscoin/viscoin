@@ -23,6 +23,7 @@ interface Node {
     verifyrate: {
         transaction: number
         block: number
+        hashes: number
     }
     queue: {
         blocks: Set<Block>
@@ -63,7 +64,8 @@ class Node extends events.EventEmitter {
                 log.debug(1, 'Verifyrate', this.verifyrate)
                 this.verifyrate = {
                     transaction: 0,
-                    block: 0
+                    block: 0,
+                    hashes: 0
                 }
             }, 1000)
 
@@ -198,17 +200,11 @@ class Node extends events.EventEmitter {
         })
         this.on('add-block', async (block: Block, cb: Function) => {
             if (!this.blockchain.loaded) return
-            // console.log(block)
             if (!block.hash) return
             if (this.blockchain.hashes[block.height]?.equals(block.hash)) {
-                this.verifyrate.block++
+                this.verifyrate.hashes++
                 return cb(0)
             }
-            // if (this.blockchain.hashes.find(e => e.equals(block.hash))) {
-            //     // console.log(true)
-            //     return cb(0)
-            // }
-            // else console.log(false)
             if (this.queue.callbacks.has(block.hash.toString('hex'))) return this.queue.callbacks.set(block.hash.toString('hex'), [ ...this.queue.callbacks.get(block.hash.toString('hex')), cb ])
             this.queue.callbacks.set(block.hash.toString('hex'), [ cb ])
             this.queue.blocks.add(block)
@@ -234,7 +230,8 @@ class Node extends events.EventEmitter {
         })
         this.verifyrate = {
             transaction: 0,
-            block: 0
+            block: 0,
+            hashes: 0
         }
     }
     async getNodes() {
