@@ -37,7 +37,7 @@ interface Node {
     }
 }
 class Node extends events.EventEmitter {
-    constructor({ nodes, blocks, hashes }) {
+    constructor({ nodes, blocks, hashes }, commit: string) {
         super()
         this.nodes = nodes
         this.sync = {
@@ -53,7 +53,7 @@ class Node extends events.EventEmitter {
         this.workersBusy = new Set()
         this.threads = cpus().length
         if (config_settings.Node.threads) this.threads = config_settings.Node.threads
-        this.httpApi = new HTTPApi()
+        this.httpApi = new HTTPApi(commit)
         this.tcpApi = TCPApi.createServer()
         this.tcpNode = new TCPNode(nodes)
         this.blockchain = new Blockchain({ blocks, hashes })

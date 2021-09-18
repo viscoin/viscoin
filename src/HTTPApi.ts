@@ -10,7 +10,6 @@ import * as rateLimit from 'express-rate-limit'
 import log from './log'
 import * as config_default_env from '../config/default_env.json'
 import Address from './Address'
-import { execSync } from 'child_process'
 
 const beautify = (block) => {
     block = new Block(Block.beautify(block))
@@ -27,22 +26,22 @@ const beautify = (block) => {
     return block
 }
 
-const commit = execSync('git rev-parse HEAD').toString().trim()
-
 interface HTTPApi {
     server: net.Server
     HTTP_API: {
         host: string
         port: number
     }
+    commit: string
 }
 interface IP_Address {
     host: string
     port: number
 }
 class HTTPApi extends events.EventEmitter {
-    constructor() {
+    constructor(commit: string) {
         super()
+        this.commit = commit
         const HTTP_API = process.env.HTTP_API || config_default_env.HTTP_API
         this.HTTP_API = {
             host: HTTP_API.split(':').slice(0, -1).join(':'),
@@ -56,7 +55,7 @@ class HTTPApi extends events.EventEmitter {
         app.use(express.json({ limit: '2mb' }))
         app.use(rateLimit(config_settings.HTTPApi.rateLimit))
         if (config_settings.HTTPApi.get['/commit'] === true) app.get('/commit', (req, res) => {
-            HTTPApi.resEndJSON(res, commit)
+            HTTPApi.resEndJSON(res, this.commit)
         })
         if (config_settings.HTTPApi.get['/config'] === true) app.get('/config', (req, res) => this.emit('get-config', config => HTTPApi.resEndJSON(res, config)))
         if (config_settings.HTTPApi.get['/block'] === true) app.get('/block', (req, res) => {
