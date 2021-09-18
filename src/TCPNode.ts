@@ -55,18 +55,10 @@ class TCPNode extends events.EventEmitter {
                 this.peers.add(peer)
                 if (peer.remoteAddress) await this.nodes.put(peer.remoteAddress, '0')
                 log.info('Peer connection', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`)
-                if (server === false) {
-                    this.broadcast(protocol.constructBuffer('node', {
-                        address: peer.remoteAddress,
-                        port: peer.remotePort
-                    }))
-                }
-                else {
-                    this.broadcast(protocol.constructBuffer('node', {
-                        address: peer.remoteAddress,
-                        port: 9333
-                    }))
-                }
+                this.broadcast(protocol.constructBuffer('node', {
+                    address: peer.remoteAddress,
+                    port: server === false ? peer.remotePort : 9333
+                }))
             })
             .on('delete', () => {
                 if (this.peers.delete(peer)) log.info('Peer disconnected', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`)
