@@ -93,5 +93,5 @@
         "chanceToNotUse": 0
     },
     "maxBlocksInCache": 10080,
-    "trustedAfterBlocks": 1440
+    "trustedAfterBlocks": 10080
 }

@@ -48,13 +48,12 @@ class TCPNode extends events.EventEmitter {
     add(peer: Peer, server: boolean) {
         peer
             .on('add', async () => {
-                // if ((await Model_Node.findOne({ host: peer.remoteAddress }).exec())?.banned > Date.now() - config_settings.Node.banTimeout) return peer.delete()
                 this.nodes.get(peer.remoteAddress, (err, bannedTimestamp) => {
                     if (bannedTimestamp > Date.now() - config_settings.Node.banTimeout) return peer.delete()
                 })
                 if (this.hasSocketWithRemoteAddress(peer) || this.peers.size >= config_settings.TCPNode.maxConnectionsOut) return peer.delete()
                 this.peers.add(peer)
-                // this.emit('peer-connect', peer, server)
+                if (peer.remoteAddress) await this.nodes.put(peer.remoteAddress, '0')
                 log.info('Peer connection', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`)
                 if (server === false) {
                     this.broadcast(protocol.constructBuffer('node', {
@@ -70,13 +69,14 @@ class TCPNode extends events.EventEmitter {
                 }
             })
             .on('delete', () => {
-                // if (this.peers.delete(peer)) this.emit('peer-disconnect', peer, server)
                 if (this.peers.delete(peer)) log.info('Peer disconnected', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`)
             })
-            .on('ban', code => {
-                // this.emit('peer-ban', peer, server)
-                if (!peer.remoteAddress) return log.warn('Peer', server ? 'in' : 'out', 'connection failed')
-                log.warn('Peer banned', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`, 'code:', code)
+            .on('ban', async code => {
+                if (peer.remoteAddress) {
+                    await this.nodes.put(peer.remoteAddress, Date.now())
+                    log.warn('Peer banned', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`, 'code:', code)
+                }
+                else log.warn('Peer', server ? 'in' : 'out', 'connection failed')
             })
         for (const type of protocol.types) {
             peer.on(type, (data, buffer, cb) => {

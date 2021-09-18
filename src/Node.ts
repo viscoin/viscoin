@@ -172,14 +172,6 @@ class Node extends events.EventEmitter {
                         })
                     }
                 })
-                this.tcpNode.on('peer-connect', async peer => {
-                    if (!peer.remoteAddress) return
-                    this.nodes.put(peer.remoteAddress, '0')
-                })
-                this.tcpNode.on('peer-ban', async peer => {
-                    if (!peer.remoteAddress) return
-                    this.nodes.put(peer.remoteAddress, Date.now())
-                })
             }
             if (config_settings.Node.connectToNetwork === true) {
                 log.info('Connecting to network')
