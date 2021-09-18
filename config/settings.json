@@ -2,6 +2,7 @@
     "HTTPApi": {
         "autoRetry": 1000,
         "get": {
+            "/commit": true,
             "/config": true,
             "/block": true,
             "/transactions/pending": true,
