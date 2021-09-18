@@ -30,10 +30,10 @@ interface Node {
         transactions: Set<Transaction>
         callbacks: Map<string, Array<Function>>
     }
-    hashes: Set<string>
     sync: {
         timeout: number
         timestamp: number
+        height: number
     }
 }
 class Node extends events.EventEmitter {
@@ -42,7 +42,8 @@ class Node extends events.EventEmitter {
         this.nodes = nodes
         this.sync = {
             timeout: 0,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            height: 0
         }
         this.queue = {
             blocks: new Set(),
@@ -157,6 +158,7 @@ class Node extends events.EventEmitter {
                         this.emit('add-block', block, code => {
                             if (i === blocks.length - 1) {
                                 this.sync.timeout = 0
+                                this.sync.height = block.height + 1
                             }
                             cb(code)
                         })
@@ -166,6 +168,12 @@ class Node extends events.EventEmitter {
             if (config_settings.Node.connectToNetwork === true) {
                 log.info('Connecting to network')
                 this.reconnect()
+            }
+            if (config_settings.Node.sync === true) {
+                log.info('Starting to synchronize in', config_settings.Node.syncTimeout / 1000, 'seconds')
+                const latestBlock = await this.blockchain.getLatestBlock()
+                const block = await this.blockchain.getBlockByHeight(latestBlock.height - config_settings.trustedAfterBlocks)
+                this.sync.height = !block ? latestBlock.height : block.height
             }
             this.nextBlock()
             this.nextTransaction()
@@ -326,11 +334,11 @@ class Node extends events.EventEmitter {
         if (this.sync.timestamp > Date.now() - this.sync.timeout) return
         this.sync = {
             timeout: config_settings.Node.syncTimeout,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            height: this.sync.height
         }
-        const height = (await this.blockchain.getLatestBlock()).height + 1
-        log.debug(4, 'Sync', height)
-        this.tcpNode.broadcast(protocol.constructBuffer('sync', height), true)
+        log.debug(4, 'Sync', this.sync.height)
+        this.tcpNode.broadcast(protocol.constructBuffer('sync', this.sync.height), true)
     }
 }
 export default Node
