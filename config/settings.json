@@ -61,6 +61,7 @@
         "maxBytesInMemory": 131072,
         "maxRequestsPerSecond": {
             "block": 100,
+            "blocks": 100,
             "transaction": 100,
             "sync": 100,
             "node": 100

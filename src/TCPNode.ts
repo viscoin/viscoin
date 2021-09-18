@@ -108,9 +108,15 @@ class TCPNode extends events.EventEmitter {
     }
     hasSocketWithRemoteAddress(peer: Peer) {
         for (const _peer of this.peers) {
-            if (peer.remoteAddress === _peer.remoteAddress) return true
+            if (TCPNode.removeIPv6Prefix(peer.remoteAddress) === TCPNode.removeIPv6Prefix(_peer.remoteAddress)) return true
         }
         return false
+    }
+    static removeIPv6Prefix(ip: string) {
+        if (ip.substr(0, 7) == "::ffff:") {
+            ip = ip.substr(7)
+        }
+        return ip
     }
     static shuffle(arr: Array<any>) {
         let j, x

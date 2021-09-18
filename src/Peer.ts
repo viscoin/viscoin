@@ -15,6 +15,7 @@ interface Peer extends events.EventEmitter {
     buffer: Buffer
     requests: {
         block: number
+        blocks: number
         transaction: number
         sync: number
         node: number
@@ -34,6 +35,7 @@ class Peer extends events.EventEmitter {
         this.buffer = Buffer.alloc(0)
         this.requests = {
             block: 0,
+            blocks: 0,
             transaction: 0,
             sync: 0,
             node: 0
@@ -65,6 +67,7 @@ class Peer extends events.EventEmitter {
             this.bytesWritten = this.socket.bytesWritten
             this.requests = {
                 block: 0,
+                blocks: 0,
                 transaction: 0,
                 sync: 0,
                 node: 0
