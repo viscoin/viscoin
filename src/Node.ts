@@ -38,9 +38,6 @@ interface Node {
 class Node extends events.EventEmitter {
     constructor({ nodes, blocks, hashes }) {
         super()
-        setTimeout(() => {
-            this.reconnect()
-        }, 3000)
         this.nodes = nodes
         this.sync = {
             timeout: 0,
@@ -56,136 +53,143 @@ class Node extends events.EventEmitter {
         this.workersBusy = new Set()
         this.threads = cpus().length
         if (config_settings.Node.threads) this.threads = config_settings.Node.threads
+        this.httpApi = new HTTPApi()
+        this.tcpApi = TCPApi.createServer()
+        this.tcpNode = new TCPNode(nodes)
         this.blockchain = new Blockchain({ blocks, hashes })
-        if (config_settings.Node.HTTPApi === true) {
-            this.httpApi = new HTTPApi()
-            this.httpApi.start()
-            this.httpApi.on('get-config', cb => cb(config_settings))
-            this.httpApi.on('get-transactions-pending', cb => cb(this.blockchain.pendingTransactions.map(e => Transaction.minify(e))))
-            // this.httpApi.on('get-block-transaction-signature', async (signature, cb) => cb(Block.minify(await this.blockchain.getBlockByTransactionSignature(signature))))
-            this.httpApi.on('get-block-height', async (height, cb) => {
-                const block = await this.blockchain.getBlockByHeight(height)
-                cb(Block.minify(block))
-            })
-            this.httpApi.on('get-block-hash', async (hash, cb) => {
-                const block = await this.blockchain.getBlockByHash(hash)
-                cb(Block.minify(block))
-            })
-            this.httpApi.on('get-block-latest', async cb => {
-                const block = await this.blockchain.getLatestBlock()
-                cb(Block.minify(block))
-            })
-            this.httpApi.on('get-block-new', async (address, cb) => cb(Block.minify(await this.blockchain.getNewBlock(address))))
-            this.httpApi.on('get-balance-address', async (address, cb) => {
-                cb(beautifyBigInt(await this.blockchain.getBalanceOfAddress(address)))
-            })
-            this.httpApi.on('transaction', async (transaction, cb) => this.emit('add-transaction', transaction, code => cb(code)))
-            this.httpApi.on('block', async (block, cb) => this.emit('add-block', block, code => cb(code)))
-            // this.httpApi.on('get-transactions-address', async (address, cb) => {
-            //     // const projection = `
-            //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.to.name}
-            //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.from.name}
-            //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.amount.name}
-            //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.minerFee.name}
-            //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.timestamp.name}
-            //     //     ${config_mongoose.block.timestamp.name}
-            //     // `
-            //     // const { transactions, unconfirmed_transactions } = await this.blockchain.getTransactionsOfAddress(address, projection)
-            //     // cb([
-            //     //     ...transactions.map(e => Transaction.minify(e)),
-            //     //     ...unconfirmed_transactions.map(e => Transaction.minify(e))
-            //     // ])
-            // })
-            this.httpApi.on('get-peers', async cb => {
-                const arr = []
-                for (const peer of this.tcpNode.peers) arr.push(`${peer.remoteAddress}:${peer.remotePort}`)
-                cb(arr)
-            })
-        }
-        if (config_settings.Node.TCPApi === true) {
-            this.tcpApi = TCPApi.createServer()
-            this.tcpApi.start()
-        }
-        if (config_settings.Node.TCPNode === true) {
-            this.tcpNode = new TCPNode(nodes)
-            this.tcpNode.start()
-            this.tcpNode.on('block', (block, cb) => this.emit('add-block', block, code => {
-                // console.log(block)
-                if (code === 0) {
-                    this.hashes.delete(block.previousHash.toString('hex'))
-                    this.hashes.add(block.hash.toString('hex'))
+        this.blockchain.once('loaded', async () => {
+
+            setInterval(() => {
+                log.debug(1, 'Verifyrate', this.verifyrate)
+                this.verifyrate = {
+                    transaction: 0,
+                    block: 0
                 }
-                cb(code)
-            }))
-            this.tcpNode.on('transaction', (transaction, cb) => this.emit('add-transaction', transaction, code => cb(code)))
-            this.tcpNode.on('node', (node, cb) => {
-                if (config_settings.Node.connectToNetwork) cb(this.tcpNode.connectToNode(node))
-            })
-            this.tcpNode.on('sync', async (height: number, cb) => {
-                const blocks = []
-                for (let i = 0; i < config_settings.Node.syncBlocks; i++) {
-                    try {
-                        const block = await this.blockchain.getBlockByHeight(height + i)
-                        blocks.push(Block.minify(block))
+            }, 1000)
+
+
+
+            // HTTP API
+
+            if (config_settings.Node.HTTPApi === true) {
+                this.httpApi.start()
+                this.httpApi.on('get-config', cb => cb(config_settings))
+                this.httpApi.on('get-transactions-pending', cb => cb(this.blockchain.pendingTransactions.map(e => Transaction.minify(e))))
+                // this.httpApi.on('get-block-transaction-signature', async (signature, cb) => cb(Block.minify(await this.blockchain.getBlockByTransactionSignature(signature))))
+                this.httpApi.on('get-block-height', async (height, cb) => {
+                    const block = await this.blockchain.getBlockByHeight(height)
+                    cb(Block.minify(block))
+                })
+                this.httpApi.on('get-block-hash', async (hash, cb) => {
+                    const block = await this.blockchain.getBlockByHash(hash)
+                    cb(Block.minify(block))
+                })
+                this.httpApi.on('get-block-latest', async cb => {
+                    const block = await this.blockchain.getLatestBlock()
+                    cb(Block.minify(block))
+                })
+                this.httpApi.on('get-block-new', async (address, cb) => cb(Block.minify(await this.blockchain.getNewBlock(address))))
+                this.httpApi.on('get-balance-address', async (address, cb) => {
+                    cb(beautifyBigInt(await this.blockchain.getBalanceOfAddress(address)))
+                })
+                this.httpApi.on('transaction', async (transaction, cb) => this.emit('add-transaction', transaction, code => cb(code)))
+                this.httpApi.on('block', async (block, cb) => this.emit('add-block', block, code => cb(code)))
+                // this.httpApi.on('get-transactions-address', async (address, cb) => {
+                //     // const projection = `
+                //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.to.name}
+                //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.from.name}
+                //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.amount.name}
+                //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.minerFee.name}
+                //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.timestamp.name}
+                //     //     ${config_mongoose.block.timestamp.name}
+                //     // `
+                //     // const { transactions, unconfirmed_transactions } = await this.blockchain.getTransactionsOfAddress(address, projection)
+                //     // cb([
+                //     //     ...transactions.map(e => Transaction.minify(e)),
+                //     //     ...unconfirmed_transactions.map(e => Transaction.minify(e))
+                //     // ])
+                // })
+                this.httpApi.on('get-peers', async cb => {
+                    const arr = []
+                    for (const peer of this.tcpNode.peers) arr.push(`${peer.remoteAddress}:${peer.remotePort}`)
+                    cb(arr)
+                })
+            }
+
+
+
+            // TCP API
+
+            if (config_settings.Node.TCPApi === true) {
+                this.tcpApi.start()
+            }
+
+
+
+            // TCP NODE
+
+            if (config_settings.Node.TCPNode === true) {
+                this.tcpNode.start()
+                this.tcpNode.on('block', (block, cb) => this.emit('add-block', block, code => {
+                    if (code === 0) {
+                        this.hashes.delete(block.previousHash.toString('hex'))
+                        this.hashes.add(block.hash.toString('hex'))
                     }
-                    catch {
-                        break
-                    }
-                }
-                cb(blocks)
-            })
-            this.tcpNode.on('blocks', (blocks, cb) => {
-                for (const block of blocks) {
-                    this.emit('add-block', block, code => {
-                        // console.log(block)
-                        // console.log(code)
-                        if (code === 0) {
-                            this.hashes.delete(block.previousHash.toString('hex'))
-                            this.hashes.add(block.hash.toString('hex'))
+                    cb(code)
+                }))
+                this.tcpNode.on('transaction', (transaction, cb) => this.emit('add-transaction', transaction, code => cb(code)))
+                this.tcpNode.on('node', (node, cb) => {
+                    if (config_settings.Node.connectToNetwork) cb(this.tcpNode.connectToNode(node))
+                })
+                this.tcpNode.on('sync', async (height: number, cb) => {
+                    const blocks = []
+                    for (let i = 0; i < config_settings.Node.syncBlocks; i++) {
+                        try {
+                            const block = await this.blockchain.getBlockByHeight(height + i)
+                            blocks.push(Block.minify(block))
                         }
-                        cb(code)
-                    })
-                }
-                this.sync.timeout = 0
-            })
-            this.tcpNode.on('peer-connect', async peer => {
-                if (!peer.remoteAddress) return
-                this.nodes.put(peer.remoteAddress, '0')
-                // if (await Model_Node.exists({
-                //     host: peer.remoteAddress
-                // })) return
-                // await new Model_Node({
-                //     host: peer.remoteAddress
-                // }).save()
-            })
-            this.tcpNode.on('peer-ban', async peer => {
-                if (!peer.remoteAddress) return
-                this.nodes.put(peer.remoteAddress, Date.now())
-                // const doc = await Model_Node.findOne({
-                //     host: peer.remoteAddress
-                // }).exec()
-                // log.debug(2, doc)
-                // if (doc) {
-                //     doc.banned = Date.now()
-                //     await doc.save()
-                // }
-            })
-        }
-        this.blockchain.on('loaded', async () => {
+                        catch {
+                            break
+                        }
+                    }
+                    cb(blocks)
+                })
+                this.tcpNode.on('blocks', (blocks, cb) => {
+                    for (let i = 0; i < blocks.length; i++) {
+                        const block = blocks[i]
+                        this.emit('add-block', block, code => {
+                            if (code === 0) {
+                                this.hashes.delete(block.previousHash.toString('hex'))
+                                this.hashes.add(block.hash.toString('hex'))
+                            }
+                            if (i === blocks.length - 1) {
+                                this.sync.timeout = 0
+                            }
+                            cb(code)
+                        })
+                    }
+                })
+                this.tcpNode.on('peer-connect', async peer => {
+                    if (!peer.remoteAddress) return
+                    this.nodes.put(peer.remoteAddress, '0')
+                })
+                this.tcpNode.on('peer-ban', async peer => {
+                    if (!peer.remoteAddress) return
+                    this.nodes.put(peer.remoteAddress, Date.now())
+                })
+            }
             if (config_settings.Node.connectToNetwork === true) {
-                log.info('Connecting to other nodes')
+                log.info('Connecting to network')
                 this.reconnect()
             }
             if (config_settings.Node.sync === true) {
-                log.info('Starting sync')
-                this.hashes = new Set()
+                log.info('Starting to synchronize in', config_settings.Node.syncTimeout / 1000, 'seconds...')
                 try {
                     const latestBlock = await this.blockchain.getLatestBlock()
                     let block = await this.blockchain.getBlockByHeight(latestBlock.height - config_settings.trustedAfterBlocks)
                     this.hashes.add(block.hash.toString('hex'))
                 }
-                catch (err) {
-                    // log.error(err)
+                catch {
                     this.hashes.add(this.blockchain.genesisBlock.hash.toString('hex'))
                 }
             }
@@ -196,7 +200,10 @@ class Node extends events.EventEmitter {
             if (!this.blockchain.loaded) return
             // console.log(block)
             if (!block.hash) return
-            if (this.blockchain.hashes[block.height]?.equals(block.hash)) return cb(0)
+            if (this.blockchain.hashes[block.height]?.equals(block.hash)) {
+                this.verifyrate.block++
+                return cb(0)
+            }
             // if (this.blockchain.hashes.find(e => e.equals(block.hash))) {
             //     // console.log(true)
             //     return cb(0)
@@ -219,6 +226,7 @@ class Node extends events.EventEmitter {
             if (config_settings.Node.TCPApi === true) this.tcpApi.broadcast(buffer)
         })
         this.on('transaction', (transaction, code) => {
+            console.log(transaction, code)
             if (code !== 0) return
             const buffer = protocol.constructBuffer('transaction', Transaction.minify(transaction))
             this.tcpNode.broadcast(buffer)
@@ -228,14 +236,6 @@ class Node extends events.EventEmitter {
             transaction: 0,
             block: 0
         }
-        setInterval(() => {
-            // this.emit('verifyrate', this.verifyrate)
-            log.debug(1, 'Verifyrate', this.verifyrate)
-            this.verifyrate = {
-                transaction: 0,
-                block: 0
-            }
-        }, 1000)
     }
     async getNodes() {
         return new Promise<Array<string>>(resolve => {
@@ -250,7 +250,7 @@ class Node extends events.EventEmitter {
         })
     }
     async reconnect() {
-        log.debug(3, 'Reconnecting to other nodes')
+        log.debug(3, 'Reconnecting to network')
         const nodes = await this.getNodes()
         log.debug(4, nodes)
         this.tcpNode.connectToNetwork(nodes)
@@ -371,6 +371,10 @@ class Node extends events.EventEmitter {
         log.debug(4, 'Sync:', [...this.hashes])
         for (const hash of this.hashes) {
             const block = await this.blockchain.getBlockByHash(Buffer.from(hash, 'hex'))
+            if (!block) {
+                this.hashes.delete(hash)
+                continue
+            }
             this.tcpNode.broadcast(protocol.constructBuffer('sync', block.height + 1), true)
         }
     }

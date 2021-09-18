@@ -47,7 +47,7 @@ class Peer extends events.EventEmitter {
             .on('connect', () => this.emit('add'))
             .on('error', () => {})
             .on('close', () => this.delete())
-            .on('timeout', () => this.emit('ban'))
+            .on('timeout', () => this.emit('ban', 1))
             .on('data', chunk => this.onData(chunk))
         this
             .on('add', () => {
@@ -79,9 +79,9 @@ class Peer extends events.EventEmitter {
         this.socket.destroy()
     }
     onData(chunk: Buffer) {
-        if (this.socket.bytesRead - this.bytesRead > config_settings.Peer.socket.maxBytesRead1s) return this.emit('ban')
+        if (this.socket.bytesRead - this.bytesRead > config_settings.Peer.socket.maxBytesRead1s) return this.emit('ban', 2)
         this.buffer = Buffer.concat([ this.buffer, chunk ])
-        if (Buffer.byteLength(this.buffer) > config_settings.Peer.maxBytesInMemory) return this.emit('ban')
+        if (Buffer.byteLength(this.buffer) > config_settings.Peer.maxBytesInMemory) return this.emit('ban', 3)
         this.extract()
     }
     extract() {
@@ -101,7 +101,7 @@ class Peer extends events.EventEmitter {
             if (this.requests[type]++ > config_settings.Peer.maxRequestsPerSecond[type]) continue
             this.addHash(hash)
             this.emit(type, data, b, res => {
-                if (res === 1) this.emit('ban')
+                if (res === 1) this.emit('ban', 4)
                 if (type === 'sync' && res !== null) this.write(protocol.constructBuffer('blocks', res), () => {})
             })
         }

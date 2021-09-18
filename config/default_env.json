@@ -2,6 +2,6 @@
     "HTTP_API": ":80",
     "TCP_API": ":9332",
     "TCP_NODE": ":9333",
-    "DEBUG": 1,
+    "DEBUG": 0,
     "ADDRESS": "your_mining_address"
 }

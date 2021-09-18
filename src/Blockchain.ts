@@ -42,17 +42,13 @@ class Blockchain extends events.EventEmitter {
     }
     async setGenesisBlock() {
         this.genesisBlock = await this.createGenesisBlock()
-        try {
-            await this.loadBlockHashes(this.genesisBlock.hash)
-            if (this.loaded === false) {
-                this.loaded = true
-                log.info(`Done in ${((performance.now()) / 1000).toFixed(3)}s!`)
-                this.emit('loaded')
-            }
-        }
-        catch (err) {
-            log.error(err)
-        }
+        log.debug(2, 'Created genesisBlock', this.genesisBlock.hash)
+        log.info('Loading blockchain...')
+        await this.loadBlockHashes(this.genesisBlock.hash)
+        this.loaded = true
+        log.info(`Done in ${((performance.now()) / 1000).toFixed(3)}s!`)
+        log.info(`Blockchain height: ${(await this.getLatestBlock()).height}`)
+        this.emit('loaded')
     }
     static difficultyToWork(difficulty: number) {
         return 2n ** BigInt(difficulty >> config_core.smoothness)
@@ -124,20 +120,6 @@ class Blockchain extends events.EventEmitter {
             loadNextBlock(hash)
         })
     }
-    async updateBlockHashes() {
-        if (this.updatingBlockHashes) {
-            return <void> await new Promise(resolve => this.once('updated-block-hashes', () => resolve()))
-        }
-        this.updatingBlockHashes = true
-        log.debug(3, 'Looking for fork')
-
-        const i = this.hashes.length - config_settings.trustedAfterBlocks
-        let hash = this.genesisBlock.hash
-        if (i > 0) hash = this.hashes[i]
-        await this.loadBlockHashes(hash)
-        this.emit('updated-block-hashes')
-        this.updatingBlockHashes = false
-    }
     async createGenesisBlock() {
         const block = new Block({
             transactions: [],
@@ -154,11 +136,10 @@ class Blockchain extends events.EventEmitter {
         if (!this.hashes.length) return this.genesisBlock
         return await this.getBlockByHash(this.hashes[this.hashes.length - 1])
     }
-    addTransaction(transaction: Transaction) {
-        return new Promise<void | number>(async (resolve, reject) => {
-            if (this.pendingTransactions.find(_transaction => Transaction.calculateHash(transaction).equals(Transaction.calculateHash(_transaction)))) return reject(1)
-            const block = await this.getLatestBlock()
-            if (transaction.timestamp < block.timestamp) return reject(2)
+    async addTransaction(transaction: Transaction) {
+        if (this.pendingTransactions.find(_transaction => Transaction.calculateHash(transaction).equals(Transaction.calculateHash(_transaction)))) return 1
+        const block = await this.getLatestBlock()
+            if (transaction.timestamp < block.timestamp) return 2
             let sum = parseBigInt(transaction.minerFee)
             if (transaction.amount) sum += parseBigInt(transaction.amount)
             for (const { from, amount, minerFee } of this.pendingTransactions) {
@@ -167,60 +148,58 @@ class Blockchain extends events.EventEmitter {
                     if (amount) sum += parseBigInt(amount)
                 }
             }
-            if (await this.getBalanceOfAddress(transaction.from) < sum) return reject(3)
-            const { bigint, remainder } = transaction.byteFee()
-            if (bigint < this.minByteFee.bigint
-            || (bigint === this.minByteFee.bigint && remainder <= this.minByteFee.remainder)) return reject(4)
-            this.pendingTransactions.push(transaction)
-            return resolve()
-        })
+        if (await this.getBalanceOfAddress(transaction.from) < sum) return 3
+        const { bigint, remainder } = transaction.byteFee()
+        if (bigint < this.minByteFee.bigint
+        || (bigint === this.minByteFee.bigint && remainder <= this.minByteFee.remainder)) return 4
+        this.pendingTransactions.push(transaction)
+        return 0
     }
-    addBlock(block: Block) {
-        return new Promise<void | number>(async (resolve, reject) => {
-            let previousBlock = this.genesisBlock
-            try {
-                previousBlock = await this.getBlockByHash(block.previousHash)
-            }
-            catch {}
+    async addBlock(block: Block) {
+        let previousBlock = null
+        try  {
+            previousBlock = await this.getBlockByHash(block.previousHash)
+        }
+        catch {}
+        try {
             if (previousBlock) {
-                if (block.timestamp <= previousBlock.timestamp) return reject(2)
+                if (block.timestamp <= previousBlock.timestamp) return 2
                 if (await this.isPartOfChainValid([
                     previousBlock,
                     block
-                ]) !== 0) return reject(3)
+                ]) !== 0) return 3
             }
-            else if (!block.previousHash.equals(previousBlock.hash)) return reject(4)
+            else if (!block.previousHash.equals(this.genesisBlock.hash)) return 4
             const data = Block.minify(block)
             delete data[config_minify.block.hash]
-            this.blocksDB.put(block.hash, data, async err => {
-                if (err) reject(err)
-                this.hashesDB.get(previousBlock.hash, (err, hashes) => {
-                    if (hashes) hashes = [...hashes, block.hash]
-                    else hashes = [block.hash]
-                    this.hashesDB.put(previousBlock.hash, hashes, async err => {
-                        for (const transaction of block.transactions) {
-                            if (transaction.to && this.addresses.has(transaction.to.toString('hex'))) {
-                                let balance = this.addresses.get(transaction.to.toString('hex'))
-                                balance += parseBigInt(transaction.amount)
-                                this.addresses.set(transaction.to.toString('hex'), balance)
-                            }
-                            if (transaction.from && this.addresses.has(transaction.from.toString('hex'))) {
-                                let balance = this.addresses.get(transaction.from.toString('hex'))
-                                if (transaction.amount) balance -= parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee)
-                                else balance -= parseBigInt(transaction.minerFee)
-                                this.addresses.set(transaction.from.toString('hex'), balance)
-                            }
-                        }
-                        await this.updateBlockHashes()
-                        resolve()
-                    })
-                })
-            })
-        })
+            await this.blocksDB.put(block.hash, data)
+            let hashes = await this.getHashesByPreviousHash(previousBlock.hash)
+            if (hashes) hashes = [...hashes, block.hash]
+            else hashes = [block.hash]
+            await this.hashesDB.put(previousBlock.hash, hashes)
+            for (const transaction of block.transactions) {
+                if (transaction.to && this.addresses.has(transaction.to.toString('hex'))) {
+                    let balance = this.addresses.get(transaction.to.toString('hex'))
+                    balance += parseBigInt(transaction.amount)
+                    this.addresses.set(transaction.to.toString('hex'), balance)
+                }
+                if (transaction.from && this.addresses.has(transaction.from.toString('hex'))) {
+                    let balance = this.addresses.get(transaction.from.toString('hex'))
+                    if (transaction.amount) balance -= parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee)
+                    else balance -= parseBigInt(transaction.minerFee)
+                    this.addresses.set(transaction.from.toString('hex'), balance)
+                }
+            }
+            log.debug(4, 'Looking for fork')
+            await this.loadBlockHashes(previousBlock.hash)
+            return 0
+        }
+        catch {
+            return 5
+        }
     }
     async getBalanceOfAddress(address: Buffer) {
         if (this.addresses.has(address.toString('hex'))) return this.addresses.get(address.toString('hex'))
-        const t1 = performance.now()
         if (!this.loaded) return null
         const getBalance = (transactions) => {
             let balance = 0n
@@ -242,8 +221,6 @@ class Blockchain extends events.EventEmitter {
         }
         this.addresses.set(address.toString('hex'), balance)
         return balance
-        const t2 = performance.now()
-        console.log(t2-t1)
     }
     async isPartOfChainValid(chain: Array<Block>) {
         for (let i = 1; i < chain.length; i++) {
@@ -282,15 +259,28 @@ class Blockchain extends events.EventEmitter {
         else if (time >= _time && difficulty > 1 << config_core.smoothness) difficulty--
         return difficulty
     }
+    async getHashesByPreviousHash(previousHash: Buffer) {
+        try {
+            return Array<Buffer> (await this.hashesDB.get(previousHash)).map(e => Buffer.from(e))
+        }
+        catch {
+            return []
+        }
+    }
     async getBlockByHash(hash: Buffer) {
         if (this.genesisBlock.hash.equals(hash)) return this.genesisBlock
-        const data = { [config_minify.block.hash]: hash, ...(await this.blocksDB.get(hash)) }
-        return new Block(Block.beautify(data))
+        try {
+            const data = { [config_minify.block.hash]: hash, ...(await this.blocksDB.get(hash)) }
+            return new Block(Block.beautify(data))
+        }
+        catch {
+            return null
+        }
     }
     async getBlockByPreviousHash(previousHash: Buffer) {
         if (this.genesisBlock.previousHash.equals(previousHash)) return this.genesisBlock
-        const hashes: Array<object> = await this.hashesDB.get(previousHash)
-        for (const hash of hashes.map(e => Buffer.from(e))) {
+        const hashes = await this.getHashesByPreviousHash(previousHash)
+        for (const hash of hashes) {
             if (this.hashes.find(e => e.equals(hash))) {
                 return await this.getBlockByHash(hash)
             }

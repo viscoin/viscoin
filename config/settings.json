@@ -34,7 +34,7 @@
         "connectToNetwork": true,
         "sync": true,
         "syncBlocks": 16,
-        "syncTimeout": 30000,
+        "syncTimeout": 10000,
         "banTimeout": 60000,
         "queue": {
             "blocks": 1000,
@@ -49,8 +49,8 @@
     },
     "Peer": {
         "socket": {
-            "maxBytesRead1s": 1048576,
-            "maxBytesWritten1s": 1048576,
+            "maxBytesRead1s": 10000000,
+            "maxBytesWritten1s": 10000000,
             "setTimeout": 120000
         },
         "hashes": {
@@ -92,5 +92,5 @@
         "chanceToNotUse": 0
     },
     "maxBlocksInCache": 10080,
-    "trustedAfterBlocks": 60
+    "trustedAfterBlocks": 1440
 }

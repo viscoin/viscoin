@@ -55,7 +55,7 @@ class TCPNode extends events.EventEmitter {
                 if (this.hasSocketWithRemoteAddress(peer) || this.peers.size >= config_settings.TCPNode.maxConnectionsOut) return peer.delete()
                 this.peers.add(peer)
                 // this.emit('peer-connect', peer, server)
-                log.info('Peer connection', server ? 'incomming' : 'outgoing', `${peer.remoteAddress}:${peer.remotePort}`)
+                log.info('Peer connection', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`)
                 if (server === false) {
                     this.broadcast(protocol.constructBuffer('node', {
                         address: peer.remoteAddress,
@@ -71,12 +71,12 @@ class TCPNode extends events.EventEmitter {
             })
             .on('delete', () => {
                 // if (this.peers.delete(peer)) this.emit('peer-disconnect', peer, server)
-                if (this.peers.delete(peer)) log.info('Peer disconnected', server ? 'incomming' : 'outgoing', `${peer.remoteAddress}:${peer.remotePort}`)
+                if (this.peers.delete(peer)) log.info('Peer disconnected', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`)
             })
-            .on('ban', async () => {
+            .on('ban', code => {
                 // this.emit('peer-ban', peer, server)
-                if (!peer.remoteAddress) return log.warn('Peer', server ? 'incomming' : 'outgoing', 'connection failed')
-                log.warn('Peer banned', server ? 'incomming' : 'outgoing', `${peer.remoteAddress}:${peer.remotePort}`)
+                if (!peer.remoteAddress) return log.warn('Peer', server ? 'in' : 'out', 'connection failed')
+                log.warn('Peer banned', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`, 'code:', code)
             })
         for (const type of protocol.types) {
             peer.on(type, (data, buffer, cb) => {

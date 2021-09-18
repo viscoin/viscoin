@@ -48,7 +48,7 @@ class HTTPApi extends events.EventEmitter {
         if (process.env.HTTP_API) log.info('Using HTTP_API:', this.HTTP_API)
         else log.warn('Unset environment value! Using default value for HTTP_API:', this.HTTP_API)
         const app = express()
-        app.use(express.urlencoded())
+        app.use(express.urlencoded({ extended: true }))
         // app.use(express.urlencoded({ limit: '2mb' }))
         app.use(express.json({ limit: '2mb' }))
         app.use(rateLimit(config_settings.HTTPApi.rateLimit))
