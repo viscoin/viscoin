@@ -161,15 +161,13 @@ class Blockchain extends events.EventEmitter {
             previousBlock = await this.getBlockByHash(block.previousHash)
         }
         catch {}
+        if (!previousBlock) previousBlock = this.genesisBlock
         try {
-            if (previousBlock) {
-                if (block.timestamp <= previousBlock.timestamp) return 2
-                if (await this.isPartOfChainValid([
-                    previousBlock,
-                    block
-                ]) !== 0) return 3
-            }
-            else if (!block.previousHash.equals(this.genesisBlock.hash)) return 4
+            if (block.timestamp <= previousBlock.timestamp) return 2
+            if (await this.isPartOfChainValid([
+                previousBlock,
+                block
+            ]) !== 0) return 3
             const data = Block.minify(block)
             delete data[config_minify.block.hash]
             await this.blocksDB.put(block.hash, data)
@@ -195,7 +193,7 @@ class Blockchain extends events.EventEmitter {
             return 0
         }
         catch {
-            return 5
+            return 4
         }
     }
     async getBalanceOfAddress(address: Buffer) {

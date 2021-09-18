@@ -60,11 +60,11 @@
         },
         "maxBytesInMemory": 131072,
         "maxRequestsPerSecond": {
-            "block": 100,
+            "block": 5,
             "blocks": 100,
             "transaction": 100,
             "sync": 100,
-            "node": 100
+            "node": 5
         }
     },
     "TCPNode": {
@@ -93,5 +93,5 @@
         "chanceToNotUse": 0
     },
     "maxBlocksInCache": 10080,
-    "trustedAfterBlocks": 10080
+    "trustedAfterBlocks": 1440
 }

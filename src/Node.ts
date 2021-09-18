@@ -44,7 +44,6 @@ class Node extends events.EventEmitter {
             timeout: 0,
             timestamp: Date.now()
         }
-        this.hashes = new Set()
         this.queue = {
             blocks: new Set(),
             transactions: new Set(),
@@ -133,11 +132,6 @@ class Node extends events.EventEmitter {
             if (config_settings.Node.TCPNode === true) {
                 this.tcpNode.start()
                 this.tcpNode.on('block', (block, cb) => this.emit('add-block', block, code => {
-                    if (code === 0) {
-                        if (this.hashes.delete(block.previousHash.toString('hex'))) {
-                            this.hashes.add(block.hash.toString('hex'))
-                        }
-                    }
                     cb(code)
                 }))
                 this.tcpNode.on('transaction', (transaction, cb) => this.emit('add-transaction', transaction, code => cb(code)))
@@ -161,10 +155,6 @@ class Node extends events.EventEmitter {
                     for (let i = 0; i < blocks.length; i++) {
                         const block = blocks[i]
                         this.emit('add-block', block, code => {
-                            if (code === 0) {
-                                this.hashes.delete(block.previousHash.toString('hex'))
-                                this.hashes.add(block.hash.toString('hex'))
-                            }
                             if (i === blocks.length - 1) {
                                 this.sync.timeout = 0
                             }
@@ -176,17 +166,6 @@ class Node extends events.EventEmitter {
             if (config_settings.Node.connectToNetwork === true) {
                 log.info('Connecting to network')
                 this.reconnect()
-            }
-            if (config_settings.Node.sync === true) {
-                log.info('Starting to synchronize in', config_settings.Node.syncTimeout / 1000, 'seconds...')
-                try {
-                    const latestBlock = await this.blockchain.getLatestBlock()
-                    let block = await this.blockchain.getBlockByHeight(latestBlock.height - config_settings.trustedAfterBlocks)
-                    this.hashes.add(block.hash.toString('hex'))
-                }
-                catch {
-                    this.hashes.add(this.blockchain.genesisBlock.hash.toString('hex'))
-                }
             }
             this.nextBlock()
             this.nextTransaction()
@@ -306,15 +285,7 @@ class Node extends events.EventEmitter {
         }
         catch {}
         if (code === 0) {
-            try {
-                await this.blockchain.addBlock(block)
-            }
-            catch (err) {
-                // console.log('addBlock', err)
-                code = 2
-            }
-            // console.log('add-block', block)
-            // if (await this.blockchain.addBlock(block) !== 0) code = 2
+            code = await this.blockchain.addBlock(block)
         }
         if (this.queue.callbacks.has(block.hash.toString('hex'))) {
             const cbs = this.queue.callbacks.get(block.hash.toString('hex'))
@@ -340,7 +311,7 @@ class Node extends events.EventEmitter {
         }
         catch {}
         if (code === 0) {
-            if (await this.blockchain.addTransaction(transaction) !== 0) code = 2
+            code = await this.blockchain.addTransaction(transaction)
         }
         if (this.queue.callbacks.has(transaction.signature.toString('hex'))) {
             const cbs = this.queue.callbacks.get(transaction.signature.toString('hex'))
@@ -357,15 +328,9 @@ class Node extends events.EventEmitter {
             timeout: config_settings.Node.syncTimeout,
             timestamp: Date.now()
         }
-        log.debug(4, 'Sync:', [...this.hashes])
-        for (const hash of this.hashes) {
-            const block = await this.blockchain.getBlockByHash(Buffer.from(hash, 'hex'))
-            if (!block) {
-                this.hashes.delete(hash)
-                continue
-            }
-            this.tcpNode.broadcast(protocol.constructBuffer('sync', block.height + 1), true)
-        }
+        const height = (await this.blockchain.getLatestBlock()).height + 1
+        log.debug(4, 'Sync', height)
+        this.tcpNode.broadcast(protocol.constructBuffer('sync', height), true)
     }
 }
 export default Node
