@@ -27,6 +27,8 @@ const beautify = (block) => {
     return block
 }
 
+const commit = execSync('git rev-parse HEAD').toString().trim()
+
 interface HTTPApi {
     server: net.Server
     HTTP_API: {
@@ -54,7 +56,7 @@ class HTTPApi extends events.EventEmitter {
         app.use(express.json({ limit: '2mb' }))
         app.use(rateLimit(config_settings.HTTPApi.rateLimit))
         if (config_settings.HTTPApi.get['/commit'] === true) app.get('/commit', (req, res) => {
-            HTTPApi.resEndJSON(res, execSync('git rev-parse HEAD').toString().trim())
+            HTTPApi.resEndJSON(res, commit)
         })
         if (config_settings.HTTPApi.get['/config'] === true) app.get('/config', (req, res) => this.emit('get-config', config => HTTPApi.resEndJSON(res, config)))
         if (config_settings.HTTPApi.get['/block'] === true) app.get('/block', (req, res) => {
