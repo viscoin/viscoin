@@ -223,7 +223,6 @@ class Node extends events.EventEmitter {
             if (config_settings.Node.TCPApi === true) this.tcpApi.broadcast(buffer)
         })
         this.on('transaction', (transaction, code) => {
-            console.log(transaction, code)
             if (code !== 0) return
             const buffer = protocol.constructBuffer('transaction', Transaction.minify(transaction))
             this.tcpNode.broadcast(buffer)
