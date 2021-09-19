@@ -36,6 +36,7 @@
         "sync": true,
         "syncBlocks": 16,
         "syncTimeout": 10000,
+        "syncLoop": 600000,
         "banTimeout": 60000,
         "queue": {
             "blocks": 1000,

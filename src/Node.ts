@@ -171,9 +171,7 @@ class Node extends events.EventEmitter {
             }
             if (config_settings.Node.sync === true) {
                 log.info('Starting to synchronize in', config_settings.Node.syncTimeout / 1000, 'seconds')
-                const latestBlock = await this.blockchain.getLatestBlock()
-                const block = await this.blockchain.getBlockByHeight(latestBlock.height - config_settings.trustedAfterBlocks)
-                this.sync.height = !block ? latestBlock.height : block.height
+                setTimeout(this.syncLoop.bind(this), config_settings.Node.syncTimeout)
             }
             this.nextBlock()
             this.nextTransaction()
@@ -212,6 +210,13 @@ class Node extends events.EventEmitter {
             block: 0,
             hashes: 0
         }
+    }
+    async syncLoop() {
+        const latestBlock = await this.blockchain.getLatestBlock()
+        const block = await this.blockchain.getBlockByHeight(latestBlock.height - config_settings.trustedAfterBlocks)
+        this.sync.height = !block ? latestBlock.height : block.height
+        log.debug(3, 'syncLoop', this.sync.height)
+        if (config_settings.Node.syncLoop) setTimeout(this.syncLoop.bind(this), config_settings.Node.syncLoop)
     }
     async getNodes() {
         return new Promise<Array<string>>(resolve => {
