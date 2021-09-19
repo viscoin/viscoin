@@ -287,6 +287,7 @@ class Blockchain extends events.EventEmitter {
     async getBlockByHeight(height: number) {
         if (height === 0) return this.genesisBlock
         const hash = this.hashes[height]
+        if (!hash) return null
         return await this.getBlockByHash(hash)
     }
     async getNewBlock(address: Buffer) {
