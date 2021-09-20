@@ -12,18 +12,23 @@ import * as config_default_env from '../config/default_env.json'
 import Address from './Address'
 
 const beautify = (block) => {
-    block = new Block(Block.beautify(block))
-    for (const i in block) {
-        if (block[i] instanceof Buffer) block[i] = block[i].toString('hex')
-        if (i === 'transactions') block[i] = block[i].map(transaction => {
-            for (const i in transaction) {
-                if ([ 'to', 'from' ].includes(i)) transaction[i] = Address.toString(transaction[i])
-                else if (transaction[i] instanceof Buffer) transaction[i] = transaction[i].toString('hex')
-            }
-            return transaction
-        })
+    try {
+        block = new Block(Block.beautify(block))
+        for (const i in block) {
+            if (block[i] instanceof Buffer) block[i] = block[i].toString('hex')
+            if (i === 'transactions') block[i] = block[i].map(transaction => {
+                for (const i in transaction) {
+                    if ([ 'to', 'from' ].includes(i)) transaction[i] = Address.toString(transaction[i])
+                    else if (transaction[i] instanceof Buffer) transaction[i] = transaction[i].toString('hex')
+                }
+                return transaction
+            })
+        }
+        return block
     }
-    return block
+    catch {
+        return null
+    }
 }
 
 interface HTTPApi {
