@@ -6,9 +6,14 @@ import * as level from 'level'
 import * as fs from 'fs'
 import { execSync } from 'child_process'
 import log from './src/log'
+import * as settings from './config/settings.json'
 
 
 if (isMainThread) {
+    setTimeout(() => {
+        log.info('Restarting...')
+        process.exit(0)
+    }, settings.Node.restartAfter)
     let commit = null
     try {
         commit = execSync('git rev-parse HEAD').toString().trim()

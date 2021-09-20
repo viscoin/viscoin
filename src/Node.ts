@@ -156,7 +156,7 @@ class Node extends events.EventEmitter {
                     for (let i = 0; i < blocks.length; i++) {
                         const block = blocks[i]
                         this.emit('add-block', block, code => {
-                            if (i === blocks.length - 1) {
+                            if (code === 0 && i === blocks.length - 1) {
                                 this.sync.timeout = 0
                                 this.sync.height = block.height + 1
                             }

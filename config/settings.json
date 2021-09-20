@@ -43,7 +43,8 @@
             "transactions": 1000
         },
         "autoReconnect": 120000,
-        "threads": 0
+        "threads": 0,
+        "restartAfter": 86400000
     },
     "TCPApi": {
         "maxConnectionsIn": 100,
