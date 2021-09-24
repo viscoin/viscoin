@@ -37,7 +37,7 @@ interface Node {
     }
 }
 class Node extends events.EventEmitter {
-    constructor({ nodes, blocks, hashes }, commit: string) {
+    constructor({ nodes, blocks }, commit: string) {
         super()
         this.nodes = nodes
         this.sync = {
@@ -57,7 +57,7 @@ class Node extends events.EventEmitter {
         this.httpApi = new HTTPApi(commit)
         this.tcpApi = TCPApi.createServer()
         this.tcpNode = new TCPNode(nodes)
-        this.blockchain = new Blockchain({ blocks, hashes })
+        this.blockchain = new Blockchain({ blocks })
         this.blockchain.once('loaded', async () => {
 
             setInterval(() => {
@@ -142,13 +142,9 @@ class Node extends events.EventEmitter {
                 this.tcpNode.on('sync', async (height: number, cb) => {
                     const blocks = []
                     for (let i = 0; i < config_settings.Node.syncBlocks; i++) {
-                        try {
-                            const block = await this.blockchain.getBlockByHeight(height + i)
-                            blocks.push(Block.minify(block))
-                        }
-                        catch {
-                            break
-                        }
+                        const block = await this.blockchain.getBlockByHeight(height + i)
+                        if (!block) break
+                        blocks.push(Block.minify(block))
                     }
                     cb(blocks)
                 })
@@ -343,7 +339,7 @@ class Node extends events.EventEmitter {
             height: this.sync.height
         }
         log.debug(4, 'Sync', this.sync.height)
-        this.tcpNode.broadcast(protocol.constructBuffer('sync', this.sync.height), true)
+        await this.tcpNode.broadcast(protocol.constructBuffer('sync', this.sync.height), true)
     }
 }
 export default Node

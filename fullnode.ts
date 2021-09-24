@@ -25,8 +25,7 @@ if (isMainThread) {
     if (!fs.existsSync('./db')) fs.mkdirSync('./db')
     const nodes = level('./db/nodes', { keyEncoding: 'utf8', valueEncoding: 'utf8' })
     const blocks = level('./db/blocks', { keyEncoding: 'binary', valueEncoding: 'json' })
-    const hashes = level('./db/hashes', { keyEncoding: 'binary', valueEncoding: 'json' })
-    const node = new Node({ nodes, blocks, hashes }, commit)
+    const node = new Node({ nodes, blocks }, commit)
     setPriority(19)
     for (let i = 0; i < node.threads; i++) node.addWorker(new Worker(__filename))
 }
