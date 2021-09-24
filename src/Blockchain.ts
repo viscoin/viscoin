@@ -87,21 +87,16 @@ class Blockchain extends events.EventEmitter {
                 }
                 const hash = this.hashes[block.height]
                 if (hash?.equals(block.hash)) return resolve()
-                try {
+                if (hash) {
                     const _block = await this.getBlockByHash(hash)
                     this.cacheAddressesInputOutputOfTransactionsNegative(_block.transactions)
                 }
-                catch {}
                 this.hashes[block.height] = block.hash
                 if (block.height === 0) return resolve()
                 this.cacheAddressesInputOutputOfTransactions(block.transactions)
-                try {
-                    const previousBlock = await this.getBlockByHash(block.previousHash)
-                    loadPreviousBlock(previousBlock)
-                }
-                catch {
-                    resolve()
-                }
+                const previousBlock = await this.getBlockByHash(block.previousHash)
+                loadPreviousBlock(previousBlock)
+                resolve()
             }
             const next = async () => {
                 if (--forks_loading_count > 0) return
