@@ -171,9 +171,6 @@ class Blockchain extends events.EventEmitter {
     async addBlock(block: Block) {
         let previousBlock = block.height === 1 ? this.genesisBlock : await this.getBlockByHash(block.previousHash)
         if (!previousBlock) return 10
-        console.log(block.previousHash)
-        console.log(previousBlock.hash)
-        console.log(block.previousHash.equals(previousBlock.hash))
         try {
             if (block.timestamp <= previousBlock.timestamp) return 2
             const latestBlock = await this.getLatestBlock()
@@ -186,14 +183,11 @@ class Blockchain extends events.EventEmitter {
             const data = Block.minify(block)
             delete data[config_minify.block.hash]
             await this.blocksDB.put(block.hash, data)
-            // let hashes = await this.getHashesByPreviousHash(previousBlock.hash)
-            // if (hashes) hashes = [...hashes, block.hash]
-            // else hashes = [block.hash]
-            // await this.hashesDB.put(previousBlock.hash, hashes)
             this.addHash(block.previousHash.toString('binary'), block.hash)
             // await this.cacheAddressesInputOutputOfTransactions(block.transactions)
             log.debug(4, 'Looking for fork')
-            await this.loadBlockHashes(block.previousHash)
+            const _block = await this.getBlockByHeight(block.height - config_settings.trustedAfterBlocks)
+            await this.loadBlockHashes(_block.previousHash)
             return 0
         }
         catch {
