@@ -193,7 +193,7 @@ class Blockchain extends events.EventEmitter {
             this.addHash(block.previousHash.toString('binary'), block.hash)
             // await this.cacheAddressesInputOutputOfTransactions(block.transactions)
             log.debug(4, 'Looking for fork')
-            await this.loadBlockHashes(previousBlock.hash)
+            await this.loadBlockHashes(block.previousHash)
             return 0
         }
         catch {
