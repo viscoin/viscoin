@@ -166,8 +166,8 @@ class Node extends events.EventEmitter {
                 this.reconnect()
             }
             if (config_settings.Node.sync === true) {
-                log.info('Starting to synchronize in', config_settings.Node.syncTimeout / 1000, 'seconds')
-                setTimeout(this.syncLoop.bind(this), config_settings.Node.syncTimeout)
+                log.info('Starting to synchronize')
+                await this.syncLoop()
             }
             this.nextBlock()
             this.nextTransaction()
@@ -209,8 +209,7 @@ class Node extends events.EventEmitter {
     }
     async syncLoop() {
         const latestBlock = await this.blockchain.getLatestBlock()
-        const block = await this.blockchain.getBlockByHeight(latestBlock.height - config_settings.trustedAfterBlocks)
-        this.sync.height = !block ? latestBlock.height : block.height
+        this.sync.height = latestBlock.height - config_settings.trustedAfterBlocks
         log.debug(3, 'syncLoop', this.sync.height)
         if (config_settings.Node.syncLoop) setTimeout(this.syncLoop.bind(this), config_settings.Node.syncLoop)
     }

@@ -169,13 +169,11 @@ class Blockchain extends events.EventEmitter {
         return 0
     }
     async addBlock(block: Block) {
-        let previousBlock = null
-        try  {
-            previousBlock = await this.getBlockByHash(block.previousHash)
-            // if (!previousBlock) log.warn('!previousBlock')
-        }
-        catch {}
-        if (!previousBlock) previousBlock = this.genesisBlock
+        let previousBlock = block.height === 1 ? this.genesisBlock : await this.getBlockByHash(block.previousHash)
+        if (!previousBlock) return 10
+        console.log(block.previousHash)
+        console.log(previousBlock.hash)
+        console.log(block.previousHash.equals(previousBlock.hash))
         try {
             if (block.timestamp <= previousBlock.timestamp) return 2
             const latestBlock = await this.getLatestBlock()
