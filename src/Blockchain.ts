@@ -111,6 +111,7 @@ class Blockchain extends events.EventEmitter {
                     })
                 }
                 const _fork = _forks.sort((b, a) => (a.work < b.work) ? -1 : ((a.work > b.work) ? 1 : 0))[0]
+                if (!_fork) return setBlockHashes(this.genesisBlock)
                 log.debug(3, 'fork', _fork.hash, _fork.work)
                 return await setBlockHashes(await this.getBlockByHash(Buffer.from(_fork.hash, 'hex')))
             }
@@ -186,8 +187,9 @@ class Blockchain extends events.EventEmitter {
             this.addHash(block.previousHash.toString('binary'), block.hash)
             // await this.cacheAddressesInputOutputOfTransactions(block.transactions)
             log.debug(4, 'Looking for fork')
-            const _block = await this.getBlockByHeight(block.height - config_settings.trustedAfterBlocks)
-            await this.loadBlockHashes(_block.previousHash)
+            let _block = await this.getBlockByHeight(block.height - config_settings.trustedAfterBlocks)
+            if (!_block) _block = this.genesisBlock
+            await this.loadBlockHashes(_block.hash)
             return 0
         }
         catch {

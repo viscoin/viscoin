@@ -210,6 +210,7 @@ class Node extends events.EventEmitter {
     async syncLoop() {
         const latestBlock = await this.blockchain.getLatestBlock()
         this.sync.height = latestBlock.height - config_settings.trustedAfterBlocks
+        if (this.sync.height < 0) this.sync.height = 0
         log.debug(3, 'syncLoop', this.sync.height)
         if (config_settings.Node.syncLoop) setTimeout(this.syncLoop.bind(this), config_settings.Node.syncLoop)
     }
