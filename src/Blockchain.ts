@@ -95,8 +95,8 @@ class Blockchain extends events.EventEmitter {
                 if (block.height === 0) return resolve()
                 this.cacheAddressesInputOutputOfTransactions(block.transactions)
                 const previousBlock = await this.getBlockByHash(block.previousHash)
+                if (!previousBlock) return resolve()
                 loadPreviousBlock(previousBlock)
-                resolve()
             }
             const next = async () => {
                 if (--forks_loading_count > 0) return
@@ -174,10 +174,12 @@ class Blockchain extends events.EventEmitter {
         if (!previousBlock) previousBlock = this.genesisBlock
         try {
             if (block.timestamp <= previousBlock.timestamp) return 2
+            const latestBlock = await this.getLatestBlock()
+            const isLatestBlock = latestBlock.hash.equals(previousBlock.hash)
             const code = await this.isPartOfChainValid([
                 previousBlock,
                 block
-            ])
+            ], isLatestBlock)
             if (code !== 0) return parseFloat('3.' + code)
             const data = Block.minify(block)
             delete data[config_minify.block.hash]
@@ -257,7 +259,7 @@ class Blockchain extends events.EventEmitter {
         this.addresses.set(address.toString('hex'), balance)
         return balance
     }
-    async isPartOfChainValid(chain: Array<Block>) {
+    async isPartOfChainValid(chain: Array<Block>, isLatestBlock: boolean) {
         for (let i = 1; i < chain.length; i++) {
             const block = chain[i]
             const previousBlock = chain[i - 1]
@@ -281,7 +283,7 @@ class Blockchain extends events.EventEmitter {
                         if (_transaction.amount) sum += parseBigInt(_transaction.amount)
                     }
                 }
-                const balance = await this.getBalanceOfAddressFromHash(transaction.from, block.previousHash)
+                const balance = isLatestBlock ? await this.getBalanceOfAddress(transaction.from) : await this.getBalanceOfAddressFromHash(transaction.from, block.previousHash)
                 if (balance < sum) return 7
             }
         }
