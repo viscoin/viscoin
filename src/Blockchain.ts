@@ -80,7 +80,7 @@ class Blockchain extends events.EventEmitter {
             let forks_loading_count = 1
             const forks = new Map()
             let i = 0
-            const loadPreviousBlock = async (block: Block) => {
+            const setBlockHashes = async (block: Block) => {
                 if (i++ === 2) {
                     // this.addresses = new Map()
                     log.debug(2, 'Found new fork')
@@ -95,8 +95,11 @@ class Blockchain extends events.EventEmitter {
                 if (block.height === 0) return resolve()
                 this.cacheAddressesInputOutputOfTransactions(block.transactions)
                 const previousBlock = await this.getBlockByHash(block.previousHash)
-                if (!previousBlock) return resolve()
-                loadPreviousBlock(previousBlock)
+                if (!previousBlock) {
+                    log.error('Missing block', block)
+                    return resolve()
+                }
+                setBlockHashes(previousBlock)
             }
             const next = async () => {
                 if (--forks_loading_count > 0) return
@@ -109,7 +112,7 @@ class Blockchain extends events.EventEmitter {
                 }
                 const _fork = _forks.sort((b, a) => (a.work < b.work) ? -1 : ((a.work > b.work) ? 1 : 0))[0]
                 log.debug(3, 'fork', _fork.hash, _fork.work)
-                return await loadPreviousBlock(await this.getBlockByHash(Buffer.from(_fork.hash, 'hex')))
+                return await setBlockHashes(await this.getBlockByHash(Buffer.from(_fork.hash, 'hex')))
             }
             const fork = async (hash: Buffer) => {
                 const work = forks.get(hash.toString('hex')) || 0n
@@ -169,6 +172,7 @@ class Blockchain extends events.EventEmitter {
         let previousBlock = null
         try  {
             previousBlock = await this.getBlockByHash(block.previousHash)
+            // if (!previousBlock) log.warn('!previousBlock')
         }
         catch {}
         if (!previousBlock) previousBlock = this.genesisBlock
@@ -188,8 +192,8 @@ class Blockchain extends events.EventEmitter {
             // if (hashes) hashes = [...hashes, block.hash]
             // else hashes = [block.hash]
             // await this.hashesDB.put(previousBlock.hash, hashes)
-            this.addHash(previousBlock.hash.toString('binary'), block.hash)
-            await this.cacheAddressesInputOutputOfTransactions(block.transactions)
+            this.addHash(block.previousHash.toString('binary'), block.hash)
+            // await this.cacheAddressesInputOutputOfTransactions(block.transactions)
             log.debug(4, 'Looking for fork')
             await this.loadBlockHashes(previousBlock.hash)
             return 0
