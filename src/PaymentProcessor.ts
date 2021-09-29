@@ -121,17 +121,11 @@ class PaymentProcessor extends events.EventEmitter {
         return charge
     }
     async putCharge(charge: { address: string }) {
-        const address = charge.address
-        delete charge.address
-        await this.db.put(address, charge)
+        await this.db.put(charge.address, charge)
     }
     async getCharge(address: string) {
         let charge = await this.db.get(address)
         if (!charge) return null
-        charge = {
-            address,
-            ...charge
-        }
         if (![ 'NEW', 'PENDING' ].includes(charge.status)) return null
         if (charge.expires < Date.now()) {
             charge.status = 'EXPIRED'
