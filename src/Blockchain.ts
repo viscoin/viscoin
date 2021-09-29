@@ -9,7 +9,6 @@ import log from './log'
 import * as config_minify from '../config/minify.json'
 interface Blockchain {
     blocksDB: any
-    hashesDB: any
     pendingTransactions: Array<Transaction>
     hashes: Array<Buffer>
     updatingBlockHashes: boolean
@@ -22,12 +21,12 @@ interface Blockchain {
     loaded: boolean
     genesisBlock: Block
     addresses: Map<string, bigint>
+    _hashes: object
 }
 class Blockchain extends events.EventEmitter {
-    constructor({ blocks, hashes }) {
+    constructor({ blocks }) {
         super()
         this.blocksDB = blocks
-        this.hashesDB = hashes
         this.pendingTransactions = []
         this.updatingBlockHashes = false
         this.minByteFee = {
@@ -37,18 +36,30 @@ class Blockchain extends events.EventEmitter {
         this.genesisBlockTimestamp = config_core.genesisBlockTimestamp === -1 ? Date.now() : config_core.genesisBlockTimestamp
         this.loaded = false
         this.hashes = []
+        this._hashes = {}
         this.addresses = new Map()
         this.setGenesisBlock()
+    }
+    addHash(previousHash: string, hash: Buffer) {
+        const hashes = this._hashes[previousHash]
+        this._hashes[previousHash] = hashes ? [ ...hashes, hash ] : [ hash ]
     }
     async setGenesisBlock() {
         this.genesisBlock = await this.createGenesisBlock()
         log.debug(2, 'Created genesisBlock', this.genesisBlock.hash)
         log.info('Loading blockchain...')
-        await this.loadBlockHashes(this.genesisBlock.hash)
-        this.loaded = true
-        log.info(`Done in ${((performance.now()) / 1000).toFixed(3)}s!`)
-        log.info(`Blockchain height: ${(await this.getLatestBlock()).height}`)
-        this.emit('loaded')
+        const stream = this.blocksDB.createReadStream()
+        stream.on('data', data => {
+            this.addHash(data.value[config_minify.block.previousHash], data.key)
+        })
+        stream.on('end', async () => {
+            log.info(`Stream done in ${((performance.now()) / 1000).toFixed(3)}s!`)
+            await this.loadBlockHashes(this.genesisBlock.hash)
+            this.loaded = true
+            log.info(`Load Hashes done in ${((performance.now()) / 1000).toFixed(3)}s!`)
+            log.info(`Blockchain height: ${(await this.getLatestBlock()).height}`)
+            this.emit('loaded')
+        })
     }
     static difficultyToWork(difficulty: number) {
         return 2n ** BigInt(difficulty >> config_core.smoothness)
@@ -66,58 +77,61 @@ class Blockchain extends events.EventEmitter {
     }
     loadBlockHashes(hash: Buffer) {
         return new Promise<void>((resolve, reject) => {
+            let forks_loading_count = 1
             const forks = new Map()
             let i = 0
-            const loadPreviousBlock = async (block: Block) => {
+            const setBlockHashes = async (block: Block) => {
                 if (i++ === 2) {
-                    this.addresses = new Map()
+                    // this.addresses = new Map()
                     log.debug(2, 'Found new fork')
-                } 
+                }
                 const hash = this.hashes[block.height]
                 if (hash?.equals(block.hash)) return resolve()
+                if (hash) {
+                    const _block = await this.getBlockByHash(hash)
+                    this.cacheAddressesInputOutputOfTransactionsNegative(_block.transactions)
+                }
                 this.hashes[block.height] = block.hash
                 if (block.height === 0) return resolve()
+                this.cacheAddressesInputOutputOfTransactions(block.transactions)
                 const previousBlock = await this.getBlockByHash(block.previousHash)
-                loadPreviousBlock(previousBlock)
+                if (!previousBlock) {
+                    log.error('Missing block', block)
+                    return resolve()
+                }
+                setBlockHashes(previousBlock)
             }
-            const loadNextBlock = (previousHash: Buffer) => {
-                this.hashesDB.get(previousHash, async (err, hashes) => {
-                    const work = forks.get(previousHash.toString('hex'))?.work || 0n
-                    if (hashes) {
-                        hashes = hashes.map(e => Buffer.from(e))
-                        for (const hash of hashes) {
-                            forks.delete(previousHash.toString('hex'))
-                            const block = await this.getBlockByHash(hash)
-                            // console.log(block)
-                            if (err) reject(err)
-                            if (block) {
-                                forks.set(hash.toString('hex'), { work: work + Blockchain.difficultyToWork(block.difficulty), done: false })
-                                return loadNextBlock(block.hash)
-                            }
-                        }
-                    }
-                    else {
-                        forks.set(previousHash.toString('hex'), { work, done: true })
-                        // console.log(forks)
-                        let done = true
-                        for (const fork of forks) {
-                            if (fork[1].done === false) done = false
-                        }
-                        if (!done) return
-                        const _forks = []
-                        for (const fork of forks) {
-                            _forks.push({
-                                hash: fork[0],
-                                ...fork[1]
-                            })
-                        }
-                        const fork = _forks.sort((b, a) => (a.work < b.work) ? -1 : ((a.work > b.work) ? 1 : 0))[0]
-                        // console.log(fork)
-                        loadPreviousBlock(await this.getBlockByHash(Buffer.from(fork.hash, 'hex')))
-                    }
-                })
+            const next = async () => {
+                if (--forks_loading_count > 0) return
+                const _forks = []
+                for (const fork of forks) {
+                    _forks.push({
+                        hash: fork[0],
+                        work: fork[1]
+                    })
+                }
+                const _fork = _forks.sort((b, a) => (a.work < b.work) ? -1 : ((a.work > b.work) ? 1 : 0))[0]
+                if (!_fork) return setBlockHashes(this.genesisBlock)
+                log.debug(3, 'fork', _fork.hash, _fork.work)
+                return await setBlockHashes(await this.getBlockByHash(Buffer.from(_fork.hash, 'hex')))
             }
-            loadNextBlock(hash)
+            const fork = async (hash: Buffer) => {
+                const work = forks.get(hash.toString('hex')) || 0n
+                const hashes = this._hashes[hash.toString('binary')]
+                if (hashes?.length) {
+                    forks_loading_count += hashes.length - 1
+                    for (const hash of hashes.map(e => Buffer.from(e))) {
+                        const block = await this.getBlockByHash(hash)
+                        if (block) {
+                            forks.set(hash.toString('hex'), work + Blockchain.difficultyToWork(block.difficulty))
+                            fork(block.hash)
+                        }
+                        else next()
+                    }
+                }
+                else next()
+            }
+            fork(hash)
         })
     }
     async createGenesisBlock() {
@@ -156,71 +170,94 @@ class Blockchain extends events.EventEmitter {
         return 0
     }
     async addBlock(block: Block) {
-        let previousBlock = null
-        try  {
-            previousBlock = await this.getBlockByHash(block.previousHash)
-        }
-        catch {}
-        if (!previousBlock) previousBlock = this.genesisBlock
+        let previousBlock = block.height === 1 ? this.genesisBlock : await this.getBlockByHash(block.previousHash)
+        if (!previousBlock) return 10
         try {
             if (block.timestamp <= previousBlock.timestamp) return 2
-            if (await this.isPartOfChainValid([
+            const latestBlock = await this.getLatestBlock()
+            const isLatestBlock = latestBlock.hash.equals(previousBlock.hash)
+            const code = await this.isPartOfChainValid([
                 previousBlock,
                 block
-            ]) !== 0) return 3
+            ], isLatestBlock)
+            if (code !== 0) return parseFloat('3.' + code)
             const data = Block.minify(block)
             delete data[config_minify.block.hash]
             await this.blocksDB.put(block.hash, data)
-            let hashes = await this.getHashesByPreviousHash(previousBlock.hash)
-            if (hashes) hashes = [...hashes, block.hash]
-            else hashes = [block.hash]
-            await this.hashesDB.put(previousBlock.hash, hashes)
-            for (const transaction of block.transactions) {
-                if (transaction.to && this.addresses.has(transaction.to.toString('hex'))) {
-                    let balance = this.addresses.get(transaction.to.toString('hex'))
-                    balance += parseBigInt(transaction.amount)
-                    this.addresses.set(transaction.to.toString('hex'), balance)
-                }
-                if (transaction.from && this.addresses.has(transaction.from.toString('hex'))) {
-                    let balance = this.addresses.get(transaction.from.toString('hex'))
-                    if (transaction.amount) balance -= parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee)
-                    else balance -= parseBigInt(transaction.minerFee)
-                    this.addresses.set(transaction.from.toString('hex'), balance)
-                }
-            }
+            this.addHash(block.previousHash.toString('binary'), block.hash)
+            // await this.cacheAddressesInputOutputOfTransactions(block.transactions)
             log.debug(4, 'Looking for fork')
-            await this.loadBlockHashes(previousBlock.hash)
+            let _block = await this.getBlockByHeight(block.height - config_settings.trustedAfterBlocks)
+            if (!_block) _block = this.genesisBlock
+            await this.loadBlockHashes(_block.hash)
             return 0
         }
         catch {
             return 4
         }
     }
+    async cacheAddressesInputOutputOfTransactionsNegative(transactions: Array<Transaction>) {
+        for (const transaction of transactions) {
+            if (transaction.to) {
+                let balance = this.addresses.get(transaction.to.toString('hex'))
+                balance -= parseBigInt(transaction.amount)
+                this.addresses.set(transaction.to.toString('hex'), balance)
+            }
+            if (transaction.from) {
+                let balance = this.addresses.get(transaction.from.toString('hex'))
+                balance += transaction.amount ? parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee) : parseBigInt(transaction.minerFee)
+                this.addresses.set(transaction.from.toString('hex'), balance)
+            }
+        }
+    }
+    async cacheAddressesInputOutputOfTransactions(transactions: Array<Transaction>) {
+        for (const transaction of transactions) {
+            if (transaction.to) {
+                let balance = this.addresses.get(transaction.to.toString('hex')) || 0n
+                balance += parseBigInt(transaction.amount)
+                this.addresses.set(transaction.to.toString('hex'), balance)
+            }
+            if (transaction.from) {
+                let balance = this.addresses.get(transaction.from.toString('hex')) || 0n
+                balance -= transaction.amount ? parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee) : parseBigInt(transaction.minerFee)
+                this.addresses.set(transaction.from.toString('hex'), balance)
+            }
+        }
+    }
+    static calcAddressInputOutputOfTransactions(address: Buffer, transactions: Array<Transaction>) {
+        let balance = 0n
+        for (const transaction of transactions) {
+            if (transaction.from?.equals(address)) {
+                if (transaction.amount) balance -= parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee)
+                else balance -= parseBigInt(transaction.minerFee)
+            }
+            if (transaction.to?.equals(address)) {
+                balance += parseBigInt(transaction.amount)
+            }
+        }
+        return balance
+    }
+    async getBalanceOfAddressFromHash(address: Buffer, hash: Buffer) {
+        let balance = 0n
+        let block = await this.getBlockByHash(hash)
+        while (block) {
+            balance += Blockchain.calcAddressInputOutputOfTransactions(address, block.transactions)
+            block = await this.getBlockByHash(block.previousHash)
+        }
+        return balance
+    }
     async getBalanceOfAddress(address: Buffer) {
         if (this.addresses.has(address.toString('hex'))) return this.addresses.get(address.toString('hex'))
         if (!this.loaded) return null
-        const getBalance = (transactions) => {
-            let balance = 0n
-            for (const transaction of transactions) {
-                if (transaction.from?.equals(address)) {
-                    if (transaction.amount) balance -= parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee)
-                    else balance -= parseBigInt(transaction.minerFee)
-                }
-                if (transaction.to?.equals(address)) {
-                    balance += parseBigInt(transaction.amount)
-                }
-            }
-            return balance
-        }
         let balance = 0n
         for (const hash of this.hashes) {
             const block = await this.getBlockByHash(hash)
-            balance += getBalance(block.transactions)
+            balance += Blockchain.calcAddressInputOutputOfTransactions(address, block.transactions)
         }
         this.addresses.set(address.toString('hex'), balance)
         return balance
     }
-    async isPartOfChainValid(chain: Array<Block>) {
+    async isPartOfChainValid(chain: Array<Block>, isLatestBlock: boolean) {
         for (let i = 1; i < chain.length; i++) {
             const block = chain[i]
             const previousBlock = chain[i - 1]
@@ -244,7 +281,8 @@ class Blockchain extends events.EventEmitter {
                         if (_transaction.amount) sum += parseBigInt(_transaction.amount)
                     }
                 }
-                if (await this.getBalanceOfAddress(transaction.from) < sum) return 7
+                const balance = isLatestBlock ? await this.getBalanceOfAddress(transaction.from) : await this.getBalanceOfAddressFromHash(transaction.from, block.previousHash)
+                if (balance < sum) return 7
             }
         }
         return 0
@@ -257,14 +295,14 @@ class Blockchain extends events.EventEmitter {
         else if (time >= _time && difficulty > 1 << config_core.smoothness) difficulty--
         return difficulty
     }
-    async getHashesByPreviousHash(previousHash: Buffer) {
-        try {
-            return Array<Buffer> (await this.hashesDB.get(previousHash)).map(e => Buffer.from(e))
-        }
-        catch {
-            return []
-        }
-    }
+    // async getHashesByPreviousHash(previousHash: Buffer) {
+    //     try {
+    //         return Array<Buffer> (await this.hashesDB.get(previousHash)).map(e => Buffer.from(e))
+    //     }
+    //     catch {
+    //         return []
+    //     }
+    // }
     async getBlockByHash(hash: Buffer) {
         if (this.genesisBlock.hash.equals(hash)) return this.genesisBlock
         try {
@@ -277,7 +315,8 @@ class Blockchain extends events.EventEmitter {
     }
     async getBlockByPreviousHash(previousHash: Buffer) {
         if (this.genesisBlock.previousHash.equals(previousHash)) return this.genesisBlock
-        const hashes = await this.getHashesByPreviousHash(previousHash)
+        const hashes = this._hashes[previousHash.toString('binary')]
+        // const hashes = await this.getHashesByPreviousHash(previousHash)
         for (const hash of hashes) {
             if (this.hashes.find(e => e.equals(hash))) {
                 return await this.getBlockByHash(hash)

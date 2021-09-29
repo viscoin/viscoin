@@ -36,13 +36,15 @@
         "sync": true,
         "syncBlocks": 16,
         "syncTimeout": 10000,
+        "syncLoop": 600000,
         "banTimeout": 60000,
         "queue": {
             "blocks": 1000,
             "transactions": 1000
         },
         "autoReconnect": 120000,
-        "threads": 0
+        "threads": 0,
+        "restartAfter": 86400000
     },
     "TCPApi": {
         "maxConnectionsIn": 100,
@@ -94,5 +96,5 @@
         "chanceToNotUse": 0
     },
     "maxBlocksInCache": 10080,
-    "trustedAfterBlocks": 1440
+    "trustedAfterBlocks": 128
 }

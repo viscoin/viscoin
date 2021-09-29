@@ -6,9 +6,14 @@ import * as level from 'level'
 import * as fs from 'fs'
 import { execSync } from 'child_process'
 import log from './src/log'
+import * as settings from './config/settings.json'
 
 
 if (isMainThread) {
+    setTimeout(() => {
+        log.info('Restarting...')
+        process.exit(0)
+    }, settings.Node.restartAfter)
     let commit = null
     try {
         commit = execSync('git rev-parse HEAD').toString().trim()
@@ -20,8 +25,7 @@ if (isMainThread) {
     if (!fs.existsSync('./db')) fs.mkdirSync('./db')
     const nodes = level('./db/nodes', { keyEncoding: 'utf8', valueEncoding: 'utf8' })
     const blocks = level('./db/blocks', { keyEncoding: 'binary', valueEncoding: 'json' })
-    const hashes = level('./db/hashes', { keyEncoding: 'binary', valueEncoding: 'json' })
-    const node = new Node({ nodes, blocks, hashes }, commit)
+    const node = new Node({ nodes, blocks }, commit)
     setPriority(19)
     for (let i = 0; i < node.threads; i++) node.addWorker(new Worker(__filename))
 }
