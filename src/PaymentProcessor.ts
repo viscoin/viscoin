@@ -7,47 +7,40 @@ import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
 import Transaction from './Transaction'
 import * as events from 'events'
-import { Mongoose } from 'mongoose'
-import * as crypto from 'crypto'
 import Address from './Address'
+import keygen from './keygen'
 
 interface PaymentProcessor {
+    db: any
     privateKey: Buffer
+    confirmations: number
+    sendBackToMainWallet: boolean
     httpApi: {
         port: number
         host: string
     }
     tcpClient: TCPApi['Client']
-    confirmations: number
-    model_charge: any
-    sendBackToMainWallet: boolean
 }
 class PaymentProcessor extends events.EventEmitter {
-    constructor(privateKey: Buffer, confirmations: number, httpApi: { port: number, host: string }, tcpClient: TCPApi['Client'], mongoose: Mongoose, model_charge_options: object, sendBackToMainWallet: boolean) {
+    constructor(db, privateKey: Buffer, confirmations: number, sendBackToMainWallet: boolean, httpApi: { port: number, host: string }, tcpClient: TCPApi['Client']) {
         super()
-        const options = {
-            status: String,
-            amount: String,
-            address: String,
-            privateKey: String,
-            created: Number,
-            expires: Number,
-            payments: Array,
-            ...model_charge_options
-        }
-        this.model_charge = mongoose.model("Charge", new mongoose.Schema(options, { collection: 'charges', versionKey: false }))
+        this.db = db
         this.privateKey = privateKey
         this.confirmations = confirmations
         this.sendBackToMainWallet = sendBackToMainWallet
         this.httpApi = httpApi
         this.tcpClient = tcpClient
-        this.tcpClient.on('block', async block => {
-            try {
-                const charges = await this.model_charge.find({
-                    status: {
-                        $in: [ 'NEW', 'PENDING' ]
-                    }
-                })
+        this.tcpClient.on('block', block => {
+            let charges = []
+            const stream = this.db.createReadStream()
+            stream.on('data', data => {
+                const charge = {
+                    address: data.key,
+                    ...data.value
+                }
+                if ([ 'NEW', 'PENDING' ].includes(charge.status)) charges.push(charge)
+            })
+            stream.on('end', async () => {
                 for (const charge of charges) {
                     if (charge.expires < Date.now()) charge.status = 'EXPIRED'
                     else {
@@ -62,16 +55,12 @@ class PaymentProcessor extends events.EventEmitter {
                                 signature: transaction.signature.toString('hex')
                             })
                             this.emit('charge-pending', charge, block)
-                            // if (charge.status === 'NEW') this.emit('charge-pending', charge, block)
                             charge.status = 'PENDING'
                         }
                     }
-                    await charge.save()
+                    await this.putCharge(charge)
                 }
-            }
-            catch {}
-            try {
-                const charges = await this.model_charge.find({ status: 'PENDING' })
+                charges = charges.filter(e => e.status === 'PENDING')
                 for (const charge of charges) {
                     charge.payments = charge.payments.filter(async payment => await HTTPApi.getBlockByHash(this.httpApi, Buffer.from(payment.block.hash, 'hex')))
                     let sum = 0n,
@@ -84,23 +73,22 @@ class PaymentProcessor extends events.EventEmitter {
                     if (height > block.height - (this.confirmations - 1)) return
                     if (sum < parseBigInt(charge.amount)) return
                     charge.status = 'COMPLETED'
-                    charge.save()
+                    await this.putCharge(charge)
                     this.emit('charge-completed', charge)
                     if (this.sendBackToMainWallet === true) {
                         const { code, transaction } = await this.withdrawAllBalance(charge.privateKey)
                         this.emit('withdraw-all-balance', code, transaction)
                     }
                 }
-            }
-            catch {}
+            })
         })
         this.tcpClient.on('transaction', async transaction => {
             try {
                 const to = Address.toString(transaction.to)
-                const charge = await this.model_charge.findOne({ address: to, status: 'NEW' })
+                const charge = await this.getCharge(to)
                 if (!charge) return
                 charge.status = 'PENDING'
-                await charge.save()
+                await this.putCharge(charge)
                 this.emit('charge-pending', charge)
             }
             catch {}
@@ -110,13 +98,7 @@ class PaymentProcessor extends events.EventEmitter {
         return addressFromPublicKey(publicKeyFromPrivateKey(this.privateKey))
     }
     async getNewAddress() {
-        const charges = await this.model_charge.countDocuments({})
-        const buffer = Buffer.alloc(4)
-        buffer.writeUInt32BE(charges)
-        const privateKey = crypto.createHash('sha256').update(Buffer.concat([
-            this.privateKey,
-            buffer
-        ])).digest()
+        const privateKey = keygen()
         return {
             address: Address.toString(Address.fromPrivateKey(privateKey)),
             privateKey: base58.encode(privateKey)
@@ -124,7 +106,7 @@ class PaymentProcessor extends events.EventEmitter {
     }
     async createCharge(amount: string, expiresAfter: number, data: object) {
         const { address, privateKey } = await this.getNewAddress()
-        const charge = await new this.model_charge({
+        const charge = {
             status: 'NEW',
             amount,
             address,
@@ -133,30 +115,38 @@ class PaymentProcessor extends events.EventEmitter {
             expires: Date.now() + expiresAfter,
             payments: [],
             ...data
-        }).save()
+        }
+        await this.putCharge(charge)
         this.emit('charge-new', charge)
         return charge
     }
-    async getCharge(query: object) {
-        const charge = await this.model_charge.findOne({ status: { $in: [ 'NEW', 'PENDING' ] }, ...query })
+    async putCharge(charge: { address: string }) {
+        const address = charge.address
+        delete charge.address
+        await this.db.put(address, charge)
+    }
+    async getCharge(address: string) {
+        let charge = await this.db.get(address)
         if (!charge) return null
+        charge = {
+            address,
+            ...charge
+        }
+        if (![ 'NEW', 'PENDING' ].includes(charge.status)) return null
         if (charge.expires < Date.now()) {
             charge.status = 'EXPIRED'
-            charge.save()
+            await this.putCharge(charge)
             return null
         }
         return charge
     }
-    async cancelCharge(query: object) {
-        try {
-            const charge = await this.model_charge.findOne({ status: { $in: [ 'NEW', 'PENDING' ] }, ...query })
-            if (!charge) return false
-            charge.status = 'CANCELED'
-            await charge.save()
-            this.emit('charge-canceled', charge)
-            return true
-        }
-        catch {}
+    async cancelCharge(address: string) {
+        const charge = await this.getCharge(address)
+        if (!charge) return false
+        charge.status = 'CANCELED'
+        await this.putCharge(charge)
+        this.emit('charge-canceled', charge)
+        return true
     }
     async withdrawAllBalance(privateKey: string, maxFee: bigint = 0n) {
         try {
