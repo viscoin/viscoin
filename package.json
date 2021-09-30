@@ -7,7 +7,8 @@
     "c": "tsc",
     "build": "tsc --p tsconfig.module.json",
     "docs": "typedoc index.ts --out dist --hideGenerator",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "setup": "npm i && tsc"
   },
   "files": [
     "lib"
