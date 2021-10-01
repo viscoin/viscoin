@@ -54,21 +54,21 @@ class TCPNode extends events.EventEmitter {
                 if (this.hasSocketWithRemoteAddress(peer) || this.peers.size >= config_settings.TCPNode.maxConnectionsOut) return peer.delete()
                 this.peers.add(peer)
                 if (peer.remoteAddress) await this.nodes.put(peer.remoteAddress, '0')
-                log.info('Peer connection', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`)
+                log.debug(1, 'Peer connection', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`)
                 this.broadcast(protocol.constructBuffer('node', {
                     address: peer.remoteAddress,
                     port: server === false ? peer.remotePort : 9333
                 }))
             })
             .on('delete', () => {
-                if (this.peers.delete(peer)) log.info('Peer disconnected', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`)
+                if (this.peers.delete(peer)) log.debug(1, 'Peer disconnected', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`)
             })
             .on('ban', async code => {
                 if (peer.remoteAddress) {
                     await this.nodes.put(peer.remoteAddress, Date.now())
                     log.warn('Peer banned', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`, 'code:', code)
                 }
-                else log.warn('Peer', server ? 'in' : 'out', 'connection failed')
+                else log.debug(2, 'Peer', server ? 'in' : 'out', 'connection failed')
             })
         for (const type of protocol.types) {
             peer.on(type, (data, buffer, cb) => {
@@ -130,11 +130,12 @@ class TCPNode extends events.EventEmitter {
             this.add(new Peer(socket), false)
         }
     }
-    connectToNode(host: string) {
-        if (net.isIP(host) === 0) return 2
+    connectToNode({ address, port }) {
+        if (net.isIP(address) === 0) return 1
+        if (port < 1 || port > 65536) return 1
         if (config_settings.TCPNode.allowConnectionsToSelf !== true
-        && host === this.host) return 3
-        const socket = net.connect(9333, host)
+        && address === this.host) return 2
+        const socket = net.connect(port, address)
         this.add(new Peer(socket), false)
         return 0
     }
