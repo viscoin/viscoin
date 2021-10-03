@@ -4,12 +4,17 @@ import * as events from 'events'
 import * as crypto from 'crypto'
 import protocol from './protocol'
 import Block from './Block'
+import * as secp256k1 from 'secp256k1'
+import addressFromPublicKey from './addressFromPublicKey'
+import Address from './Address'
+import isValidOnion from './isValidOnion'
+import log from './log'
 interface Peer extends events.EventEmitter {
     socket: net.Socket
     remotePort: number
     remoteAddress: string
-    port: number
-    address: string
+    localPort: number
+    localAddress: string
     bytesRead: number
     bytesWritten: number
     buffer: Buffer
@@ -25,11 +30,17 @@ interface Peer extends events.EventEmitter {
     height: number
     synced: boolean
     latestBlock: Block
+    address: string
+    timestamp: number
+    onion: string
 }
 class Peer extends events.EventEmitter {
-    constructor(socket: net.Socket) {
+    constructor(socket: net.Socket, { address, privateKey }: { address: Buffer, privateKey: Buffer }, onion: string) {
         super()
         this.socket = socket
+        this.address = ''
+        this.timestamp = 0
+        this.onion = ''
         this.bytesRead = this.bytesRead
         this.bytesWritten = this.bytesWritten
         this.buffer = Buffer.alloc(0)
@@ -44,22 +55,34 @@ class Peer extends events.EventEmitter {
         setInterval(this.interval['1s'].bind(this), 1000)
         setInterval(this.interval.hashes.bind(this), config_settings.Peer.hashes.interval)
         this.socket.setTimeout(config_settings.Peer.socket.setTimeout)
-        if (this.socket.connecting === false) setImmediate(() => this.emit('add'))
+        if (this.socket.connecting === false) setImmediate(() => this.emit('meta-send'))
         this.socket
-            .on('connect', () => this.emit('add'))
+            .on('connect', () => this.emit('meta-send'))
             .on('error', () => {})
-            .on('close', () => this.delete())
+            .on('close', () => this.delete(1))
             .on('timeout', () => this.emit('ban', 1))
             .on('data', chunk => this.onData(chunk))
         this
-            .on('add', () => {
+            .once('meta-send', () => {
+                const timestamp = Date.now()
+                const hash = crypto.createHash('sha256').update(timestamp.toString()).digest()
+                const signature = secp256k1.ecdsaSign(hash, privateKey)
+                this.socket.write(protocol.constructBuffer('meta', {
+                    address,
+                    timestamp,
+                    hash,
+                    signature: {
+                        signature: Buffer.from(signature.signature),
+                        recid: signature.recid
+                    },
+                    onion
+                }))
                 this.remotePort = socket.remotePort
                 this.remoteAddress = socket.remoteAddress
-                const address = <net.AddressInfo> socket.address()
-                this.port = address.port
-                this.address = address.address
+                this.localPort = socket.localPort
+                this.localAddress = socket.localAddress
             })
-            .on('ban', () => this.delete())
+            .on('ban', () => this.delete(2))
     }
     interval = {
         '1s': () => {
@@ -77,8 +100,8 @@ class Peer extends events.EventEmitter {
             this.hashes = this.hashes.filter(e => e.timestamp > Date.now() - config_settings.Peer.hashes.timeToLive)
         }
     }
-    delete() {
-        this.emit('delete')
+    delete(code) {
+        this.emit('delete', code)
         this.socket.destroy()
     }
     onData(chunk: Buffer) {
@@ -101,12 +124,35 @@ class Peer extends events.EventEmitter {
             const parsed = protocol.parse(d)
             if (parsed === null) continue
             const { type, data } = parsed
+            if (type === 'meta') {
+                if (this.address !== '') return this.emit('ban', 5)
+                const code = this.meta(data)
+                if (code !== 0) return this.emit('ban', 7)
+                this.emit('meta-received')
+            }
+            else if (this.address === '') return this.emit('ban', 6)
             if (this.requests[type]++ > config_settings.Peer.maxRequestsPerSecond[type]) continue
             this.addHash(hash)
             this.emit(type, data, b, res => {
                 if (res === 1) this.emit('ban', 4)
                 if (type === 'sync' && res !== null) this.write(protocol.constructBuffer('blocks', res), () => {})
             })
+        }
+    }
+    meta(data: { address: Buffer, timestamp: number, hash: Buffer, signature: { recid: number, signature: Uint8Array }, onion: string }) {
+        try {
+            if (!crypto.createHash('sha256').update(data.timestamp.toString()).digest().equals(data.hash)) return 1
+            const publicKey = secp256k1.ecdsaRecover(data.signature.signature, data.signature.recid, data.hash, false)
+            const address = addressFromPublicKey(publicKey)
+            if (!address.equals(data.address)) return 2
+            if (data.onion && !isValidOnion(data.onion)) return 3
+            this.address = Address.toString(data.address)
+            this.timestamp = data.timestamp
+            this.onion = data.onion
+            return 0
+        }
+        catch {
+            return 3
         }
     }
     write(buffer: Buffer, cb) {

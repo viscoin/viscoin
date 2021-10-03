@@ -44,7 +44,8 @@
         },
         "autoReconnect": 120000,
         "threads": 0,
-        "restartAfter": 86400000
+        "restartAfter": 86400000,
+        "dbPath": "./db"
     },
     "TCPApi": {
         "maxConnectionsIn": 100,
@@ -73,7 +74,12 @@
     "TCPNode": {
         "allowConnectionsToSelf": false,
         "maxConnectionsIn": 50,
-        "maxConnectionsOut": 50
+        "maxConnectionsOut": 50,
+        "proxy": {
+            "host": "127.0.0.1",
+            "port": 9050,
+            "type": 5
+        }
     },
     "Wallet": {
         "wordlist": "english.txt",

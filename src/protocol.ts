@@ -6,7 +6,8 @@ const types = [
     'transaction',
     'node',
     'sync',
-    'blocks'
+    'blocks',
+    'meta'
 ] as const
 type types_string = typeof types[number]
 export default {
@@ -22,7 +23,7 @@ export default {
         }
         return null
     },
-    constructBuffer(type: types_string | number, data: object | number) {
+    constructBuffer(type: types_string | number, data: object | number | string) {
         const buffer = data instanceof Buffer ? data : Buffer.from(JSON.stringify(data), 'binary')
         return Buffer.concat([
             Buffer.alloc(1, this.getType(type)),
@@ -47,13 +48,21 @@ export default {
                     data = new Transaction(Transaction.beautify(data))
                     break
                 case 'node':
-                    data = {
-                        port: data.port,
-                        address: data.address
-                    }
                     break
                 case 'sync':
                     data = parseInt(data)
+                    break
+                case 'meta':
+                    data = {
+                        address: Buffer.from(data.address),
+                        timestamp: data.timestamp,
+                        hash: Buffer.from(data.hash),
+                        signature: {
+                            signature: Buffer.from(data.signature.signature),
+                            recid: data.signature.recid
+                        },
+                        onion: data.onion
+                    }
                     break
                 default:
                     return null

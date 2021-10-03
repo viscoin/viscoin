@@ -137,9 +137,7 @@ class Node extends events.EventEmitter {
                 }))
                 this.tcpNode.on('transaction', (transaction, cb) => this.emit('add-transaction', transaction, code => cb(code)))
                 this.tcpNode.on('node', (node, cb) => {
-                    const code = this.tcpNode.connectToNode(node)
-                    log.debug(2, 'connectToNode', node, code)
-                    if (config_settings.Node.connectToNetwork) cb(code)
+                    if (config_settings.Node.connectToNetwork) cb(this.tcpNode.connectToNode(node))
                 })
                 this.tcpNode.on('sync', async (height: number, cb) => {
                     const blocks = []

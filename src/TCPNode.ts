@@ -8,6 +8,13 @@ import protocol from './protocol'
 import Peer from './Peer'
 import log from './log'
 import * as config_default_env from '../config/default_env.json'
+import { SocksClient, SocksClientOptions, SocksProxy } from 'socks'
+import isValidHost from './isValidHost'
+import keygen from './keygen'
+import publicKeyFromPrivateKey from './publicKeyFromPrivateKey'
+import addressFromPublicKey from './addressFromPublicKey'
+import Address from './Address'
+import isValidOnion from './isValidOnion'
 interface TCPNode {
     nodes: any
     host: string
@@ -17,11 +24,16 @@ interface TCPNode {
     TCP_NODE: {
         host: string
         port: number
-    }
+    },
+    privateKey: Buffer
+    address: Buffer
 }
 class TCPNode extends events.EventEmitter {
     constructor(nodes) {
         super()
+        this.privateKey = keygen()
+        this.address = addressFromPublicKey(publicKeyFromPrivateKey(this.privateKey))
+        log.info('TCPNode Address:', Address.toString(this.address))
         this.nodes = nodes
         const TCP_NODE = process.env.TCP_NODE || config_default_env.TCP_NODE
         this.TCP_NODE = {
@@ -31,39 +43,59 @@ class TCPNode extends events.EventEmitter {
         if (process.env.TCP_NODE) log.info('Using TCP_NODE:', this.TCP_NODE)
         else log.warn('Unset environment value! Using default value for TCP_NODE:', this.TCP_NODE)
         this.host = null
-        dns.lookup(hostname(), (err, add) => {
+        dns.lookup(hostname(), (err, host) => {
             if (err) throw err
-            this.host = add
+            this.host = host
         })
         this.hashes = []
         this.peers = new Set()
         this.server = new net.Server()
         this.server.maxConnections = config_settings.TCPNode.maxConnectionsIn
         this.server
-            .on('connection', socket => this.add(new Peer(socket), true))
+            .on('connection', socket => this.addPeer(new Peer(socket, { address: this.address, privateKey: this.privateKey }, config_default_env.ONION_ADDRESS), true))
             .on('listening', () => log.info('TCP_NODE listening', this.server.address()))
             .on('error', e => log.error('TCP_NODE', e))
             .on('close', () => log.warn('TCP_NODE close'))
     }
-    add(peer: Peer, server: boolean) {
+    addPeer(peer: Peer, server: boolean) {
+        const broadcastNode = () => {
+            this.broadcast(protocol.constructBuffer('node', peer.remoteAddress))
+        }
         peer
-            .on('add', async () => {
-                this.nodes.get(peer.remoteAddress, (err, bannedTimestamp) => {
-                    if (bannedTimestamp > Date.now() - config_settings.Node.banTimeout) return peer.delete()
-                })
-                if (this.hasSocketWithRemoteAddress(peer) || this.peers.size >= config_settings.TCPNode.maxConnectionsOut) return peer.delete()
+            .once('meta-received', async () => {
+                const _peer = this.getPeerByAddress(peer.address)
+                if (_peer) {
+                    if (_peer.timestamp < peer.timestamp) _peer.delete(3)
+                    else {
+                        peer.delete(4)
+                        return
+                    }
+                }
                 this.peers.add(peer)
+                if (!peer.onion) return
+                if (config_default_env.USE_PROXY && TCPNode.removeIPv6Prefix(peer.remoteAddress) === TCPNode.removeIPv6Prefix(config_settings.TCPNode.proxy.host)) peer.remoteAddress = peer.onion
+                this.nodes.get(peer.onion, (err, bannedTimestamp) => {
+                    if (bannedTimestamp > Date.now() - config_settings.Node.banTimeout) return peer.delete(5)
+                })
+                await this.nodes.put(peer.onion, '0')
+                log.debug(2, 'Peer verified', `${peer.remoteAddress}:${peer.remotePort}`)
+                broadcastNode()
+            })
+            .once('meta-send', async () => {
+                this.nodes.get(peer.remoteAddress, (err, bannedTimestamp) => {
+                    if (bannedTimestamp > Date.now() - config_settings.Node.banTimeout) return peer.delete(6)
+                })
+                if (!peer.remoteAddress || this.hasSocketWithRemoteAddress(peer.remoteAddress) || this.peers.size >= config_settings.TCPNode.maxConnectionsOut) return peer.delete(7)
                 if (peer.remoteAddress) await this.nodes.put(peer.remoteAddress, '0')
                 log.debug(1, 'Peer connection', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`)
-                this.broadcast(protocol.constructBuffer('node', {
-                    address: peer.remoteAddress,
-                    port: server === false ? peer.remotePort : 9333
-                }))
+                broadcastNode()
             })
-            .on('delete', () => {
-                if (this.peers.delete(peer)) log.debug(1, 'Peer disconnected', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`)
+            .once('delete', code => {
+                this.peers.delete(peer)
+                log.debug(1, 'Peer disconnected', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`)
+                log.debug(4, 'Peer deleted', code)
             })
-            .on('ban', async code => {
+            .once('ban', async code => {
                 if (peer.remoteAddress) {
                     await this.nodes.put(peer.remoteAddress, Date.now())
                     log.warn('Peer banned', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`, 'code:', code)
@@ -98,9 +130,16 @@ class TCPNode extends events.EventEmitter {
             }
         })
     }
-    hasSocketWithRemoteAddress(peer: Peer) {
+    getPeerByAddress(address: string) {
         for (const _peer of this.peers) {
-            if (TCPNode.removeIPv6Prefix(peer.remoteAddress) === TCPNode.removeIPv6Prefix(_peer.remoteAddress)) return true
+            if (_peer.address === '') continue
+            if (_peer.address === address) return _peer
+        }
+    }
+    hasSocketWithRemoteAddress(remoteAddress) {
+        for (const _peer of this.peers) {
+            if (TCPNode.removeIPv6Prefix(remoteAddress) === '127.0.0.1') continue // proxy
+            if (TCPNode.removeIPv6Prefix(remoteAddress) === TCPNode.removeIPv6Prefix(_peer.remoteAddress)) return true
         }
         return false
     }
@@ -123,25 +162,45 @@ class TCPNode extends events.EventEmitter {
     connectToNetwork(hosts: Array<string>) {
         hosts = TCPNode.shuffle(hosts)
         for (const host of hosts) {
-            if (net.isIP(host) === 0) continue
-            if (config_settings.TCPNode.allowConnectionsToSelf !== true
-            && host === this.host) continue
-            const socket = net.connect(9333, host)
-            this.add(new Peer(socket), false)
+            const code = this.connectToNode(host)
+            log.debug(3, 'connectToNode', host, code)
         }
     }
-    connectToNode({ address, port }) {
-        if (net.isIP(address) === 0) return 1
-        if (port < 1 || port > 65536) return 1
+    connectToNode(host: string) {
+        if (!isValidHost(host)) return 1
         if (config_settings.TCPNode.allowConnectionsToSelf !== true
-        && address === this.host) return 2
-        const socket = net.connect(port, address)
-        this.add(new Peer(socket), false)
+        && (host === this.host
+            || host === config_default_env.ONION_ADDRESS
+            || host === this.TCP_NODE.host)) return 2
+        if (this.hasSocketWithRemoteAddress(host)) return 3
+        if (config_default_env.USE_PROXY) {
+            const options: SocksClientOptions = {
+                proxy: <SocksProxy> config_settings.TCPNode.proxy,
+                command: 'connect',
+                destination: {
+                    host: host,
+                    port: 9333
+                }
+            }
+            SocksClient.createConnection(options, (err, info) => {
+                if (err) return log.debug(3, 'Proxy connection failed')
+                const peer = new Peer(info.socket, { address: this.address, privateKey: this.privateKey }, config_default_env.ONION_ADDRESS)
+                peer.once('meta-send', () => {
+                    peer.remoteAddress = host
+                    this.addPeer(peer, false)
+                })
+            })
+        }
+        else {
+            if (isValidOnion(host)) return 4
+            const socket = net.connect(9333, host)
+            this.addPeer(new Peer(socket, { address: this.address, privateKey: this.privateKey }, config_default_env.ONION_ADDRESS), false)
+        }
         return 0
     }
     disconnectFromNetwork() {
         for (const peer of this.peers) {
-            peer.delete()
+            peer.delete(8)
         }
     }
     start() {

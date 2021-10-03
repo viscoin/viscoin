@@ -2,6 +2,8 @@
     "HTTP_API": ":80",
     "TCP_API": ":9332",
     "TCP_NODE": ":9333",
+    "USE_PROXY": false,
+    "ONION_ADDRESS": "",
     "DEBUG": 0,
     "ADDRESS": "your_mining_address"
 }

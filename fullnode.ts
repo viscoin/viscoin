@@ -7,7 +7,7 @@ import * as fs from 'fs'
 import { execSync } from 'child_process'
 import log from './src/log'
 import * as settings from './config/settings.json'
-
+import * as path from 'path'
 
 if (isMainThread) {
     setTimeout(() => {
@@ -22,9 +22,9 @@ if (isMainThread) {
     catch {
         log.warn('Git is not installed')
     }
-    if (!fs.existsSync('./db')) fs.mkdirSync('./db')
-    const nodes = level('./db/nodes', { keyEncoding: 'utf8', valueEncoding: 'utf8' })
-    const blocks = level('./db/blocks', { keyEncoding: 'binary', valueEncoding: 'json' })
+    if (!fs.existsSync(settings.Node.dbPath)) fs.mkdirSync(settings.Node.dbPath)
+    const nodes = level(path.join(settings.Node.dbPath, 'nodes'), { keyEncoding: 'utf8', valueEncoding: 'utf8' })
+    const blocks = level(path.join(settings.Node.dbPath, 'blocks'), { keyEncoding: 'binary', valueEncoding: 'json' })
     const node = new Node({ nodes, blocks }, commit)
     setPriority(19)
     for (let i = 0; i < node.threads; i++) node.addWorker(new Worker(__filename))

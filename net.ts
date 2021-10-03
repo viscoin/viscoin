@@ -2,9 +2,12 @@ import * as prompts from 'prompts'
 import * as net from 'net'
 import * as level from 'level'
 import * as fs from 'fs'
+import isValidHost from './src/isValidHost'
+import * as path from 'path'
+import * as settings from './config/settings.json'
 
-if (!fs.existsSync('./db')) fs.mkdirSync('./db')
-const nodes = level('./db/nodes', { keyEncoding: 'utf8', valueEncoding: 'utf8' })
+if (!fs.existsSync(settings.Node.dbPath)) fs.mkdirSync(settings.Node.dbPath)
+const nodes = level(path.join(settings.Node.dbPath, 'nodes'), { keyEncoding: 'utf8', valueEncoding: 'utf8' })
 const commands = {
     commands: async () => {
         let choices: Array<{ title: string, description: string, value: Function }> = [
@@ -30,8 +33,7 @@ const commands = {
             name: 'host',
             message: 'Enter host',
             validate: host => {
-                console.log(host)
-                if (net.isIP(host) === 0) return 'Invalid IP address'
+                if (!isValidHost(host)) return 'Invalid IP or onion address'
                 return true
             }
         })
