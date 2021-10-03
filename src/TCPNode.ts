@@ -187,6 +187,7 @@ class TCPNode extends events.EventEmitter {
                 const peer = new Peer(info.socket, { address: this.address, privateKey: this.privateKey }, config_default_env.ONION_ADDRESS)
                 peer.once('meta-send', () => {
                     peer.remoteAddress = host
+                    peer.remotePort = 9333
                     this.addPeer(peer, false)
                 })
             })
