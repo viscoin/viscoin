@@ -55,7 +55,7 @@ const functions = {
 }
 const commands = {
     commands: async () => {
-        const block = await HTTPApi.getLatestBlock({ host: host, port: port })
+        const block = await HTTPApi.getLatestBlock({ host, port })
         if (block === null) console.log(`HTTP_API ${c.red}${host}:${port}${c.reset} - Offline!`)
         else console.log(`HTTP_API ${c.green}${host}:${port}${c.reset} - Blockchain height: ${c.yellow}${block.height}${c.reset}`)
         let choices: Array<{ title: string, description: string, value: Function }> = [
@@ -162,23 +162,15 @@ const commands = {
                 amount: res.amount === undefined ? undefined : beautifyBigInt(parseBigInt(res.amount)),
                 minerFee: beautifyBigInt(parseBigInt(res.minerFee))
             })
-            let i: number = 0,
-            log: boolean = true
-            setTimeout(async function loop() {
-                try {
-                    const code = await HTTPApi.send({ host: host, port: port }, transaction)
-                    if (log === true) {
-                        if (code === 0) console.log('Transaction accepted')
-                        else console.log(`Transaction not accepted, code ${code}`)
-                    }
-                    if (++i < config_settings.Wallet.timesToRepeatBroadcastTransaction) setTimeout(loop, Math.pow(i, 2) * 1000)
-                }
-                catch {
-                    functions.log_unable_to_connect_to_api()
-                }
-            })
+            try {
+                const code = await HTTPApi.send({ host, port }, transaction)
+                if (code === 0) console.log('Transaction accepted')
+                else console.log(`Transaction not accepted, code ${code}`)
+            }
+            catch {
+                functions.log_unable_to_connect_to_api()
+            }
             await commands.pause()
-            log = false
         }
         console.clear()
         commands.commands()
@@ -219,7 +211,7 @@ const commands = {
             return commands.commands()
         }
         try {
-            console.log(await HTTPApi.getBalanceOfAddress({ host: host, port: port }, res.address === undefined ? wallet.address : res.address))
+            console.log(await HTTPApi.getBalanceOfAddress({ host, port }, res.address === undefined ? wallet.address : res.address))
         }
         catch {
             functions.log_unable_to_connect_to_api()
@@ -433,12 +425,12 @@ const commands = {
             return commands.commands()
         }
         try {
-            const transactions = (await HTTPApi.getTransactionsOfAddress({ host: host, port: port }, res.address === undefined ? wallet.address : res.address))
+            const transactions = (await HTTPApi.getTransactionsOfAddress({ host, port }, res.address === undefined ? wallet.address : res.address))
                 .sort((a, b) => a.timestamp - b.timestamp)
-            const latestBlock = await HTTPApi.getLatestBlock({ host: host, port: port })
+            const latestBlock = await HTTPApi.getLatestBlock({ host, port })
             const blocks = [ latestBlock ]
-            for (let i = latestBlock.height - 1; i >= latestBlock.height + 1 - config_settings.confirmations && i >= 0; i--) {
-                blocks.push(await HTTPApi.getBlockByHeight({ host: host, port: port }, i))
+            for (let i = latestBlock.height - 1; i >= latestBlock.height + 1 - config_settings.Wallet.confirmations && i >= 0; i--) {
+                blocks.push(await HTTPApi.getBlockByHeight({ host, port }, i))
             }
             if (transactions.length) {
                 for (const transaction of transactions) {
@@ -447,9 +439,9 @@ const commands = {
                         if (transaction.timestamp >= blocks[i].timestamp) {
                             if (transaction.from !== undefined) {
                                 if (i === 0) str = `${str} ${0}`
-                                else if (config_settings.confirmations > 0) str = `${str} ${i}`
+                                else if (config_settings.Wallet.confirmations > 0) str = `${str} ${i}`
                             }
-                            else if (config_settings.confirmations > 0) str = `${str} ${i + 1}`
+                            else if (config_settings.Wallet.confirmations > 0) str = `${str} ${i + 1}`
                             break
                         }
                     }

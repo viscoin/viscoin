@@ -30,8 +30,8 @@ class Blockchain extends events.EventEmitter {
         this.pendingTransactions = []
         this.updatingBlockHashes = false
         this.minByteFee = {
-            bigint: parseBigInt(config_settings.minByteFee.bigint),
-            remainder: parseBigInt(config_settings.minByteFee.remainder)
+            bigint: parseBigInt(config_settings.Blockchain.minByteFee.bigint),
+            remainder: parseBigInt(config_settings.Blockchain.minByteFee.remainder)
         }
         this.genesisBlockTimestamp = config_core.genesisBlockTimestamp === -1 ? Date.now() : config_core.genesisBlockTimestamp
         this.loaded = false
@@ -187,7 +187,7 @@ class Blockchain extends events.EventEmitter {
             this.addHash(block.previousHash.toString('binary'), block.hash)
             // await this.cacheAddressesInputOutputOfTransactions(block.transactions)
             log.debug(4, 'Looking for fork')
-            let _block = await this.getBlockByHeight(block.height - config_settings.trustedAfterBlocks)
+            let _block = await this.getBlockByHeight(block.height - config_settings.Blockchain.trustedAfterBlocks)
             if (!_block) _block = this.genesisBlock
             await this.loadBlockHashes(_block.hash)
             return 0
@@ -331,8 +331,8 @@ class Blockchain extends events.EventEmitter {
     }
     async getNewBlock(address: Buffer) {
         this.minByteFee = {
-            bigint: parseBigInt(config_settings.minByteFee.bigint),
-            remainder: parseBigInt(config_settings.minByteFee.remainder)
+            bigint: parseBigInt(config_settings.Blockchain.minByteFee.bigint),
+            remainder: parseBigInt(config_settings.Blockchain.minByteFee.remainder)
         }
         const previousBlock = await this.getLatestBlock()
         this.pendingTransactions = this.pendingTransactions

@@ -1,4 +1,42 @@
 {
+    "proxy": {
+        "host": "127.0.0.1",
+        "port": 9050,
+        "type": 5
+    },
+    "Node": {
+        "threads": 0,
+        "HTTPApi": true,
+        "TCPApi": true,
+        "TCPNode": true,
+        "connectToNetwork": true,
+        "sync": true,
+        "syncBlocks": 16,
+        "syncTimeout": 10000,
+        "syncLoop": 600000,
+        "banTimeout": 60000,
+        "queue": {
+            "blocks": 1000,
+            "transactions": 1000
+        },
+        "maxDesync": 30000,
+        "autoReconnect": 120000,
+        "restartAfter": 86400000,
+        "dbPath": "./db"
+    },
+    "Miner": {
+        "threads": 0,
+        "restartDelay": 1000,
+        "maxListeners": 500
+    },
+    "Wallet": {
+        "confirmations": 6,
+        "argon2": {
+            "timeCost": 2,
+            "memoryCost": 1048576,
+            "parallelism": 1
+        }
+    },
     "HTTPApi": {
         "autoRetry": 1000,
         "get": {
@@ -23,33 +61,14 @@
             "message": ""
         }
     },
-    "Miner": {
-        "restartDelay": 1000,
-        "maxListeners": 500,
-        "threads": 0
-    },
-    "Node": {
-        "HTTPApi": true,
-        "TCPApi": true,
-        "TCPNode": true,
-        "connectToNetwork": true,
-        "sync": true,
-        "syncBlocks": 16,
-        "syncTimeout": 10000,
-        "syncLoop": 600000,
-        "banTimeout": 60000,
-        "queue": {
-            "blocks": 1000,
-            "transactions": 1000
-        },
-        "autoReconnect": 120000,
-        "threads": 0,
-        "restartAfter": 86400000,
-        "dbPath": "./db"
-    },
     "TCPApi": {
         "maxConnectionsIn": 100,
         "autoReconnect": 1000
+    },
+    "TCPNode": {
+        "allowConnectionsToSelf": false,
+        "maxConnectionsIn": 50,
+        "maxConnectionsOut": 50
     },
     "Peer": {
         "socket": {
@@ -71,36 +90,11 @@
             "node": 5
         }
     },
-    "TCPNode": {
-        "allowConnectionsToSelf": false,
-        "maxConnectionsIn": 50,
-        "maxConnectionsOut": 50,
-        "proxy": {
-            "host": "127.0.0.1",
-            "port": 9050,
-            "type": 5
-        }
-    },
-    "Wallet": {
-        "wordlist": "english.txt",
-        "timesToRepeatBroadcastTransaction": 1,
-        "argon2": {
-            "timeCost": 2,
-            "memoryCost": 1048576,
-            "parallelism": 1
-        }
-    },
-    "addressList": "./config/addresses.txt",
-    "confirmations": 6,
-    "maxDesync": 30000,
-    "minByteFee": {
-        "bigint": "0",
-        "remainder": "0"
-    },
-    "optimization": {
-        "enabled": true,
-        "chanceToNotUse": 0
-    },
-    "maxBlocksInCache": 10080,
-    "trustedAfterBlocks": 128
+    "Blockchain": {
+        "minByteFee": {
+            "bigint": "0",
+            "remainder": "0"
+        },
+        "trustedAfterBlocks": 128
+    }
 }

@@ -25,6 +25,8 @@ interface TCPNode {
         host: string
         port: number
     },
+    USE_PROXY: boolean
+    ONION_ADDRESS: string
     privateKey: Buffer
     address: Buffer
 }
@@ -42,6 +44,12 @@ class TCPNode extends events.EventEmitter {
         }
         if (process.env.TCP_NODE) log.info('Using TCP_NODE:', this.TCP_NODE)
         else log.warn('Unset environment value! Using default value for TCP_NODE:', this.TCP_NODE)
+        this.USE_PROXY = Boolean(process.env.USE_PROXY || config_default_env.USE_PROXY)
+        if (process.env.USE_PROXY) log.info('Using USE_PROXY:', this.USE_PROXY)
+        else log.warn('Unset environment value! Using default value for USE_PROXY:', this.USE_PROXY)
+        this.ONION_ADDRESS = process.env.ONION_ADDRESS || config_default_env.ONION_ADDRESS
+        if (process.env.ONION_ADDRESS) log.info('Using ONION_ADDRESS:', this.ONION_ADDRESS)
+        else log.warn('Unset environment value! Using default value for ONION_ADDRESS:', this.ONION_ADDRESS)
         this.host = null
         dns.lookup(hostname(), (err, host) => {
             if (err) throw err
@@ -52,7 +60,7 @@ class TCPNode extends events.EventEmitter {
         this.server = new net.Server()
         this.server.maxConnections = config_settings.TCPNode.maxConnectionsIn
         this.server
-            .on('connection', socket => this.addPeer(new Peer(socket, { address: this.address, privateKey: this.privateKey }, config_default_env.ONION_ADDRESS), true))
+            .on('connection', socket => this.addPeer(new Peer(socket, { address: this.address, privateKey: this.privateKey }, this.ONION_ADDRESS), true))
             .on('listening', () => log.info('TCP_NODE listening', this.server.address()))
             .on('error', e => log.error('TCP_NODE', e))
             .on('close', () => log.warn('TCP_NODE close'))
@@ -73,7 +81,7 @@ class TCPNode extends events.EventEmitter {
                 }
                 this.peers.add(peer)
                 if (!peer.onion) return
-                if (config_default_env.USE_PROXY && TCPNode.removeIPv6Prefix(peer.remoteAddress) === TCPNode.removeIPv6Prefix(config_settings.TCPNode.proxy.host)) peer.remoteAddress = peer.onion
+                if (this.USE_PROXY && TCPNode.removeIPv6Prefix(peer.remoteAddress) === TCPNode.removeIPv6Prefix(config_settings.proxy.host)) peer.remoteAddress = peer.onion
                 this.nodes.get(peer.onion, (err, bannedTimestamp) => {
                     if (bannedTimestamp > Date.now() - config_settings.Node.banTimeout) return peer.delete(5)
                 })
@@ -170,21 +178,21 @@ class TCPNode extends events.EventEmitter {
         if (!isValidHost(host)) return 1
         if (config_settings.TCPNode.allowConnectionsToSelf !== true
         && (host === this.host
-            || host === config_default_env.ONION_ADDRESS
+            || host === this.ONION_ADDRESS
             || host === this.TCP_NODE.host)) return 2
         if (this.hasSocketWithRemoteAddress(host)) return 3
-        if (config_default_env.USE_PROXY) {
+        if (this.USE_PROXY) {
             const options: SocksClientOptions = {
-                proxy: <SocksProxy> config_settings.TCPNode.proxy,
+                proxy: <SocksProxy> config_settings.proxy,
                 command: 'connect',
                 destination: {
-                    host: host,
+                    host,
                     port: 9333
                 }
             }
             SocksClient.createConnection(options, (err, info) => {
                 if (err) return log.debug(3, 'Proxy connection failed')
-                const peer = new Peer(info.socket, { address: this.address, privateKey: this.privateKey }, config_default_env.ONION_ADDRESS)
+                const peer = new Peer(info.socket, { address: this.address, privateKey: this.privateKey }, this.ONION_ADDRESS)
                 peer.once('meta-send', () => {
                     peer.remoteAddress = host
                     peer.remotePort = 9333
@@ -195,7 +203,7 @@ class TCPNode extends events.EventEmitter {
         else {
             if (isValidOnion(host)) return 4
             const socket = net.connect(9333, host)
-            this.addPeer(new Peer(socket, { address: this.address, privateKey: this.privateKey }, config_default_env.ONION_ADDRESS), false)
+            this.addPeer(new Peer(socket, { address: this.address, privateKey: this.privateKey }, this.ONION_ADDRESS), false)
         }
         return 0
     }

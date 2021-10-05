@@ -77,16 +77,17 @@ class Client extends events.EventEmitter {
     connect(port: number, host: string, autoReconnect: boolean = false) {
         const socket = <Socket> net.connect(port, host)
         socket.data = Buffer.alloc(0)
-        socket.on('connect', () => {
+        socket.once('connect', () => {
             this.sockets.add(socket)
             log.info('TCP_API Socket connect', `${socket.remoteAddress}:${socket.remotePort}`)
         })
-        socket.on('error', e => log.error('TCP_API Socket', e))
-        socket.on('close', () => {
+        socket.once('close', e => {
             this.sockets.delete(socket)
             if (autoReconnect) setTimeout(() => this.connect(port, host, autoReconnect), config_settings.TCPApi.autoReconnect)
-            log.info('TCP_API Socket close')
+            if (e) return log.warn('Connection failed', `${host}:${port}`)
+            log.info('TCP_API Socket close', `${host}:${port}`)
         })
+        socket.on('error', e => log.debug(2, 'TCP_API Socket', e))
         socket.on('data', chunk => {
             log.debug(3, 'TCP_API Socket data')
             socket.data = Buffer.concat([ socket.data, chunk ])

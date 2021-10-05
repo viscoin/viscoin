@@ -139,7 +139,7 @@ class Block {
     async isValid() {
         const code = this.seemsValid()
         if (code !== 0) return code
-        if (this.timestamp > Date.now() + config_settings.maxDesync) return 11
+        if (this.timestamp > Date.now() + config_settings.Node.maxDesync) return 11
         if (Buffer.byteLength(JSON.stringify(Block.minify(this))) > config_core.maxBlockSize) return 12
         if (this.hash.equals(await Block.calculateHash(this)) === false) return 13
         if (this.meetsDifficulty() === false) return 14
