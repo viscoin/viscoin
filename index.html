@@ -114,14 +114,25 @@
 					<li><code>node wallet</code></li>
 					<li><code>ADDRESS=your_mining_address node miner</code></li>
 				</ol>
-				<a href="#running-a-node" id="running-a-node" style="color: inherit; text-decoration: none;">
-					<h3>Running a node</h3>
+				<a href="#fullnode" id="fullnode" style="color: inherit; text-decoration: none;">
+					<h3>Fullnode</h3>
 				</a>
 				<ol start="4">
 					<li><code>node net</code></li>
 					<li><code>Add</code> IP address of node in Viscoin network.</li>
 					<li><em>using <strong><a href="https://www.npmjs.com/package/pm2">pm2</a></strong></em> <code>pm2 start fullnode.js</code> <em>or with <strong>docker</strong></em> <code>docker-compose up -d</code></li>
 				</ol>
+				<a href="#fullnode--tor" id="fullnode--tor" style="color: inherit; text-decoration: none;">
+					<h4>Fullnode + Tor</h4>
+				</a>
+				<p><em>config/default_env.json</em></p>
+				<pre><code class="language-json"><span style="color: #A31515">&quot;USE_PROXY&quot;</span><span style="color: #000000">: </span><span style="color: #0000FF">true</span><span style="color: #000000">,</span>
+<span style="color: #A31515">&quot;ONION_ADDRESS&quot;</span><span style="color: #000000">: </span><span style="color: #A31515">&quot;XXXXXXXXXXX.onion&quot;</span><span style="color: #000000">,</span>
+</code></pre>
+				<p><em>/etc/tor/torrc</em></p>
+				<pre><code><span style="color: #001080">HiddenServiceDir</span><span style="color: #000000"> /</span><span style="color: #0000FF">var</span><span style="color: #000000">/</span><span style="color: #001080">lib</span><span style="color: #000000">/tor/viscoin-service/</span>
+<span style="color: #001080">HiddenServicePort</span><span style="color: #000000"> </span><span style="color: #098658">9333</span><span style="color: #000000"> </span><span style="color: #098658">127.0</span><span style="color: #000000">.</span><span style="color: #098658">0.1</span><span style="color: #000000">:</span><span style="color: #098658">9333</span>
+</code></pre>
 				<a href="#important" id="important" style="color: inherit; text-decoration: none;">
 					<h4>Important</h4>
 				</a>
@@ -131,49 +142,29 @@
 					<h2>Package usage</h2>
 				</a>
 				<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
-					<h4>Installation</h4>
+					<h3>Installation</h3>
 				</a>
 				<pre><code><span style="color: #001080">npm</span><span style="color: #000000"> </span><span style="color: #001080">install</span><span style="color: #000000"> </span><span style="color: #001080">viscoin</span>
 </code></pre>
-				<a href="#example" id="example" style="color: inherit; text-decoration: none;">
-					<h4>Example</h4>
+				<a href="#examples" id="examples" style="color: inherit; text-decoration: none;">
+					<h3>Examples</h3>
 				</a>
 				<a href="#generating-a-wallet" id="generating-a-wallet" style="color: inherit; text-decoration: none;">
-					<h6>Generating a wallet</h6>
+					<h4>Generating a wallet</h4>
 				</a>
 				<pre><code class="language-typescript"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">Wallet</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;viscoin&#039;</span>
-
 <span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">wallet</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Wallet</span><span style="color: #000000">()</span>
-
 <span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">)</span>
 </code></pre>
-				<a href="#building-a-transaction" id="building-a-transaction" style="color: inherit; text-decoration: none;">
-					<h6>Building a transaction</h6>
-				</a>
-				<pre><code class="language-typescript"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">Wallet</span><span style="color: #000000">, </span><span style="color: #001080">Transaction</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;viscoin&#039;</span>
-
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">wallet</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Wallet</span><span style="color: #000000">()</span>
-
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">transaction</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Transaction</span><span style="color: #000000">({</span>
-<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;BE2gMZkRS48NhyYRyKdTCCTskqhh4AjPQ&#039;</span><span style="color: #000000">,</span>
-<span style="color: #000000">    </span><span style="color: #001080">amount:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;420.69&#039;</span><span style="color: #000000">,</span>
-<span style="color: #000000">    </span><span style="color: #001080">minerFee:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0.1&#039;</span>
-<span style="color: #000000">})</span>
-<span style="color: #001080">transaction</span><span style="color: #000000">.</span><span style="color: #795E26">sign</span><span style="color: #000000">(</span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #001080">privateKey</span><span style="color: #000000">)</span>
-
-<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">transaction</span><span style="color: #000000">)</span>
-</code></pre>
 				<a href="#get-latest-block-http-request" id="get-latest-block-http-request" style="color: inherit; text-decoration: none;">
-					<h6>Get latest block (HTTP Request)</h6>
+					<h4>Get latest block (HTTP Request)</h4>
 				</a>
 				<pre><code class="language-typescript"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">HTTPApi</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;viscoin&#039;</span>
-
 <span style="color: #000000">(</span><span style="color: #0000FF">async</span><span style="color: #000000"> () </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
 <span style="color: #000000">    </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">block</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">HTTPApi</span><span style="color: #000000">.</span><span style="color: #795E26">getLatestBlock</span><span style="color: #000000">({ </span><span style="color: #001080">host:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;localhost&#039;</span><span style="color: #000000">, </span><span style="color: #001080">port:</span><span style="color: #000000"> </span><span style="color: #098658">80</span><span style="color: #000000"> })</span>
 <span style="color: #000000">    </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">block</span><span style="color: #000000">)</span>
 <span style="color: #000000">})()</span>
 </code></pre>
-				<p>Make sure the value of host is an IP address of a running viscoin node.</p>
 				<a href="#contributing" id="contributing" style="color: inherit; text-decoration: none;">
 					<h2>Contributing</h2>
 				</a>
