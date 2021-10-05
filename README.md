@@ -28,10 +28,22 @@ Viscoin is an experimental digital currency that enables instant payments to any
 4. `node wallet`
 5. `ADDRESS=your_mining_address node miner`
 
-### Running a node
+### Fullnode
 4. `node net`
 5. `Add` IP address of node in Viscoin network.
 6. *using **[pm2](https://www.npmjs.com/package/pm2)*** `pm2 start fullnode.js` *or with **docker*** `docker-compose up -d`
+
+#### Fullnode + Tor
+*config/default_env.json*
+```json
+"USE_PROXY": true,
+"ONION_ADDRESS": "XXXXXXXXXXX.onion",
+```
+*/etc/tor/torrc*
+```
+HiddenServiceDir /var/lib/tor/viscoin-service/
+HiddenServicePort 9333 127.0.0.1:9333
+```
 
 #### Important
 If your system clock is off by more than `30 seconds` the network will reject your blocks.
@@ -39,48 +51,28 @@ Check with [Time.is](https://time.is) if you are synchronized with the official 
 
 ## Package usage
 
-#### Installation
+### Installation
 ```
 npm install viscoin
 ```
 
-#### Example
+### Examples
 
-###### Generating a wallet
+#### Generating a wallet
 ```typescript
 import { Wallet } from 'viscoin'
-
 const wallet = new Wallet()
-
 console.log(wallet.address)
 ```
 
-###### Building a transaction
-```typescript
-import { Wallet, Transaction } from 'viscoin'
-
-const wallet = new Wallet()
-
-const transaction = new Transaction({
-    to: 'BE2gMZkRS48NhyYRyKdTCCTskqhh4AjPQ',
-    amount: '420.69',
-    minerFee: '0.1'
-})
-transaction.sign(wallet.privateKey)
-
-console.log(transaction)
-```
-
-###### Get latest block (HTTP Request)
+#### Get latest block (HTTP Request)
 ```typescript
 import { HTTPApi } from 'viscoin'
-
 (async () => {
     const block = await HTTPApi.getLatestBlock({ host: 'localhost', port: 80 })
     console.log(block)
 })()
 ```
-Make sure the value of host is an IP address of a running viscoin node.
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
