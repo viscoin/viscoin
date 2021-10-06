@@ -247,15 +247,8 @@ class Blockchain extends events.EventEmitter {
         return balance
     }
     async getBalanceOfAddress(address: Buffer) {
-        if (this.addresses.has(address.toString('hex'))) return this.addresses.get(address.toString('hex'))
         if (!this.loaded) return null
-        let balance = 0n
-        for (const hash of this.hashes) {
-            const block = await this.getBlockByHash(hash)
-            balance += Blockchain.calcAddressInputOutputOfTransactions(address, block.transactions)
-        }
-        this.addresses.set(address.toString('hex'), balance)
-        return balance
+        return this.addresses.get(address.toString('hex')) || 0n
     }
     async isPartOfChainValid(chain: Array<Block>, isLatestBlock: boolean) {
         for (let i = 1; i < chain.length; i++) {
