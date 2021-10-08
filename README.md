@@ -29,7 +29,7 @@ Viscoin is an experimental digital currency that enables instant payments to any
 5. `ADDRESS=your_mining_address node miner`
 
 ### Fullnode
-4. `node net`
+4. `node net-config`
 5. `Add` IP address of node in Viscoin network.
 6. *using **[pm2](https://www.npmjs.com/package/pm2)*** `pm2 start fullnode.js` *or with **docker*** `docker-compose up -d`
 

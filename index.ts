@@ -11,6 +11,8 @@ import Block from "./src/Block"
 import Blockchain from "./src/Blockchain"
 import HTTPApi from "./src/HTTPApi"
 import isValidAddress from "./src/isValidAddress"
+import isValidHost from "./src/isValidHost"
+import isValidOnion from "./src/isValidOnion"
 import keygen from "./src/keygen"
 import Miner from "./src/Miner"
 import MinerThread from "./src/MinerThread"
@@ -44,6 +46,8 @@ export {
     Blockchain,
     HTTPApi,
     isValidAddress,
+    isValidHost,
+    isValidOnion,
     keygen,
     Miner,
     MinerThread,

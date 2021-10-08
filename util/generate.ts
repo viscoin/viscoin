@@ -1,7 +1,7 @@
-import base58 from './src/base58'
+import base58 from '../src/base58'
 import * as fs from 'fs'
 import * as prompts from 'prompts'
-import Address from './src/Address'
+import Address from '../src/Address'
 import * as crypto from 'crypto'
 
 (async () => {

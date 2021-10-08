@@ -1,5 +1,4 @@
 import * as prompts from 'prompts'
-import * as net from 'net'
 import * as level from 'level'
 import * as fs from 'fs'
 import isValidHost from './src/isValidHost'
