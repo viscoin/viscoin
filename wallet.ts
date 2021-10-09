@@ -1,3 +1,5 @@
+import { config } from 'dotenv'
+config()
 import * as crypto from 'crypto'
 import * as prompts from 'prompts'
 import * as fs from 'fs'

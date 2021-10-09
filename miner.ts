@@ -1,3 +1,5 @@
+import { config } from 'dotenv'
+config()
 import * as default_env from './config/default_env.json'
 import MinerThread from './src/MinerThread'
 import { Worker, isMainThread } from 'worker_threads'

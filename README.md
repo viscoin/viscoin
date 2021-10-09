@@ -24,25 +24,37 @@ Viscoin is an experimental digital currency that enables instant payments to any
 2. `cd viscoin`
 3. `npm run setup`
 
-### Mining & Wallet
-4. `node wallet`
-5. `ADDRESS=your_mining_address node miner`
+### Configuration
+Create a `.env` file in the root of the project.
+```
+HTTP_API=:80
+TCP_API=:9332
+TCP_NODE=:9333
+DEBUG=0
+ADDRESS=your_mining_address
+```
+
+### Wallet
+* `node wallet`
+
+### Miner
+* `node miner`
 
 ### Fullnode
 4. `node net-config`
-5. `Add` IP address of node in Viscoin network.
-6. *using **[pm2](https://www.npmjs.com/package/pm2)*** `pm2 start fullnode.js` *or with **docker*** `docker-compose up -d`
+5. `Add` addresses to other nodes that are part of the Viscoin network.
+6. *Using **[pm2](https://www.npmjs.com/package/pm2)*** `pm2 start fullnode.js` *or with **docker*** `docker-compose up -d`.
 
-#### Fullnode + Tor
-*config/default_env.json*
-```json
-"USE_PROXY": true,
-"ONION_ADDRESS": "XXXXXXXXXXX.onion",
-```
+#### Tor hidden service
 */etc/tor/torrc*
 ```
 HiddenServiceDir /var/lib/tor/viscoin-service/
 HiddenServicePort 9333 127.0.0.1:9333
+```
+*.env*
+```
+USE_PROXY=1
+ONION_ADDRESS=XXXXXXXXXXX.onion
 ```
 
 #### Important

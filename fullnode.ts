@@ -1,3 +1,5 @@
+import { config } from 'dotenv'
+config()
 import Node from './src/Node'
 import NodeThread from './src/NodeThread'
 import { Worker, isMainThread } from 'worker_threads'
