@@ -19,8 +19,6 @@ if (isMainThread) {
     catch {
         log.warn('Git is not installed')
     }
-    log.info("If you see that your hashrate is stuck at 0 you most likely haven't properly configured HTTP_API & TCP_API in ./config/default_env.json")
-    log.info('Make sure that your system clock is synchronized with the world clock. You can check it here: https://time.is/')
     const ADDRESS = process.env.ADDRESS || default_env.ADDRESS
     if (ADDRESS === 'your_mining_address') {
         log.error('You must set your mining reward address!\nTo do so edit ./config/default_env.json and replace "your_mining_address" with your own address.')
