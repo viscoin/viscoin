@@ -74,7 +74,7 @@ class Miner extends events.EventEmitter {
     emitThreadsMineNewBlock(block: Block, previousBlock: Block) {
         this.mining = true
         for (const worker of this.workers) {
-            worker.postMessage(JSON.stringify({ e: 'mine', block: Block.minify(block), previousBlock: Block.minify(previousBlock), threads: this.threads }))
+            worker.postMessage(JSON.stringify({ e: 'mine', block: Block.minify(block), previousBlock: Block.minify(previousBlock) }))
         }
     }
     emitThreadsStop() {

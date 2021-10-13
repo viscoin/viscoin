@@ -54,8 +54,8 @@ class Block {
         remainder = difficulty % 8
         return Buffer.alloc(32).fill(Math.pow(2, 7 - remainder), index, index + 1)
     }
-    async recalculateHash(add: number) {
-        this.nonce += add
+    async recalculateHash() {
+        this.nonce = Math.round(Math.random() * Number.MAX_SAFE_INTEGER)
         this.hash = await Block.calculateHash(this)
         return this.meetsDifficulty()
     }
@@ -124,16 +124,27 @@ class Block {
         return <any> output
     }
     seemsValid() {
-        if (typeof this.nonce !== 'number') return 1
-        if (typeof this.height !== 'number') return 2
-        if (typeof this.timestamp !== 'number') return 3
-        if (typeof this.difficulty !== 'number') return 4
+        if (typeof this.nonce !== 'number'
+            || !Number.isInteger(this.nonce)
+            || this.nonce < 0
+            || this.nonce > Number.MAX_SAFE_INTEGER) return 1
+        if (typeof this.height !== 'number'
+            || !Number.isInteger(this.height)
+            || this.height < 0
+            || this.height > Number.MAX_SAFE_INTEGER) return 2
+        if (typeof this.timestamp !== 'number'
+            || !Number.isInteger(this.timestamp)
+            || this.timestamp < 0
+            || this.timestamp > Number.MAX_SAFE_INTEGER) return 3
+        if (typeof this.difficulty !== 'number'
+            || !Number.isInteger(this.difficulty)
+            || this.difficulty < 0
+            || this.difficulty > 256 * 2**config_core.smoothness) return 4
         if (typeof this.hash !== 'object') return 5
         if (typeof this.previousHash !== 'object') return 6
         if (this.hash instanceof Buffer === false) return 7
         if (this.previousHash instanceof Buffer === false) return 8
         if (Array.isArray(this.transactions) === false) return 9
-        if (!Number.isInteger(this.timestamp) || !Number.isFinite(this.timestamp)) return 10
         return 0
     }
     async isValid() {
