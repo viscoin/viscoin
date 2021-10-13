@@ -21,7 +21,7 @@ if (isMainThread) {
     }
     const ADDRESS = process.env.ADDRESS || default_env.ADDRESS
     if (ADDRESS === 'your_mining_address') {
-        log.error('You must set your mining reward address!\nTo do so edit ./config/default_env.json and replace "your_mining_address" with your own address.')
+        log.warn('You must set your mining reward address!\n(.env) \x1b[1mADDRESS\x1b[0m=\x1b[5myour_mining_address\x1b[0m')
         process.exit()
     }
     const address = Address.toBuffer(ADDRESS)
