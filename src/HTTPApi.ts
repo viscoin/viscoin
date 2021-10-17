@@ -305,6 +305,14 @@ class HTTPApi extends events.EventEmitter {
             return null
         }
     }
+    static async getAddresses(address: IP_Address, start: number = 0, amount: number = 0) {
+        try {
+            return await this.get(address, `/addresses?start=${start}&amount=${amount}`)
+        }
+        catch {
+            return null
+        }
+    }
     static async getNewBlock(address: IP_Address, _address: Buffer) {
         try {
             const block = await this.get(address, `/block/new/${Address.toString(_address)}`)
