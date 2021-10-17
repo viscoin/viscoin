@@ -56,7 +56,6 @@ class HTTPApi extends events.EventEmitter {
         else log.warn('Unset environment value! Using default value for HTTP_API:', this.HTTP_API)
         const app = express()
         app.use(express.urlencoded({ extended: true }))
-        // app.use(express.urlencoded({ limit: '2mb' }))
         app.use(express.json({ limit: '2mb' }))
         app.use(rateLimit(config_settings.HTTPApi.rateLimit))
         if (config_settings.HTTPApi.get['/addresses'] === true) app.get('/addresses', (req, res) => {
@@ -123,15 +122,6 @@ class HTTPApi extends events.EventEmitter {
             try {
                 const address = Address.toBuffer(req.params.address)
                 this.emit('get-balance-address', address, balance => HTTPApi.resEndJSON(res, balance))
-            }
-            catch {
-                res.status(400).end()
-            }
-        })
-        if (config_settings.HTTPApi.get['/block/transaction/:signature'] === true) app.get('/block/transaction/:signature', (req, res) => {
-            try {
-                const signature = base58.decode(req.params.signature)
-                this.emit('get-block-transaction-signature', signature, block => HTTPApi.resEndJSON(res, block))
             }
             catch {
                 res.status(400).end()
@@ -269,16 +259,6 @@ class HTTPApi extends events.EventEmitter {
     static async getBlockByHash(address: IP_Address, hash: Buffer) {
         try {
             const block = await this.get(address, `/block/${hash.toString('hex')}`)
-            if (!block) return null
-            return new Block(Block.beautify(block))
-        }
-        catch {
-            return null
-        }
-    }
-    static async getBlockByTransactionSignature(address: IP_Address, signature: Buffer) {
-        try {
-            const block = await this.get(address, `/block/transaction/${base58.encode(signature)}`)
             if (!block) return null
             return new Block(Block.beautify(block))
         }

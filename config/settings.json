@@ -49,7 +49,6 @@
             "/block/new/:address": true,
             "/transactions/:address": true,
             "/balance/:address": true,
-            "/block/transaction/:signature": true,
             "/peers": true
         },
         "post": {
