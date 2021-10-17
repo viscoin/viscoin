@@ -60,7 +60,6 @@ class Node extends events.EventEmitter {
         this.tcpNode = new TCPNode(nodes)
         this.blockchain = new Blockchain({ blocks })
         this.blockchain.once('loaded', async () => {
-
             setInterval(() => {
                 log.debug(2, 'Verifyrate', this.verifyrate)
                 this.verifyrate = {
@@ -70,10 +69,7 @@ class Node extends events.EventEmitter {
                 }
             }, 1000)
 
-
-
             // HTTP API
-
             if (config_settings.Node.HTTPApi === true) {
                 this.httpApi.start()
                 this.httpApi.on('get-config', cb => cb(config_settings))
@@ -87,7 +83,6 @@ class Node extends events.EventEmitter {
                     cb(arr)
                 })
                 this.httpApi.on('get-transactions-pending', cb => cb(this.blockchain.pendingTransactions.map(e => Transaction.minify(e))))
-                // this.httpApi.on('get-block-transaction-signature', async (signature, cb) => cb(Block.minify(await this.blockchain.getBlockByTransactionSignature(signature))))
                 this.httpApi.on('get-block-height', async (height, cb) => {
                     const block = await this.blockchain.getBlockByHeight(height)
                     cb(Block.minify(block))
@@ -106,21 +101,6 @@ class Node extends events.EventEmitter {
                 })
                 this.httpApi.on('transaction', async (transaction, cb) => this.emit('add-transaction', transaction, code => cb(code)))
                 this.httpApi.on('block', async (block, cb) => this.emit('add-block', block, code => cb(code)))
-                // this.httpApi.on('get-transactions-address', async (address, cb) => {
-                //     // const projection = `
-                //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.to.name}
-                //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.from.name}
-                //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.amount.name}
-                //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.minerFee.name}
-                //     //     ${config_mongoose.block.transactions.name}.${config_mongoose.transaction.timestamp.name}
-                //     //     ${config_mongoose.block.timestamp.name}
-                //     // `
-                //     // const { transactions, unconfirmed_transactions } = await this.blockchain.getTransactionsOfAddress(address, projection)
-                //     // cb([
-                //     //     ...transactions.map(e => Transaction.minify(e)),
-                //     //     ...unconfirmed_transactions.map(e => Transaction.minify(e))
-                //     // ])
-                // })
                 this.httpApi.on('get-peers', async cb => {
                     const arr = []
                     for (const peer of this.tcpNode.peers) arr.push(`${peer.remoteAddress}:${peer.remotePort}`)
@@ -128,18 +108,12 @@ class Node extends events.EventEmitter {
                 })
             }
 
-
-
             // TCP API
-
             if (config_settings.Node.TCPApi === true) {
                 this.tcpApi.start()
             }
 
-
-
             // TCP NODE
-
             if (config_settings.Node.TCPNode === true) {
                 this.tcpNode.start()
                 this.tcpNode.on('block', (block, cb) => this.emit('add-block', block, code => {
@@ -276,7 +250,6 @@ class Node extends events.EventEmitter {
                         if (e.e === 'verifyrate') return onMessage()
                         this.workersBusy.delete(worker)
                         this.workersReady.add(worker)
-                        // this.emit('worker')
                         resolve(e)
                     })
                 }

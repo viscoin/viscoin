@@ -86,7 +86,6 @@ class Miner extends events.EventEmitter {
     async postBlock(block: Block) {
         try {
             const code = await HTTPApi.postBlock({ host: this.HTTP_API.host, port: this.HTTP_API.port }, block)
-            // this.emit('mined', block, code)
             log.debug(1, 'Mined', code, block)
             if (code !== 0) await this.start()
         }

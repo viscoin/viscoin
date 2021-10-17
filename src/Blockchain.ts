@@ -82,7 +82,6 @@ class Blockchain extends events.EventEmitter {
             let i = 0
             const setBlockHashes = async (block: Block) => {
                 if (i++ === 2) {
-                    // this.addresses = new Map()
                     log.debug(2, 'Found new fork')
                 }
                 const hash = this.hashes[block.height]
@@ -185,7 +184,6 @@ class Blockchain extends events.EventEmitter {
             delete data[config_minify.block.hash]
             await this.blocksDB.put(block.hash, data)
             this.addHash(block.previousHash.toString('binary'), block.hash)
-            // await this.cacheAddressesInputOutputOfTransactions(block.transactions)
             log.debug(4, 'Looking for fork')
             let _block = await this.getBlockByHeight(block.height - config_settings.Blockchain.trustedAfterBlocks)
             if (!_block) _block = this.genesisBlock
@@ -288,14 +286,6 @@ class Blockchain extends events.EventEmitter {
         else if (time >= _time && difficulty > 1 << config_core.smoothness) difficulty--
         return difficulty
     }
-    // async getHashesByPreviousHash(previousHash: Buffer) {
-    //     try {
-    //         return Array<Buffer> (await this.hashesDB.get(previousHash)).map(e => Buffer.from(e))
-    //     }
-    //     catch {
-    //         return []
-    //     }
-    // }
     async getBlockByHash(hash: Buffer) {
         if (this.genesisBlock.hash.equals(hash)) return this.genesisBlock
         try {
@@ -309,7 +299,6 @@ class Blockchain extends events.EventEmitter {
     async getBlockByPreviousHash(previousHash: Buffer) {
         if (this.genesisBlock.previousHash.equals(previousHash)) return this.genesisBlock
         const hashes = this._hashes[previousHash.toString('binary')]
-        // const hashes = await this.getHashesByPreviousHash(previousHash)
         for (const hash of hashes) {
             if (this.hashes.find(e => e.equals(hash))) {
                 return await this.getBlockByHash(hash)
