@@ -107,31 +107,46 @@
 					<li><code>cd viscoin</code></li>
 					<li><code>npm run setup</code></li>
 				</ol>
-				<a href="#mining-amp-wallet" id="mining-amp-wallet" style="color: inherit; text-decoration: none;">
-					<h3>Mining &amp; Wallet</h3>
+				<a href="#configuration" id="configuration" style="color: inherit; text-decoration: none;">
+					<h3>Configuration</h3>
 				</a>
-				<ol start="4">
+				<p>Create a <code>.env</code> file in the root of the project.</p>
+				<pre><code><span style="color: #0070C1">HTTP_API</span><span style="color: #000000">=:</span><span style="color: #098658">80</span>
+<span style="color: #0070C1">TCP_API</span><span style="color: #000000">=:</span><span style="color: #098658">9332</span>
+<span style="color: #0070C1">TCP_NODE</span><span style="color: #000000">=:</span><span style="color: #098658">9333</span>
+<span style="color: #0070C1">DEBUG</span><span style="color: #000000">=</span><span style="color: #098658">0</span>
+<span style="color: #0070C1">ADDRESS</span><span style="color: #000000">=</span><span style="color: #001080">your_mining_address</span>
+</code></pre>
+				<a href="#wallet" id="wallet" style="color: inherit; text-decoration: none;">
+					<h3>Wallet</h3>
+				</a>
+				<ul>
 					<li><code>node wallet</code></li>
-					<li><code>ADDRESS=your_mining_address node miner</code></li>
-				</ol>
+				</ul>
+				<a href="#miner" id="miner" style="color: inherit; text-decoration: none;">
+					<h3>Miner</h3>
+				</a>
+				<ul>
+					<li><code>node miner</code></li>
+				</ul>
 				<a href="#fullnode" id="fullnode" style="color: inherit; text-decoration: none;">
 					<h3>Fullnode</h3>
 				</a>
 				<ol start="4">
 					<li><code>node net-config</code></li>
-					<li><code>Add</code> IP address of node in Viscoin network.</li>
-					<li><em>using <strong><a href="https://www.npmjs.com/package/pm2">pm2</a></strong></em> <code>pm2 start fullnode.js</code> <em>or with <strong>docker</strong></em> <code>docker-compose up -d</code></li>
+					<li><code>Add</code> addresses to other nodes that are part of the Viscoin network.</li>
+					<li><em>Using <strong><a href="https://www.npmjs.com/package/pm2">pm2</a></strong></em> <code>pm2 start fullnode.js</code> <em>or with <strong>docker</strong></em> <code>docker-compose up -d</code>.</li>
 				</ol>
-				<a href="#fullnode--tor" id="fullnode--tor" style="color: inherit; text-decoration: none;">
-					<h4>Fullnode + Tor</h4>
+				<a href="#tor-hidden-service" id="tor-hidden-service" style="color: inherit; text-decoration: none;">
+					<h4>Tor hidden service</h4>
 				</a>
-				<p><em>config/default_env.json</em></p>
-				<pre><code class="language-json"><span style="color: #A31515">&quot;USE_PROXY&quot;</span><span style="color: #000000">: </span><span style="color: #0000FF">true</span><span style="color: #000000">,</span>
-<span style="color: #A31515">&quot;ONION_ADDRESS&quot;</span><span style="color: #000000">: </span><span style="color: #A31515">&quot;XXXXXXXXXXX.onion&quot;</span><span style="color: #000000">,</span>
-</code></pre>
 				<p><em>/etc/tor/torrc</em></p>
 				<pre><code><span style="color: #001080">HiddenServiceDir</span><span style="color: #000000"> /</span><span style="color: #0000FF">var</span><span style="color: #000000">/</span><span style="color: #001080">lib</span><span style="color: #000000">/tor/viscoin-service/</span>
 <span style="color: #001080">HiddenServicePort</span><span style="color: #000000"> </span><span style="color: #098658">9333</span><span style="color: #000000"> </span><span style="color: #098658">127.0</span><span style="color: #000000">.</span><span style="color: #098658">0.1</span><span style="color: #000000">:</span><span style="color: #098658">9333</span>
+</code></pre>
+				<p><em>.env</em></p>
+				<pre><code><span style="color: #0070C1">USE_PROXY</span><span style="color: #000000">=</span><span style="color: #098658">1</span>
+<span style="color: #0070C1">ONION_ADDRESS</span><span style="color: #000000">=</span><span style="color: #0070C1">XXXXXXXXXXX</span><span style="color: #000000">.</span><span style="color: #001080">onion</span>
 </code></pre>
 				<a href="#important" id="important" style="color: inherit; text-decoration: none;">
 					<h4>Important</h4>
