@@ -11,6 +11,7 @@ import beautifyBigInt from "./beautifyBigInt"
 import { Worker } from 'worker_threads'
 import { cpus } from 'os'
 import log from './log'
+import Address from './Address'
 interface Node {
     nodes: any
     workersReady: Set<Worker>
@@ -76,6 +77,15 @@ class Node extends events.EventEmitter {
             if (config_settings.Node.HTTPApi === true) {
                 this.httpApi.start()
                 this.httpApi.on('get-config', cb => cb(config_settings))
+                this.httpApi.on('get-addresses', (start, amount, cb) => {
+                    let arr = [...this.blockchain.addresses].map(e => {
+                        return [ Address.toString(Buffer.from(e[0], 'hex')), beautifyBigInt(e[1]) ]
+                    })
+                    start = start || 0
+                    const end = amount ? start + amount : undefined
+                    arr = arr.sort((a, b) => Number(b[1]) - Number(a[1])).slice(start, end)
+                    cb(arr)
+                })
                 this.httpApi.on('get-transactions-pending', cb => cb(this.blockchain.pendingTransactions.map(e => Transaction.minify(e))))
                 // this.httpApi.on('get-block-transaction-signature', async (signature, cb) => cb(Block.minify(await this.blockchain.getBlockByTransactionSignature(signature))))
                 this.httpApi.on('get-block-height', async (height, cb) => {

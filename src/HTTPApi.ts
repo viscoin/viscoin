@@ -59,6 +59,11 @@ class HTTPApi extends events.EventEmitter {
         // app.use(express.urlencoded({ limit: '2mb' }))
         app.use(express.json({ limit: '2mb' }))
         app.use(rateLimit(config_settings.HTTPApi.rateLimit))
+        if (config_settings.HTTPApi.get['/addresses'] === true) app.get('/addresses', (req, res) => {
+            this.emit('get-addresses', parseInt(req.query.start), parseInt(req.query.amount), addresses => {
+                HTTPApi.resEndJSON(res, addresses)
+            })
+        })
         if (config_settings.HTTPApi.get['/commit'] === true) app.get('/commit', (req, res) => {
             HTTPApi.resEndJSON(res, this.commit)
         })

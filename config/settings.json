@@ -40,6 +40,7 @@
     "HTTPApi": {
         "autoRetry": 1000,
         "get": {
+            "/addresses": true,
             "/commit": true,
             "/config": true,
             "/block": true,
