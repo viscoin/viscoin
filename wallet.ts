@@ -71,7 +71,6 @@ const commands = {
                 { title: 'Address', description: 'Show wallet address', value: commands.address },
                 { title: 'Balance', description: 'Get balance of wallet address', value: commands.balance },
                 { title: 'Send', description: 'New transaction', value: commands.send },
-                { title: 'Transactions', description: 'Lists transaction history', value: commands.log_transactions },
                 { title: 'Wallet', description: `View wallet details (Make sure no one is looking)`, value: commands.info },
                 ...choices
             ]
@@ -394,90 +393,6 @@ const commands = {
         }
         functions.save_wallet(privateKey, passphrase)
         wallet_saved = true
-        console.clear()
-        commands.commands()
-    },
-    log_transactions: async () => {
-        const res = await prompts([
-            {
-                type: 'toggle',
-                name: 'this',
-                message: 'This wallet?',
-                initial: true,
-                active: 'yes',
-                inactive: 'no'
-            },
-            {
-                type: prev => prev === true ? null : 'text',
-                name: 'address',
-                message: 'Address',
-                validate: address => {
-                    try {
-                        if (Address.verifyChecksumAddress(base58.decode(address))) return true
-                        else return 'Invalid address'
-                    }
-                    catch {
-                        return 'Invalid base58'
-                    }
-                }
-            }
-        ])
-        if (res.this === false && res.address === undefined) {
-            console.clear()
-            return commands.commands()
-        }
-        try {
-            const transactions = (await HTTPApi.getTransactionsOfAddress({ host, port }, res.address === undefined ? wallet.address : res.address))
-                .sort((a, b) => a.timestamp - b.timestamp)
-            const latestBlock = await HTTPApi.getLatestBlock({ host, port })
-            const blocks = [ latestBlock ]
-            for (let i = latestBlock.height - 1; i >= latestBlock.height + 1 - config_settings.Wallet.confirmations && i >= 0; i--) {
-                blocks.push(await HTTPApi.getBlockByHeight({ host, port }, i))
-            }
-            if (transactions.length) {
-                for (const transaction of transactions) {
-                    let str = new Date(transaction.timestamp).toLocaleString(undefined, { hour12: false })
-                    for (let i = 0; i < blocks.length; i++) {
-                        if (transaction.timestamp >= blocks[i].timestamp) {
-                            if (transaction.from !== undefined) {
-                                if (i === 0) str = `${str} ${0}`
-                                else if (config_settings.Wallet.confirmations > 0) str = `${str} ${i}`
-                            }
-                            else if (config_settings.Wallet.confirmations > 0) str = `${str} ${i + 1}`
-                            break
-                        }
-                    }
-                    if (transaction.from !== undefined) {
-                        if (transaction.from.equals(wallet._address)) {
-                            str = `${str} ${c.blue}${Address.toString(transaction.from)}${c.reset}`
-                        }
-                        else {
-                            str = `${str} ${Address.toString(transaction.from)}`
-                        }
-                        if (transaction.amount) str = `${str} ${c.red}-${beautifyBigInt(parseBigInt(transaction.amount) + parseBigInt(transaction.minerFee))}${c.reset}`
-                        else str = `${str} ${c.red}-${beautifyBigInt(parseBigInt(transaction.minerFee))}${c.reset}`
-                    }
-                    if (transaction.to !== undefined) {
-                        if (transaction.from !== undefined) str = `${str} ${c.yellow}-->${c.reset}`
-                        if (transaction.to.equals(wallet._address)) {
-                            str = `${str} ${c.blue}${Address.toString(transaction.to)}${c.reset}`
-                        }
-                        else {
-                            str = `${str} ${Address.toString(transaction.to)}`
-                        }
-                        if (transaction.amount !== undefined) str = `${str} ${c.green}+${beautifyBigInt(parseBigInt(transaction.amount))}${c.reset}`
-                    }
-                    console.log(str)
-                }
-            }
-            else {
-                console.log('No transactions')
-            }
-        }
-        catch {
-            functions.log_unable_to_connect_to_api()
-        }
-        await commands.pause()
         console.clear()
         commands.commands()
     }

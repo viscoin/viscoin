@@ -109,15 +109,6 @@ class HTTPApi extends events.EventEmitter {
                 res.status(400).end()
             }
         })
-        if (config_settings.HTTPApi.get['/transactions/:address'] === true) app.get('/transactions/:address', (req, res) => {
-            try {
-                const address = Address.toBuffer(req.params.address)
-                this.emit('get-transactions-address', address, transactions => HTTPApi.resEndJSON(res, transactions))
-            }
-            catch {
-                res.status(400).end()
-            }
-        })
         if (config_settings.HTTPApi.get['/balance/:address'] === true) app.get('/balance/:address', (req, res) => {
             try {
                 const address = Address.toBuffer(req.params.address)
@@ -224,15 +215,6 @@ class HTTPApi extends events.EventEmitter {
     static async getBalanceOfAddress(address: IP_Address, _address: string) {
         try {
             return await this.get(address, `/balance/${_address}`)
-        }
-        catch {
-            return null
-        }
-    }
-    static async getTransactionsOfAddress(address: IP_Address, _address: string) {
-        try {
-            const transactions = await this.get(address, `/transactions/${_address}`)
-            return transactions.map(e => new Transaction(Transaction.beautify(e)))
         }
         catch {
             return null
