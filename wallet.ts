@@ -164,9 +164,9 @@ const commands = {
                 minerFee: beautifyBigInt(parseBigInt(res.minerFee))
             })
             try {
-                const code = await HTTPApi.send({ host, port }, transaction)
-                if (code === 0) console.log('Transaction accepted')
-                else console.log(`Transaction not accepted, code ${code}`)
+                const code = BigInt(await HTTPApi.send({ host, port }, transaction))
+                if (code) console.log(`Transaction rejected 0x${code.toString(16)}`)
+                else console.log('\x1b[32mTransaction accepted\x1b[0m')
             }
             catch {
                 functions.log_unable_to_connect_to_api()

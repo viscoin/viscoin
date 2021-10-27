@@ -97,18 +97,6 @@ class HTTPApi extends events.EventEmitter {
                 }
             }
         })
-        if (config_settings.HTTPApi.get['/block/new/:address'] === true) app.get('/block/new/:address', (req, res) => {
-            try {
-                const address = Address.toBuffer(req.params.address)
-                this.emit('get-block-new', address, block => {
-                    if (req.query.b) block = beautify(block)
-                    HTTPApi.resEndJSON(res, block)
-                })
-            }
-            catch {
-                res.status(400).end()
-            }
-        })
         if (config_settings.HTTPApi.get['/balance/:address'] === true) app.get('/balance/:address', (req, res) => {
             try {
                 const address = Address.toBuffer(req.params.address)

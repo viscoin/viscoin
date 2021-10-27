@@ -95,7 +95,6 @@ class Node extends events.EventEmitter {
                     const block = await this.blockchain.getLatestBlock()
                     cb(Block.minify(block))
                 })
-                this.httpApi.on('get-block-new', async (address, cb) => cb(Block.minify(await this.blockchain.getNewBlock(address))))
                 this.httpApi.on('get-balance-address', async (address, cb) => {
                     cb(beautifyBigInt(await this.blockchain.getBalanceOfAddress(address)))
                 })
@@ -174,13 +173,13 @@ class Node extends events.EventEmitter {
             this.queue.transactions.add(transaction)
         })
         this.on('block', (block, code) => {
-            if (code !== 0) return
+            if (code) return
             const buffer = protocol.constructBuffer('block', Block.minify(block))
             this.tcpNode.broadcast(buffer)
             if (config_settings.Node.TCPApi === true) this.tcpApi.broadcast(buffer)
         })
         this.on('transaction', (transaction, code) => {
-            if (code !== 0) return
+            if (code) return
             const buffer = protocol.constructBuffer('transaction', Transaction.minify(transaction))
             this.tcpNode.broadcast(buffer)
             if (config_settings.Node.TCPApi === true) this.tcpApi.broadcast(buffer)

@@ -45,7 +45,6 @@
             "/block": true,
             "/transactions/pending": true,
             "/block/:h": true,
-            "/block/new/:address": true,
             "/balance/:address": true,
             "/peers": true
         },
