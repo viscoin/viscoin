@@ -60,7 +60,7 @@ class Peer extends events.EventEmitter {
             .on('connect', () => this.emit('meta-send'))
             .on('error', () => {})
             .on('close', () => this.delete(1))
-            .on('timeout', () => this.emit('ban', 1))
+            .on('timeout', () => this.emit('ban', 0x800000000000000))
             .on('data', chunk => this.onData(chunk))
         this
             .once('meta-send', () => {
@@ -105,9 +105,9 @@ class Peer extends events.EventEmitter {
         this.socket.destroy()
     }
     onData(chunk: Buffer) {
-        if (this.socket.bytesRead - this.bytesRead > config_settings.Peer.socket.maxBytesRead1s) return this.emit('ban', 2)
+        if (this.socket.bytesRead - this.bytesRead > config_settings.Peer.socket.maxBytesRead1s) return this.emit('ban', 0x1000000000000000)
         this.buffer = Buffer.concat([ this.buffer, chunk ])
-        if (Buffer.byteLength(this.buffer) > config_settings.Peer.maxBytesInMemory) return this.emit('ban', 3)
+        if (Buffer.byteLength(this.buffer) > config_settings.Peer.maxBytesInMemory) return this.emit('ban', 0x2000000000000000)
         this.extract()
     }
     extract() {
@@ -125,34 +125,35 @@ class Peer extends events.EventEmitter {
             if (parsed === null) continue
             const { type, data } = parsed
             if (type === 'meta') {
-                if (this.address !== '') return this.emit('ban', 5)
+                if (this.address !== '') return this.emit('ban', 0x4000000000000000)
                 const code = this.meta(data)
-                if (code !== 0) return this.emit('ban', 7)
+                if (code) return this.emit('ban', 0x8000000000000000)
                 this.emit('meta-received')
             }
-            else if (this.address === '') return this.emit('ban', 6)
+            else if (this.address === '') return this.emit('ban', 0x10000000000000000)
             if (this.requests[type]++ > config_settings.Peer.maxRequestsPerSecond[type]) continue
             this.addHash(hash)
             this.emit(type, data, b, res => {
-                if (res === 1) this.emit('ban', 4)
+                // if (res === 1) this.emit('ban', 4)
+                // need to add new checks
                 if (type === 'sync' && res !== null) this.write(protocol.constructBuffer('blocks', res), () => {})
             })
         }
     }
     meta(data: { address: Buffer, timestamp: number, hash: Buffer, signature: { recid: number, signature: Uint8Array }, onion: string }) {
         try {
-            if (!crypto.createHash('sha256').update(data.timestamp.toString()).digest().equals(data.hash)) return 1
+            if (!crypto.createHash('sha256').update(data.timestamp.toString()).digest().equals(data.hash)) return 0x8000000000000000n
             const publicKey = secp256k1.ecdsaRecover(data.signature.signature, data.signature.recid, data.hash, false)
             const address = addressFromPublicKey(publicKey)
-            if (!address.equals(data.address)) return 2
-            if (data.onion && !isValidOnion(data.onion)) return 3
+            if (!address.equals(data.address)) return 0x10000000000000000n
+            if (data.onion && !isValidOnion(data.onion)) return 0x20000000000000000n
             this.address = Address.toString(data.address)
             this.timestamp = data.timestamp
             this.onion = data.onion
-            return 0
+            return 0x0n
         }
         catch {
-            return 3
+            return 0x40000000000000000n
         }
     }
     write(buffer: Buffer, cb) {

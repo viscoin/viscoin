@@ -106,32 +106,32 @@ class Transaction {
         }
     }
     isValid() {
-        if (typeof this.from !== 'object') return 1
-        if (this.from instanceof Buffer === false) return 2
+        if (typeof this.from !== 'object') return 0x1n
+        if (this.from instanceof Buffer === false) return 0x2n
         if (typeof this.to === 'object') {
-            if (this.to instanceof Buffer === false) return 3
-            if (Buffer.byteLength(this.to) !== 20) return 4
-            if (typeof this.amount !== 'string') return 5
+            if (this.to instanceof Buffer === false) return 0x4n
+            if (Buffer.byteLength(this.to) !== 20) return 0x8n
+            if (typeof this.amount !== 'string') return 0x10n
             const amount = parseBigInt(this.amount)
             if (amount === null
                 || amount <= 0
-                || beautifyBigInt(amount) !== this.amount) return 6
+                || beautifyBigInt(amount) !== this.amount) return 0x20n
         }
-        else if (typeof this.to !== 'undefined') return 7
-        if (this.to === undefined && this.amount !== undefined) return 8
-        if (typeof this.signature !== 'object') return 9
-        if (this.signature instanceof Buffer === false) return 10
-        if (!Number.isInteger(this.timestamp) || !Number.isFinite(this.timestamp)) return 11
-        if (this.timestamp > Date.now() + config_settings.Node.maxDesync) return 12
-        if (typeof this.minerFee !== 'string') return 13
+        else if (typeof this.to !== 'undefined') return 0x40n
+        if (this.to === undefined && this.amount !== undefined) return 0x80n
+        if (typeof this.signature !== 'object') return 0x100n
+        if (this.signature instanceof Buffer === false) return 0x200n
+        if (!Number.isInteger(this.timestamp) || !Number.isFinite(this.timestamp)) return 0x400n
+        if (this.timestamp > Date.now()) return 0x800n
+        if (typeof this.minerFee !== 'string') return 0x1000n
         const minerFee = parseBigInt(this.minerFee)
             if (minerFee === null
                 || minerFee < 0
-                || beautifyBigInt(minerFee) !== this.minerFee) return 14
-        if (typeof this.recoveryParam !== 'number') return 15
-        if (this.recoveryParam >> 2) return 16
-        if (this.verify() === false) return 17
-        return 0
+                || beautifyBigInt(minerFee) !== this.minerFee) return 0x2000n
+        if (typeof this.recoveryParam !== 'number') return 0x4000n
+        if (this.recoveryParam >> 2) return 0x8000n
+        if (this.verify() === false) return 0x10000n
+        return 0x0n
     }
     byteFee() {
         const bytes = BigInt(Buffer.byteLength(JSON.stringify(Transaction.minify(this))))

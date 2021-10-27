@@ -26,13 +26,13 @@ class NodeThread {
             switch (e.e) {
                 case 'transaction':
                     this.verifyrate.transaction++
-                    parentPort.postMessage(JSON.stringify(new Transaction(Transaction.beautify(e.transaction)).isValid()))
+                    parentPort.postMessage(new Transaction(Transaction.beautify(e.transaction)).isValid().toString())
                     break
                 case 'block':
                     const block = new Block(Block.beautify(e.block))
                     this.verifyrate.block++
                     this.verifyrate.transaction += block.transactions.length
-                    parentPort.postMessage(JSON.stringify(await block.isValid()))
+                    parentPort.postMessage((await block.isValid()).toString())
                     break
             }
         })

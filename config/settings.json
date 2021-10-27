@@ -19,7 +19,6 @@
             "blocks": 1000,
             "transactions": 1000
         },
-        "maxDesync": 30000,
         "autoReconnect": 120000,
         "restartAfter": 86400000,
         "dbPath": "./db"
@@ -46,7 +45,6 @@
             "/block": true,
             "/transactions/pending": true,
             "/block/:h": true,
-            "/block/new/:address": true,
             "/balance/:address": true,
             "/peers": true
         },

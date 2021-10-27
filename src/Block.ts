@@ -66,37 +66,39 @@ class Block {
     }
     hasValidTransactions() {
         let amount = parseBigInt(config_core.blockReward)
-        if (!this.transactions.length) return 1
+        if (!this.transactions.length) return 0x100000000000n
         const hashes = []
         for (let i = 0; i < this.transactions.length; i++) {
             const transaction: Transaction = this.transactions[i]
-            if (typeof transaction !== 'object') return 2
+            if (typeof transaction !== 'object') return 0x200000000000n
             if (i === 0) continue
-            if (transaction.isValid() !== 0) return 3
+            if (transaction.timestamp >= this.timestamp) return 0x400000000000n
+            const code = transaction.isValid()
+            if (code) return code | 0x800000000000n
             const minerFee = parseBigInt(transaction.minerFee)
             if (minerFee === null
-            || beautifyBigInt(minerFee) !== transaction.minerFee) return 4
+            || beautifyBigInt(minerFee) !== transaction.minerFee) return 0x1000000000000n
             amount += minerFee
             if (transaction.amount !== undefined) {
                 const _amount = parseBigInt(transaction.amount)
                 if (_amount === null
-                || beautifyBigInt(_amount) !== transaction.amount) return 5
+                || beautifyBigInt(_amount) !== transaction.amount) return 0x2000000000000n
             }
             hashes.push(Transaction.calculateHash(transaction))
         }
         const _amount = parseBigInt(this.transactions[0].amount)
         if (_amount === null
         || _amount !== amount
-        || beautifyBigInt(_amount) !== this.transactions[0].amount) return 6
-        if (this.transactions[0].to === undefined) return 7
-        if (Buffer.byteLength(this.transactions[0].to) !== 20) return 8
-        if (this.transactions[0].timestamp !== undefined) return 9
-        if (this.transactions[0].minerFee !== undefined) return 10
-        if (this.transactions[0].from !== undefined) return 11
-        if (this.transactions[0].signature !== undefined) return 12
-        if (this.transactions[0].recoveryParam !== undefined) return 13
-        if (hashes.some((e, i) => hashes.indexOf(e) !== i)) return 14
-        return 0
+        || beautifyBigInt(_amount) !== this.transactions[0].amount) return 0x4000000000000n
+        if (this.transactions[0].to === undefined) return 0x8000000000000n
+        if (Buffer.byteLength(this.transactions[0].to) !== 20) return 0x10000000000000n
+        if (this.transactions[0].timestamp !== undefined) return 0x20000000000000n
+        if (this.transactions[0].minerFee !== undefined) return 0x40000000000000n
+        if (this.transactions[0].from !== undefined) return 0x80000000000000n
+        if (this.transactions[0].signature !== undefined) return 0x100000000000000n
+        if (this.transactions[0].recoveryParam !== undefined) return 0x200000000000000n
+        if (hashes.some((e, i) => hashes.indexOf(e) !== i)) return 0x400000000000000n
+        return 0x0n
     }
     static minify(input: Block) {
         if (!input) return null
@@ -127,35 +129,36 @@ class Block {
         if (typeof this.nonce !== 'number'
             || !Number.isInteger(this.nonce)
             || this.nonce < 0
-            || this.nonce > Number.MAX_SAFE_INTEGER) return 1
+            || this.nonce > Number.MAX_SAFE_INTEGER) return 0x20000n
         if (typeof this.height !== 'number'
             || !Number.isInteger(this.height)
             || this.height < 0
-            || this.height > Number.MAX_SAFE_INTEGER) return 2
+            || this.height > Number.MAX_SAFE_INTEGER) return 0x40000n
         if (typeof this.timestamp !== 'number'
             || !Number.isInteger(this.timestamp)
             || this.timestamp < 0
-            || this.timestamp > Number.MAX_SAFE_INTEGER) return 3
+            || this.timestamp > Number.MAX_SAFE_INTEGER) return 0x80000n
         if (typeof this.difficulty !== 'number'
             || !Number.isInteger(this.difficulty)
             || this.difficulty < 0
-            || this.difficulty > 256 * 2**config_core.smoothness) return 4
-        if (typeof this.hash !== 'object') return 5
-        if (typeof this.previousHash !== 'object') return 6
-        if (this.hash instanceof Buffer === false) return 7
-        if (this.previousHash instanceof Buffer === false) return 8
-        if (Array.isArray(this.transactions) === false) return 9
-        return 0
+            || this.difficulty > 256 * 2**config_core.smoothness) return 0x100000n
+        if (typeof this.hash !== 'object') return 0x200000n
+        if (typeof this.previousHash !== 'object') return 0x400000n
+        if (this.hash instanceof Buffer === false) return 0x800000n
+        if (this.previousHash instanceof Buffer === false) return 0x1000000n
+        if (Array.isArray(this.transactions) === false) return 0x2000000n
+        const code = this.hasValidTransactions()
+        if (code) return code
+        return 0x0n
     }
     async isValid() {
         const code = this.seemsValid()
-        if (code !== 0) return code
-        if (this.timestamp > Date.now() + config_settings.Node.maxDesync) return 11
-        if (Buffer.byteLength(JSON.stringify(Block.minify(this))) > config_core.maxBlockSize) return 12
-        if (this.hash.equals(await Block.calculateHash(this)) === false) return 13
-        if (this.meetsDifficulty() === false) return 14
-        if (this.hasValidTransactions() !== 0) return 15
-        return 0
+        if (code) return code | 0x4000000n
+        if (this.timestamp > Date.now()) return 0x8000000n
+        if (Buffer.byteLength(JSON.stringify(Block.minify(this))) > config_core.maxBlockSize) return 0x10000000n
+        if (this.hash.equals(await Block.calculateHash(this)) === false) return 0x20000000n
+        if (this.meetsDifficulty() === false) return 0x40000000n
+        return 0x0n
     }
 }
 export default Block

@@ -3,7 +3,6 @@ import * as config_core from '../config/core.json'
 import Transaction from './Transaction'
 import Block from './Block'
 import parseBigInt from './parseBigInt'
-import beautifyBigInt from './beautifyBigInt'
 import * as events from 'events'
 import log from './log'
 import * as config_minify from '../config/minify.json'
@@ -150,36 +149,33 @@ class Blockchain extends events.EventEmitter {
         return await this.getBlockByHash(this.hashes[this.hashes.length - 1])
     }
     async addTransaction(transaction: Transaction) {
-        if (this.pendingTransactions.find(_transaction => Transaction.calculateHash(transaction).equals(Transaction.calculateHash(_transaction)))) return 1
+        if (this.pendingTransactions.find(_transaction => Transaction.calculateHash(transaction).equals(Transaction.calculateHash(_transaction)))) return 0x1000000000n
         const block = await this.getLatestBlock()
-            if (transaction.timestamp < block.timestamp) return 2
-            let sum = parseBigInt(transaction.minerFee)
-            if (transaction.amount) sum += parseBigInt(transaction.amount)
-            for (const { from, amount, minerFee } of this.pendingTransactions) {
-                if (transaction.from.equals(from)) {
-                    sum += parseBigInt(minerFee)
-                    if (amount) sum += parseBigInt(amount)
-                }
+        if (transaction.timestamp < block.timestamp) return 0x2000000000n
+        let sum = parseBigInt(transaction.minerFee)
+        if (transaction.amount) sum += parseBigInt(transaction.amount)
+        for (const { from, amount, minerFee } of this.pendingTransactions) {
+            if (transaction.from.equals(from)) {
+                sum += parseBigInt(minerFee)
+                if (amount) sum += parseBigInt(amount)
             }
-        if (await this.getBalanceOfAddress(transaction.from) < sum) return 3
+        }
+        if (await this.getBalanceOfAddress(transaction.from) < sum) return 0x4000000000n
         const { bigint, remainder } = transaction.byteFee()
         if (bigint < this.minByteFee.bigint
-        || (bigint === this.minByteFee.bigint && remainder <= this.minByteFee.remainder)) return 4
+        || (bigint === this.minByteFee.bigint && remainder <= this.minByteFee.remainder)) return 0x8000000000n
         this.pendingTransactions.push(transaction)
-        return 0
+        return 0x0n
     }
     async addBlock(block: Block) {
-        let previousBlock = block.height === 1 ? this.genesisBlock : await this.getBlockByHash(block.previousHash)
-        if (!previousBlock) return 10
         try {
-            if (block.timestamp <= previousBlock.timestamp) return 2
+            let previousBlock = block.height === 1 ? this.genesisBlock : await this.getBlockByHash(block.previousHash)
+            if (!previousBlock) return 0x10000000000n
+            if (block.timestamp <= previousBlock.timestamp) return 0x20000000000n
             const latestBlock = await this.getLatestBlock()
             const isLatestBlock = latestBlock.hash.equals(previousBlock.hash)
-            const code = await this.isPartOfChainValid([
-                previousBlock,
-                block
-            ], isLatestBlock)
-            if (code !== 0) return parseFloat('3.' + code)
+            const code = await this.isPartOfChainValid([ previousBlock, block ], isLatestBlock)
+            if (code) return code | 0x40000000000n
             const data = Block.minify(block)
             delete data[config_minify.block.hash]
             await this.blocksDB.put(block.hash, data)
@@ -188,10 +184,12 @@ class Blockchain extends events.EventEmitter {
             let _block = await this.getBlockByHeight(block.height - config_settings.Blockchain.trustedAfterBlocks)
             if (!_block) _block = this.genesisBlock
             await this.loadBlockHashes(_block.hash)
-            return 0
+            if (isLatestBlock) this.pendingTransactions = this.pendingTransactions
+                .filter(e => e.timestamp >= block.timestamp)
+            return 0x0n
         }
         catch {
-            return 4
+            return 0x80000000000n
         }
     }
     async cacheAddressesInputOutputOfTransactionsNegative(transactions: Array<Transaction>) {
@@ -252,16 +250,17 @@ class Blockchain extends events.EventEmitter {
         for (let i = 1; i < chain.length; i++) {
             const block = chain[i]
             const previousBlock = chain[i - 1]
-            if (previousBlock.height !== block.height - 1) return 1
-            if (Blockchain.getBlockDifficulty([ previousBlock, block ]) !== block.difficulty) return 2
-            if (block.previousHash.equals(previousBlock.hash) === false) return 3
+            if (previousBlock.height !== block.height - 1) return 0x20000000n
+            if (Blockchain.getBlockDifficulty([ previousBlock, block ]) !== block.difficulty) return 0x40000000n
+            if (block.previousHash.equals(previousBlock.hash) === false) return 0x80000000n
             for (const transaction of block.transactions) {
-                if (transaction.timestamp < previousBlock.timestamp) return 4
+                if (transaction.timestamp < previousBlock.timestamp) return 0x100000000n
             }
-            for (const transaction of previousBlock.transactions) {
-                if (transaction.timestamp >= block.timestamp) return 5
-            }
-            if (await block.isValid() !== 0) return 6
+            // for (const transaction of previousBlock.transactions) {
+            //     if (transaction.timestamp >= block.timestamp) return 0x200000000n
+            // }
+            const code = await block.isValid()
+            if (code) return code | 0x400000000n
             for (let i = 1; i < block.transactions.length; i++) {
                 const transaction = block.transactions[i]
                 let sum = 0n
@@ -273,10 +272,10 @@ class Blockchain extends events.EventEmitter {
                     }
                 }
                 const balance = isLatestBlock ? await this.getBalanceOfAddress(transaction.from) : await this.getBalanceOfAddressFromHash(transaction.from, block.previousHash)
-                if (balance < sum) return 7
+                if (balance < sum) return 0x800000000n
             }
         }
-        return 0
+        return 0x0n
     }
     static getBlockDifficulty(blocks: Array<Block>) {
         let difficulty = blocks[0].difficulty
@@ -310,61 +309,6 @@ class Blockchain extends events.EventEmitter {
         const hash = this.hashes[height]
         if (!hash) return null
         return await this.getBlockByHash(hash)
-    }
-    async getNewBlock(address: Buffer) {
-        this.minByteFee = {
-            bigint: parseBigInt(config_settings.Blockchain.minByteFee.bigint),
-            remainder: parseBigInt(config_settings.Blockchain.minByteFee.remainder)
-        }
-        const previousBlock = await this.getLatestBlock()
-        this.pendingTransactions = this.pendingTransactions
-            .filter(e => e.timestamp >= previousBlock.timestamp)
-            .sort((a, b) => {
-                const byteLength = {
-                    a: BigInt(Buffer.byteLength(JSON.stringify(Transaction.minify(a)))),
-                    b: BigInt(Buffer.byteLength(JSON.stringify(Transaction.minify(b))))
-                }
-                const minerFee = {
-                    a: parseBigInt(a.minerFee),
-                    b: parseBigInt(b.minerFee)
-                }
-                const div = {
-                    a: minerFee.a / byteLength.a,
-                    b: minerFee.b / byteLength.b
-                }
-                if (div.b - div.a < 0) return -1
-                else if (div.b - div.a > 0) return 1
-                const remainder = {
-                    a: minerFee.a % byteLength.a,
-                    b: minerFee.b % byteLength.b
-                }
-                if (remainder.b < remainder.a) return -1
-                else if (remainder.b > remainder.a) return 1
-                else return 0
-            })
-        const transactions = [
-            new Transaction({
-                to: address,
-                amount: beautifyBigInt(parseBigInt(config_core.blockReward))
-            }),
-            ...this.pendingTransactions.filter(transaction => transaction.timestamp < Date.now())
-        ]
-        const block = new Block({
-            transactions,
-            previousHash: previousBlock.hash,
-            height: previousBlock.height + 1
-        })
-        for (let i = 0; i < block.transactions.length; i++) {
-            if (i === 0) continue
-            block.transactions[0].amount = beautifyBigInt(parseBigInt(block.transactions[0].amount) + parseBigInt(block.transactions[i].minerFee))
-        }
-        while (Buffer.byteLength(JSON.stringify(Block.minify(block))) > config_core.maxBlockSize - 2**8) {
-            const transaction = block.transactions.pop()
-            block.transactions[0].amount = beautifyBigInt(parseBigInt(block.transactions[0].amount) - parseBigInt(transaction.minerFee))
-            if (block.transactions.length === 1) break
-            this.minByteFee = block.transactions[block.transactions.length - 1].byteFee()
-        }
-        return block
     }
 }
 export default Blockchain

@@ -163,7 +163,7 @@ class PaymentProcessor extends events.EventEmitter {
                 timestamp: Date.now()
             })
             transaction.sign(base58.decode(privateKey))
-            if (transaction.isValid() !== 0) return {
+            if (!transaction.isValid()) return {
                 code: null,
                 transaction
             }
@@ -195,7 +195,7 @@ class PaymentProcessor extends events.EventEmitter {
                 timestamp: Date.now()
             })
             transaction.sign(base58.decode(process.env.privateKey))
-            if (transaction.isValid() !== 0) return {
+            if (!transaction.isValid()) return {
                 code: null,
                 transaction
             }
