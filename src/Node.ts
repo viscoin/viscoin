@@ -250,7 +250,7 @@ class Node extends events.EventEmitter {
                         if (e.e === 'verifyrate') return onMessage()
                         this.workersBusy.delete(worker)
                         this.workersReady.add(worker)
-                        resolve(e)
+                        resolve(BigInt(e))
                     })
                 }
                 onMessage()
@@ -268,24 +268,22 @@ class Node extends events.EventEmitter {
         }
         if (this.workersReady.size === 0) return setImmediate(this.nextBlock.bind(this))
         this.queue.blocks.delete(block)
-        let code = 0
+        let code = 0x0n
         try {
-            if (await this.assignJob({
+            code |= await this.assignJob({
                 e: 'block',
                 block: Block.minify(block)
-            }) !== 0) code = 1
+            })
         }
         catch {}
-        if (code === 0) {
-            code = await this.blockchain.addBlock(block)
-        }
+        if (!code) code |= await this.blockchain.addBlock(block)
         if (this.queue.callbacks.has(block.hash.toString('hex'))) {
             const cbs = this.queue.callbacks.get(block.hash.toString('hex'))
             for (const cb of cbs) cb(code)
             this.queue.callbacks.delete(block.hash.toString('hex'))
         }
         this.emit('block', block, code)
-        log.debug(2, 'Block:', block.hash.toString('hex'), block.height, code)
+        log.debug(2, 'Block:', block.hash.toString('hex'), block.height, '0x' + code.toString(16))
         setImmediate(this.nextBlock.bind(this))
     }
     async nextTransaction() {
@@ -294,24 +292,22 @@ class Node extends events.EventEmitter {
         if (transaction === undefined) return setTimeout(this.nextTransaction.bind(this), 10)
         if (this.workersReady.size === 0) return setImmediate(this.nextTransaction.bind(this))
         this.queue.transactions.delete(transaction)
-        let code = 0
+        let code = 0x0n
         try {
-            if (await this.assignJob({
+            code |= await this.assignJob({
                 e: 'transaction',
                 transaction: Transaction.minify(transaction)
-            }) !== 0) code = 1
+            })
         }
         catch {}
-        if (code === 0) {
-            code = await this.blockchain.addTransaction(transaction)
-        }
+        if (!code) code |= await this.blockchain.addTransaction(transaction)
         if (this.queue.callbacks.has(transaction.signature.toString('hex'))) {
             const cbs = this.queue.callbacks.get(transaction.signature.toString('hex'))
             for (const cb of cbs) cb(code)
             this.queue.callbacks.delete(transaction.signature.toString('hex'))
         }
         this.emit('transaction', transaction, code)
-        log.debug(2, 'Transaction:', code)
+        log.debug(2, 'Transaction:', '0x' + code.toString(16))
         setImmediate(this.nextTransaction.bind(this))
     }
     async nextSync() {

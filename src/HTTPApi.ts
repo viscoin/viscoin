@@ -125,7 +125,7 @@ class HTTPApi extends events.EventEmitter {
                 if (beautified.timestamp) beautified.timestamp = parseInt(beautified.timestamp)
                 if (beautified.recoveryParam) beautified.recoveryParam = parseInt(beautified.recoveryParam)
                 const transaction = new Transaction(beautified)
-                this.emit('transaction', transaction, code => HTTPApi.resEndJSON(res, code))
+                this.emit('transaction', transaction, code => HTTPApi.resEndJSON(res, '0x' + code.toString(16)))
             }
             catch {
                 res.status(400).end()
@@ -134,7 +134,7 @@ class HTTPApi extends events.EventEmitter {
         if (config_settings.HTTPApi.post['/block'] === true) app.post('/block', (req, res) => {
             try {
                 const block = new Block(Block.beautify(req.body))
-                this.emit('block', block, code => HTTPApi.resEndJSON(res, code))
+                this.emit('block', block, code => HTTPApi.resEndJSON(res, '0x' + code.toString(16)))
             }
             catch {
                 res.status(400).end()
