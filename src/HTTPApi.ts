@@ -11,7 +11,7 @@ import Address from './Address'
 
 const beautify = (block) => {
     try {
-        block = new Block(Block.beautify(block))
+        block = Block.spawn(block)
         for (const i in block) {
             if (block[i] instanceof Buffer) block[i] = block[i].toString('hex')
             if (i === 'transactions') block[i] = block[i].map(transaction => {
@@ -106,10 +106,7 @@ class HTTPApi extends events.EventEmitter {
         if (config_settings.HTTPApi.get['/peers'] === true) app.get('/peers', (req, res) => this.emit('get-peers', peers => HTTPApi.resEndJSON(res, peers)))
         if (config_settings.HTTPApi.post['/transaction'] === true) app.post('/transaction', (req, res) => {
             try {
-                const beautified = Transaction.beautify(req.body)
-                if (beautified.timestamp) beautified.timestamp = parseInt(beautified.timestamp)
-                if (beautified.recoveryParam) beautified.recoveryParam = parseInt(beautified.recoveryParam)
-                const transaction = new Transaction(beautified)
+                const transaction = Transaction.spawn(req.body)
                 this.emit('transaction', transaction, code => HTTPApi.resEndJSON(res, '0x' + code.toString(16)))
             }
             catch {
@@ -118,7 +115,7 @@ class HTTPApi extends events.EventEmitter {
         })
         if (config_settings.HTTPApi.post['/block'] === true) app.post('/block', (req, res) => {
             try {
-                const block = new Block(Block.beautify(req.body))
+                const block = Block.spawn(req.body)
                 this.emit('block', block, code => HTTPApi.resEndJSON(res, '0x' + code.toString(16)))
             }
             catch {
@@ -217,7 +214,7 @@ class HTTPApi extends events.EventEmitter {
         try {
             const block = await this.get(address, `/block/${height}`)
             if (!block) return null
-            return new Block(Block.beautify(block))
+            return Block.spawn(block)
         }
         catch {
             return null
@@ -227,7 +224,7 @@ class HTTPApi extends events.EventEmitter {
         try {
             const block = await this.get(address, `/block/${hash.toString('hex')}`)
             if (!block) return null
-            return new Block(Block.beautify(block))
+            return Block.spawn(block)
         }
         catch {
             return null
@@ -237,7 +234,7 @@ class HTTPApi extends events.EventEmitter {
         try {
             const block = await this.get(address, '/block')
             if (!block) return null
-            return new Block(Block.beautify(block))
+            return Block.spawn(block)
         }
         catch {
             return null
@@ -246,7 +243,7 @@ class HTTPApi extends events.EventEmitter {
     static async getPendingTransactions(address: IP_Address) {
         try {
             const transactions = await this.get(address, '/transactions/pending')
-            return transactions.map(e => new Transaction(Transaction.beautify(e)))
+            return transactions.map(e => Transaction.spawn(e))
         }
         catch {
             return null
@@ -264,7 +261,7 @@ class HTTPApi extends events.EventEmitter {
         try {
             const block = await this.get(address, `/block/new/${Address.toString(_address)}`)
             if (!block) return null
-            return new Block(Block.beautify(block))
+            return Block.spawn(block)
         }
         catch {
             return null

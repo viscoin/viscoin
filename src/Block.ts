@@ -19,16 +19,22 @@ interface Block {
     header: Buffer
 }
 class Block {
-    constructor({ transactions, previousHash, height, nonce = undefined, hash = undefined, difficulty = undefined, timestamp = undefined }) {
-        if (hash instanceof Buffer) this.hash = hash
-        else if (hash !== undefined) this.hash = Buffer.from(hash, 'binary')
-        if (previousHash instanceof Buffer) this.previousHash = previousHash
-        else if (previousHash !== undefined) this.previousHash = Buffer.from(previousHash, 'binary')
-        if (transactions !== undefined) this.transactions = transactions?.map(e => e instanceof Transaction ? e : new Transaction(e))
+    constructor({
+        hash = undefined,
+        previousHash,
+        height,
+        timestamp = undefined,
+        difficulty = undefined,
+        nonce = undefined,
+        transactions
+    }) {
+        if (hash !== undefined) this.hash = hash
+        if (previousHash !== undefined) this.previousHash = previousHash
         if (height !== undefined) this.height = height
-        if (nonce !== undefined) this.nonce = nonce
-        if (difficulty !== undefined) this.difficulty = difficulty
         if (timestamp !== undefined) this.timestamp = timestamp
+        if (difficulty !== undefined) this.difficulty = difficulty
+        if (nonce !== undefined) this.nonce = nonce
+        if (transactions !== undefined) this.transactions = transactions
     }
     getTransactionHashes() {
         return this.transactions.map(e => Transaction.calculateHash(e))
@@ -110,29 +116,28 @@ class Block {
         }
     }
     static minify(input: Block) {
-        if (!input) return null
         const output: object = {}
         for (const property in input) {
             if (config_minify.block[property] !== undefined) {
-                if (input[property] instanceof Buffer) output[config_minify.block[property]] = input[property].toString('binary')
+                if ([ 'hash', 'previousHash' ].includes(property)) output[config_minify.block[property]] = input[property].toString('binary')
                 else if (property === 'transactions') output[config_minify.block[property]] = <Array<Transaction>> input[property].map(e => Transaction.minify(e))
                 else output[config_minify.block[property]] = input[property]
             }
         }
         return output
     }
-    static beautify(input) {
-        if (!input) return null
+    static spawn(input) {
         const output = {}
         for (const property in input) {
             for (const _property in config_minify.block) {
                 if (property === config_minify.block[_property]) {
-                    if (_property === 'transactions') output[_property] = input[property].map(e => Transaction.beautify(e))
+                    if ([ 'hash', 'previousHash' ].includes(_property)) output[_property] = Buffer.from(input[property], 'binary')
+                    else if (_property === 'transactions') output[_property] = input[property].map(e => Transaction.spawn(e))
                     else output[_property] = input[property]
                 }
             }
         }
-        return <any> output
+        return new Block(<Block> output)
     }
     exceedsMaxBlockSize() {
         if (Buffer.byteLength(

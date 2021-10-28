@@ -286,7 +286,7 @@ class Blockchain extends events.EventEmitter {
         if (this.genesisBlock.hash.equals(hash)) return this.genesisBlock
         try {
             const data = { [config_minify.block.hash]: hash, ...(await this.blocksDB.get(hash)) }
-            return new Block(Block.beautify(data))
+            return Block.spawn(data)
         }
         catch {
             return null

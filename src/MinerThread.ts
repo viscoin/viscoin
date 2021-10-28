@@ -26,8 +26,8 @@ class MinerThread extends events.EventEmitter {
             switch (e.e) {
                 case 'mine':
                     this.stop = false
-                    this.block = new Block(Block.beautify(e.block))
-                    this.previousBlock = new Block(Block.beautify(e.previousBlock))
+                    this.block = Block.spawn(e.block)
+                    this.previousBlock = Block.spawn(e.previousBlock)
                     if (this.mining === false) this.mine()
                     break
                 case 'stop':

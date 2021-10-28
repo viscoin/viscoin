@@ -8,51 +8,53 @@ import * as config_minify from '../config/minify.json'
 import * as config_core from '../config/core.json'
 interface Transaction {
     from: Buffer
-    to: Buffer
-    timestamp: number
     amount: string
+    to: Buffer
     minerFee: string
+    timestamp: number
     signature: Buffer,
     recoveryParam: number
 }
 class Transaction {
-    constructor({ from = undefined, to = undefined, amount = undefined, timestamp = undefined, minerFee = undefined, signature = undefined, recoveryParam = undefined }) {
-        if (timestamp) this.timestamp = timestamp
-        if (typeof minerFee === 'string') this.minerFee = minerFee
-        if (from instanceof Buffer) this.from = from
-        else if (from) this.from = Buffer.from(from, 'binary')
-        if (typeof amount === 'string') {
-            if (to instanceof Buffer) this.to = to
-            else if (to) this.to = Buffer.from(to, 'binary')
-            this.amount = amount
-        }
-        if (typeof recoveryParam === 'number') {
-            if (signature instanceof Buffer) this.signature = signature
-            else if (signature) this.signature = Buffer.from(signature, 'binary')
-            this.recoveryParam = recoveryParam
-        }
+    constructor({
+        from = undefined,
+        amount,
+        to,
+        minerFee = undefined,
+        timestamp = undefined,
+        signature = undefined,
+        recoveryParam = undefined
+    }) {
+        if (from !== undefined) this.from = from
+        if (to !== undefined) this.to = to
+        if (amount !== undefined) this.amount = amount
+        if (timestamp !== undefined) this.timestamp = timestamp
+        if (minerFee !== undefined) this.minerFee = minerFee
+        if (signature !== undefined) this.signature = signature
+        if (recoveryParam !== undefined) this.recoveryParam = recoveryParam
     }
     static minify(input: Transaction) {
         const output: object = {}
         for (const property in input) {
             if (config_minify.transaction[property] !== undefined) {
-                if (input[property] instanceof Buffer) output[config_minify.transaction[property]] = input[property].toString('binary')
+                if ([ 'from', 'to', 'signature' ].includes(property)) output[config_minify.transaction[property]] = input[property].toString('binary')
                 else output[config_minify.transaction[property]] = input[property]
             }
         }
         return output
     }
-    static beautify(input) {
+    static spawn(input) {
         const output = {}
-            for (const property in input) {
-                for (const _property in config_minify.transaction) {
-                    if (property === config_minify.transaction[_property]) {
-                        output[_property] = input[property]
-                    }
+        for (const property in input) {
+            for (const _property in config_minify.transaction) {
+                if (property === config_minify.transaction[_property]) {
+                    if ([ 'from', 'to', 'signature' ].includes(_property)) output[_property] = Buffer.from(input[property], 'binary')
+                    else output[_property] = input[property]
                 }
             }
-        return <any> output
-    }    
+        }
+        return new Transaction(<Transaction> output)
+    }
     static calculateHash(transaction: Transaction) {
         let a = parseBigInt(transaction.amount).toString(16)
         if (a.length % 2 !== 0) a = '0' + a

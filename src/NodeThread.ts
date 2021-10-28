@@ -26,13 +26,18 @@ class NodeThread {
             switch (e.e) {
                 case 'transaction':
                     this.verifyrate.transaction++
-                    parentPort.postMessage(new Transaction(Transaction.beautify(e.transaction)).isValid().toString())
+                    parentPort.postMessage(Transaction.spawn(e.transaction).isValid().toString())
                     break
                 case 'block':
-                    const block = new Block(Block.beautify(e.block))
-                    this.verifyrate.block++
-                    this.verifyrate.transaction += block.transactions.length
-                    parentPort.postMessage((await block.isValid()).toString())
+                    try {
+                        const block = Block.spawn(e.block)
+                        this.verifyrate.block++
+                        this.verifyrate.transaction += block.transactions.length
+                        parentPort.postMessage((await block.isValid()).toString())
+                    }
+                    catch {
+                        parentPort.postMessage(0x800000000000000000n.toString())
+                    }
                     break
             }
         })

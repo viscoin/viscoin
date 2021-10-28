@@ -17,6 +17,7 @@ import publicKeyFromPrivateKey from './src/publicKeyFromPrivateKey'
 import Address from './src/Address'
 import log from './src/log'
 import * as config_default_env from './config/default_env.json'
+import Transaction from './src/Transaction'
 
 const c = {
     reset: '\x1b[0m',
@@ -108,7 +109,6 @@ const commands = {
                 name: 'to',
                 message: 'Address',
                 validate: to => {
-                    if (to === '') return true
                     try {
                         if (Address.verifyChecksumAddress(base58.decode(to))) return true
                         else return 'Invalid address'
@@ -119,7 +119,7 @@ const commands = {
                 }
             },
             {
-                type: previous => previous ? 'text' : null,
+                type: 'text',
                 name: 'amount',
                 message: 'Amount',
                 validate: amount => {
@@ -151,13 +151,12 @@ const commands = {
             }
         ])
         if (res.confirm === true) {
-            let to
-            if (res.to) to = Address.toBuffer(res.to)
             const transaction = wallet.createTransaction({
-                to,
-                amount: res.amount === undefined ? undefined : beautifyBigInt(parseBigInt(res.amount)),
+                to: Address.toBuffer(res.to),
+                amount: beautifyBigInt(parseBigInt(res.amount)),
                 minerFee: beautifyBigInt(parseBigInt(res.minerFee))
             })
+            console.log('Transaction bytes:', Buffer.byteLength(JSON.stringify(Transaction.minify(transaction))))
             try {
                 const code = BigInt(await HTTPApi.send({ host, port }, transaction))
                 if (code) console.log(`Transaction rejected 0x${code.toString(16)}`)
