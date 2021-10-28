@@ -1,12 +1,9 @@
 import * as crypto from 'crypto'
 import addressFromPublicKey from './addressFromPublicKey'
-import * as config_mongoose from '../config/mongoose.json'
-import * as config_settings from '../config/settings.json'
 import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
 import * as secp256k1 from 'secp256k1'
 import publicKeyFromPrivateKey from './publicKeyFromPrivateKey'
-import * as Signature from 'elliptic/lib/elliptic/ec/signature'
 import * as config_minify from '../config/minify.json'
 interface Transaction {
     from: Buffer
@@ -44,16 +41,6 @@ class Transaction {
         }
         return output
     }
-    static old_minify(input: Transaction) {
-        const output: object = {}
-        for (const property in input) {
-            if (config_mongoose.transaction[property] !== undefined) {
-                if (input[property] instanceof Buffer) output[config_mongoose.transaction[property].name] = input[property].toString('binary')
-                else output[config_mongoose.transaction[property].name] = input[property]
-            }
-        }
-        return output
-    }
     static beautify(input) {
         const output = {}
             for (const property in input) {
@@ -69,12 +56,10 @@ class Transaction {
         let buf = Buffer.alloc(0)
         if (transaction.from) buf = Buffer.concat([ buf, transaction.from ])
         if (transaction.to) buf = Buffer.concat([ buf, transaction.to ])
-        return crypto.createHash('sha256').update(
-            buf.toString('binary')
-            + transaction.amount
-            + transaction.minerFee
-            + transaction.timestamp
-        ).digest()
+        if (transaction.amount) buf = Buffer.concat([ buf, Buffer.from(parseBigInt(transaction.amount).toString(16), 'hex') ])
+        if (transaction.minerFee) buf = Buffer.concat([ buf, Buffer.from(parseBigInt(transaction.minerFee).toString(16), 'hex') ])
+        if (transaction.timestamp) buf = Buffer.concat([ buf, Buffer.from(transaction.timestamp.toString(16), 'hex') ])
+        return crypto.createHash('sha256').update(buf).digest()
     }
     sign(privateKey: Buffer) {
         this.from = addressFromPublicKey(publicKeyFromPrivateKey(privateKey))
@@ -88,15 +73,7 @@ class Transaction {
             if (this.signature === undefined) return false
             if (typeof this.recoveryParam !== 'number' || this.recoveryParam >> 2) return false
             const hash = Transaction.calculateHash(this)
-            let signature = this.signature
-            if (Buffer.byteLength(signature) !== 64) {
-                const _signature = new Signature(signature)
-                signature = Buffer.concat([
-                    _signature.r.toArrayLike(Buffer, 'be', 32),
-                    _signature.s.toArrayLike(Buffer, 'be', 32)
-                ])
-            }
-            const publicKey = secp256k1.ecdsaRecover(signature, this.recoveryParam, hash, false)
+            const publicKey = secp256k1.ecdsaRecover(this.signature, this.recoveryParam, hash, false)
             const address = addressFromPublicKey(publicKey)
             if (!address.equals(this.from)) return false
             return true

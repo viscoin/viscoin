@@ -51,11 +51,6 @@
         "post": {
             "/transaction": true,
             "/block": true
-        },
-        "rateLimit": {
-            "windowMs": 1000,
-            "max": 2000,
-            "message": ""
         }
     },
     "TCPApi": {

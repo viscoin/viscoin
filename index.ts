@@ -1,5 +1,4 @@
 import * as core from "./config/core.json"
-import * as mongoose from "./config/mongoose.json"
 import * as settings from "./config/settings.json"
 import * as default_env from "./config/default_env.json"
 import * as minify from "./config/minify.json"
@@ -31,7 +30,6 @@ import Wallet from "./src/Wallet"
 import walletPassphraseHash from "./src/walletPassphraseHash"
 const config = {
     core,
-    mongoose,
     settings,
     default_env,
     minify

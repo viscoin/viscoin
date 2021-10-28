@@ -30,20 +30,18 @@
   "engineStrict": true,
   "devDependencies": {
     "@types/node": "^14.11.8",
+    "gh-pages": "^3.2.3",
+    "typedoc": "^0.22.7",
     "typescript": "^4.2.4"
   },
   "dependencies": {
     "argon2": "^0.27.1",
     "base-x": "^3.0.8",
     "dotenv": "^10.0.0",
-    "elliptic": "^6.5.3",
     "express": "^4.17.1",
-    "express-rate-limit": "^5.2.6",
-    "gh-pages": "^3.2.3",
     "level": "^7.0.0",
     "prompts": "^2.4.0",
     "secp256k1": "^4.0.2",
-    "socks": "^2.6.1",
-    "typedoc": "^0.21.9"
+    "socks": "^2.6.1"
   }
 }

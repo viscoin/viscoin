@@ -4,9 +4,7 @@ import * as config_settings from '../config/settings.json'
 import * as http from 'http'
 import * as express from 'express'
 import Transaction from './Transaction'
-import base58 from './base58'
 import Block from './Block'
-import * as rateLimit from 'express-rate-limit'
 import log from './log'
 import * as config_default_env from '../config/default_env.json'
 import Address from './Address'
@@ -57,7 +55,6 @@ class HTTPApi extends events.EventEmitter {
         const app = express()
         app.use(express.urlencoded({ extended: true }))
         app.use(express.json({ limit: '2mb' }))
-        app.use(rateLimit(config_settings.HTTPApi.rateLimit))
         if (config_settings.HTTPApi.get['/addresses'] === true) app.get('/addresses', (req, res) => {
             this.emit('get-addresses', parseInt(req.query.start), parseInt(req.query.amount), addresses => {
                 HTTPApi.resEndJSON(res, addresses)

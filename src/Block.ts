@@ -1,7 +1,5 @@
 import Transaction from './Transaction'
 import * as config_core from '../config/core.json'
-import * as config_mongoose from '../config/mongoose.json'
-import * as config_settings from '../config/settings.json'
 import proofOfWorkHash from './proofOfWorkHash'
 import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
@@ -12,12 +10,12 @@ interface Block {
     height: number
     timestamp: number
     difficulty: number
-    _difficulty: Buffer
+    target_difficulty: Buffer
     hash: Buffer
     previousHash: Buffer
     transactions: Array<Transaction>
-    header: string
-    transactionsHash: string
+    header: Buffer
+    transactionsHash: Buffer
 }
 class Block {
     constructor({ transactions, previousHash, height, nonce = undefined, hash = undefined, difficulty = undefined, timestamp = undefined }) {
@@ -32,21 +30,28 @@ class Block {
         if (timestamp !== undefined) this.timestamp = timestamp
     }
     setTransactionsHash() {
-        this.transactionsHash = crypto.createHash('sha256').update(JSON.stringify(this.transactions.map(e => Transaction.old_minify(e)))).digest().toString('binary')
+        this.transactionsHash = crypto.createHash('sha256').update(
+            Buffer.concat(
+                this.transactions.map(e => Transaction.calculateHash(e))
+            )
+        ).digest()
     }
     setHeader() {
-        if (this.transactionsHash === undefined) this.setTransactionsHash()
-        this.header = crypto.createHash('sha256').update(
-            this.previousHash.toString('binary')
-            + this.timestamp
-            + this.transactionsHash
-            + this.height
-            + this.difficulty
-        ).digest().toString('binary')
+        if (!this.transactionsHash) this.setTransactionsHash()
+        this.header = Buffer.concat([
+            this.previousHash,
+            this.transactionsHash,
+            Buffer.from(this.timestamp.toString(16), 'hex'),
+            Buffer.from(this.height.toString(16), 'hex'),
+            Buffer.from(this.difficulty.toString(16), 'hex')
+        ])
     }
     static async calculateHash(block: Block) {
-        if (block.header === undefined) block.setHeader()
-        return await proofOfWorkHash(block.header + block.nonce)
+        if (!block.header) block.setHeader()
+        return await proofOfWorkHash(Buffer.concat([
+            block.header,
+            Buffer.from(block.nonce.toString(16), 'hex')
+        ]))
     }
     static getDifficultyBuffer(difficulty: number) {
         difficulty = difficulty >> config_core.smoothness
@@ -60,8 +65,8 @@ class Block {
         return this.meetsDifficulty()
     }
     meetsDifficulty() {
-        if (this._difficulty === undefined) this._difficulty = Block.getDifficultyBuffer(this.difficulty)
-        if (Buffer.compare(this.hash, this._difficulty) !== -1) return false
+        if (this.target_difficulty === undefined) this.target_difficulty = Block.getDifficultyBuffer(this.difficulty)
+        if (Buffer.compare(this.hash, this.target_difficulty) !== -1) return false
         return true
     }
     hasValidTransactions() {

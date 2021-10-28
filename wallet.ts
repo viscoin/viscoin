@@ -142,13 +142,8 @@ const commands = {
                 type: 'toggle',
                 name: 'confirm',
                 message: (prev, values) => {
-                    const transaction = `Raw signed transaction copy/paste\n\n${JSON.stringify(wallet.createTransaction({
-                        to: values.to === undefined ? undefined : base58.decode(values.to),
-                        amount: values.amount === undefined ? undefined : beautifyBigInt(parseBigInt(values.amount)),
-                        minerFee: beautifyBigInt(parseBigInt(values.minerFee))
-                    }))}`
-                    if (values.amount !== undefined) return `Sum: ${beautifyBigInt(parseBigInt(values.amount))} + ${beautifyBigInt(parseBigInt(values.minerFee))} = ${beautifyBigInt(parseBigInt(values.amount) + parseBigInt(values.minerFee))}\n\n${transaction}\n\nBroadcast transaction?`
-                    else return `Sum: ${values.minerFee}\n\n${transaction}\n\nBroadcast transaction?`
+                    if (values.amount !== undefined) return `Sum: ${beautifyBigInt(parseBigInt(values.amount))} + ${beautifyBigInt(parseBigInt(values.minerFee))} = ${beautifyBigInt(parseBigInt(values.amount) + parseBigInt(values.minerFee))}\nBroadcast transaction?`
+                    else return `Sum: ${beautifyBigInt(parseBigInt(values.minerFee))}\nBroadcast transaction?`
                 },
                 initial: false,
                 active: 'yes',

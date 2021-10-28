@@ -162,7 +162,7 @@ class Miner extends events.EventEmitter {
                 log.warn('Mined block rejected', '0x' + code.toString(16))
                 await this.start()
             }
-            else log.info('Mined', block.hash.toString('hex'), `\x1b[32m+${block.transactions[0].amount}\x1b[0m`)
+            else log.info('Mined', `\x1b[32m+${block.transactions[0].amount}\x1b[0m`, block.hash.toString('hex'))
         }
         catch {
             setTimeout(() => this.postBlock(block), config_settings.HTTPApi.autoRetry)
