@@ -135,7 +135,7 @@ class Node extends events.EventEmitter {
                     for (let i = 0; i < blocks.length; i++) {
                         const block = blocks[i]
                         this.emit('add-block', block, code => {
-                            if (code === 0 && i === blocks.length - 1) {
+                            if (code === 0x0n && i === blocks.length - 1) {
                                 this.sync.timeout = 0
                                 this.sync.height = block.height + 1
                             }
@@ -160,7 +160,7 @@ class Node extends events.EventEmitter {
             if (!block.hash) return
             if (this.blockchain.hashes[block.height]?.equals(block.hash)) {
                 this.verifyrate.hashes++
-                return cb(0)
+                return cb(0x0n)
             }
             if (this.queue.callbacks.has(block.hash.toString('hex'))) return this.queue.callbacks.set(block.hash.toString('hex'), [ ...this.queue.callbacks.get(block.hash.toString('hex')), cb ])
             this.queue.callbacks.set(block.hash.toString('hex'), [ cb ])
