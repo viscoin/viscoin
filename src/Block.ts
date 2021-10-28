@@ -38,7 +38,6 @@ class Block {
         const SHA256 = e => crypto.createHash('sha256').update(e).digest()
         const tree = new MerkleTree(leaves, SHA256)
         this.merkleRoot = tree.getRoot()
-        tree.print()
     }
     setHeader() {
         if (!this.merkleRoot) this.setMerkleRoot()
