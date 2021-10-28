@@ -5,6 +5,7 @@ import beautifyBigInt from './beautifyBigInt'
 import * as secp256k1 from 'secp256k1'
 import publicKeyFromPrivateKey from './publicKeyFromPrivateKey'
 import * as config_minify from '../config/minify.json'
+import * as config_core from '../config/core.json'
 interface Transaction {
     from: Buffer
     to: Buffer
@@ -53,13 +54,26 @@ class Transaction {
         return <any> output
     }    
     static calculateHash(transaction: Transaction) {
-        let buf = Buffer.alloc(0)
-        if (transaction.from) buf = Buffer.concat([ buf, transaction.from ])
-        if (transaction.to) buf = Buffer.concat([ buf, transaction.to ])
-        if (transaction.amount) buf = Buffer.concat([ buf, Buffer.from(parseBigInt(transaction.amount).toString(16), 'hex') ])
-        if (transaction.minerFee) buf = Buffer.concat([ buf, Buffer.from(parseBigInt(transaction.minerFee).toString(16), 'hex') ])
-        if (transaction.timestamp) buf = Buffer.concat([ buf, Buffer.from(transaction.timestamp.toString(16), 'hex') ])
-        return crypto.createHash('sha256').update(buf).digest()
+        let a = parseBigInt(transaction.amount).toString(16)
+        if (a.length % 2 !== 0) a = '0' + a
+        // if transaction is miner reward
+        if (!transaction.from) {
+            return crypto.createHash('sha256').update(Buffer.concat([
+                transaction.to,
+                Buffer.from(a, 'hex')
+            ])).digest()
+        }
+        let t = transaction.timestamp.toString(16)
+        if (t.length % 2 !== 0) t = '0' + t
+        let m = parseBigInt(transaction.minerFee).toString(16)
+        if (m.length % 2 !== 0) m = '0' + m
+        return crypto.createHash('sha256').update(Buffer.concat([
+            transaction.from,
+            transaction.to,
+            Buffer.from(t, 'hex'),
+            Buffer.from(a, 'hex'),
+            Buffer.from(m, 'hex')
+        ])).digest()
     }
     sign(privateKey: Buffer) {
         this.from = addressFromPublicKey(publicKeyFromPrivateKey(privateKey))
@@ -68,47 +82,46 @@ class Transaction {
         this.signature = Buffer.from(signature.signature)
         this.recoveryParam = signature.recid
     }
-    verify() {
+    isValid() {
         try {
-            if (this.signature === undefined) return false
-            if (typeof this.recoveryParam !== 'number' || this.recoveryParam >> 2) return false
+            // from
+            if (!(this.from instanceof Buffer)) return 0x8000000000000n
+            if (Buffer.byteLength(this.from) !== 20) return 0x10000000000000n
+            // to
+            if (!(this.to instanceof Buffer)) return 0x20000000000000n
+            if (Buffer.byteLength(this.to) !== 20) return 0x40000000000000n
+            // sending to self
+            if (this.from.equals(this.to)) return 0x80000000000000n
+            // signature
+            if (!(this.signature instanceof Buffer)) return 0x100000000000000n
+            if (Buffer.byteLength(this.signature) !== 64) return 0x200000000000000n
+            // recoveryParam
+            if (!Number.isSafeInteger(this.recoveryParam)) return 0x400000000000000n
+            if (this.recoveryParam >> 2) return 0x800000000000000n
+            // amount
+            const amount = parseBigInt(this.amount)
+            if (amount === null) return 0x1000000000000000n
+            if (amount <= 0n) return 0x2000000000000000n
+            if (beautifyBigInt(amount) !== this.amount) return 0x4000000000000000n
+            // minerFee
+            const minerFee = parseBigInt(this.minerFee)
+            if (minerFee === null) return 0x8000000000000000n
+            if (minerFee <= 0n) return 0x10000000000000000n
+            if (beautifyBigInt(minerFee) !== this.minerFee) return 0x20000000000000000n
+            // timestamp
+            if (!Number.isSafeInteger(this.timestamp)) return 0x40000000000000000n
+            if (this.timestamp <= config_core.genesisBlockTimestamp) return 0x80000000000000000n
+            if (this.timestamp > Date.now()) return 0x100000000000000000n
+            // verify
             const hash = Transaction.calculateHash(this)
             const publicKey = secp256k1.ecdsaRecover(this.signature, this.recoveryParam, hash, false)
-            const address = addressFromPublicKey(publicKey)
-            if (!address.equals(this.from)) return false
-            return true
+            const address = addressFromPublicKey(Buffer.from(publicKey))
+            if (!address.equals(this.from)) return 0x200000000000000000n
+            return 0x0n
         }
         catch {
-            return false
+            return 0x400000000000000000n
         }
-    }
-    isValid() {
-        if (typeof this.from !== 'object') return 0x1n
-        if (this.from instanceof Buffer === false) return 0x2n
-        if (typeof this.to === 'object') {
-            if (this.to instanceof Buffer === false) return 0x4n
-            if (Buffer.byteLength(this.to) !== 20) return 0x8n
-            if (typeof this.amount !== 'string') return 0x10n
-            const amount = parseBigInt(this.amount)
-            if (amount === null
-                || amount <= 0
-                || beautifyBigInt(amount) !== this.amount) return 0x20n
-        }
-        else if (typeof this.to !== 'undefined') return 0x40n
-        if (this.to === undefined && this.amount !== undefined) return 0x80n
-        if (typeof this.signature !== 'object') return 0x100n
-        if (this.signature instanceof Buffer === false) return 0x200n
-        if (!Number.isInteger(this.timestamp) || !Number.isFinite(this.timestamp)) return 0x400n
-        if (this.timestamp > Date.now()) return 0x800n
-        if (typeof this.minerFee !== 'string') return 0x1000n
-        const minerFee = parseBigInt(this.minerFee)
-            if (minerFee === null
-                || minerFee < 0
-                || beautifyBigInt(minerFee) !== this.minerFee) return 0x2000n
-        if (typeof this.recoveryParam !== 'number') return 0x4000n
-        if (this.recoveryParam >> 2) return 0x8000n
-        if (this.verify() === false) return 0x10000n
-        return 0x0n
     }
     byteFee() {
         const bytes = BigInt(Buffer.byteLength(JSON.stringify(Transaction.minify(this))))

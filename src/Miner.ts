@@ -124,7 +124,12 @@ class Miner extends events.EventEmitter {
             if (i === 0) continue
             nextBlock.transactions[0].amount = beautifyBigInt(parseBigInt(nextBlock.transactions[0].amount) + parseBigInt(nextBlock.transactions[i].minerFee))
         }
-        while (Buffer.byteLength(JSON.stringify(Block.minify(nextBlock))) > config_core.maxBlockSize - 2**8) {
+        // make sure block size doesn't exceed max block size when mined
+        nextBlock.timestamp = Number.MAX_SAFE_INTEGER
+        nextBlock.difficulty = 256 * 2**config_core.smoothness
+        nextBlock.hash = Buffer.alloc(32, 0x00)
+        nextBlock.nonce = Number.MAX_SAFE_INTEGER
+        while (nextBlock.exceedsMaxBlockSize()) {
             const transaction = nextBlock.transactions.pop()
             nextBlock.transactions[0].amount = beautifyBigInt(parseBigInt(nextBlock.transactions[0].amount) - parseBigInt(transaction.minerFee))
             if (nextBlock.transactions.length === 1) break

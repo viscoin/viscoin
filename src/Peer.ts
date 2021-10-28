@@ -142,18 +142,18 @@ class Peer extends events.EventEmitter {
     }
     meta(data: { address: Buffer, timestamp: number, hash: Buffer, signature: { recid: number, signature: Uint8Array }, onion: string }) {
         try {
-            if (!crypto.createHash('sha256').update(data.timestamp.toString()).digest().equals(data.hash)) return 0x8000000000000000n
+            if (!crypto.createHash('sha256').update(data.timestamp.toString()).digest().equals(data.hash)) return 0x80000000000n
             const publicKey = secp256k1.ecdsaRecover(data.signature.signature, data.signature.recid, data.hash, false)
-            const address = addressFromPublicKey(publicKey)
-            if (!address.equals(data.address)) return 0x10000000000000000n
-            if (data.onion && !isValidOnion(data.onion)) return 0x20000000000000000n
+            const address = addressFromPublicKey(Buffer.from(publicKey))
+            if (!address.equals(data.address)) return 0x100000000000n
+            if (data.onion && !isValidOnion(data.onion)) return 0x200000000000n
             this.address = Address.toString(data.address)
             this.timestamp = data.timestamp
             this.onion = data.onion
             return 0x0n
         }
         catch {
-            return 0x40000000000000000n
+            return 0x400000000000n
         }
     }
     write(buffer: Buffer, cb) {

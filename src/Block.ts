@@ -5,6 +5,7 @@ import parseBigInt from './parseBigInt'
 import beautifyBigInt from './beautifyBigInt'
 import * as crypto from 'crypto'
 import * as config_minify from '../config/minify.json'
+import { MerkleTree } from 'merkletreejs'
 interface Block {
     nonce: number
     height: number
@@ -14,8 +15,8 @@ interface Block {
     hash: Buffer
     previousHash: Buffer
     transactions: Array<Transaction>
+    merkleRoot: Buffer
     header: Buffer
-    transactionsHash: Buffer
 }
 class Block {
     constructor({ transactions, previousHash, height, nonce = undefined, hash = undefined, difficulty = undefined, timestamp = undefined }) {
@@ -29,28 +30,39 @@ class Block {
         if (difficulty !== undefined) this.difficulty = difficulty
         if (timestamp !== undefined) this.timestamp = timestamp
     }
-    setTransactionsHash() {
-        this.transactionsHash = crypto.createHash('sha256').update(
-            Buffer.concat(
-                this.transactions.map(e => Transaction.calculateHash(e))
-            )
-        ).digest()
+    getTransactionHashes() {
+        return this.transactions.map(e => Transaction.calculateHash(e))
+    }
+    setMerkleRoot() {
+        const leaves = this.getTransactionHashes()
+        const SHA256 = e => crypto.createHash('sha256').update(e).digest()
+        const tree = new MerkleTree(leaves, SHA256)
+        this.merkleRoot = tree.getRoot()
+        tree.print()
     }
     setHeader() {
-        if (!this.transactionsHash) this.setTransactionsHash()
+        if (!this.merkleRoot) this.setMerkleRoot()
+        let t = this.timestamp.toString(16)
+        if (t.length % 2 !== 0) t = '0' + t
+        let h = this.height.toString(16)
+        if (h.length % 2 !== 0) h = '0' + h
+        let d = this.difficulty.toString(16)
+        if (d.length % 2 !== 0) d = '0' + d
         this.header = Buffer.concat([
             this.previousHash,
-            this.transactionsHash,
-            Buffer.from(this.timestamp.toString(16), 'hex'),
-            Buffer.from(this.height.toString(16), 'hex'),
-            Buffer.from(this.difficulty.toString(16), 'hex')
+            this.merkleRoot,
+            Buffer.from(t, 'hex'),
+            Buffer.from(h, 'hex'),
+            Buffer.from(d, 'hex')
         ])
     }
     static async calculateHash(block: Block) {
         if (!block.header) block.setHeader()
+        let n = block.nonce.toString(16)
+        if (n.length % 2 !== 0) n = '0' + n
         return await proofOfWorkHash(Buffer.concat([
             block.header,
-            Buffer.from(block.nonce.toString(16), 'hex')
+            Buffer.from(n, 'hex')
         ]))
     }
     static getDifficultyBuffer(difficulty: number) {
@@ -70,40 +82,33 @@ class Block {
         return true
     }
     hasValidTransactions() {
-        let amount = parseBigInt(config_core.blockReward)
-        if (!this.transactions.length) return 0x100000000000n
-        const hashes = []
-        for (let i = 0; i < this.transactions.length; i++) {
-            const transaction: Transaction = this.transactions[i]
-            if (typeof transaction !== 'object') return 0x200000000000n
-            if (i === 0) continue
-            if (transaction.timestamp >= this.timestamp) return 0x400000000000n
-            const code = transaction.isValid()
-            if (code) return code | 0x800000000000n
-            const minerFee = parseBigInt(transaction.minerFee)
-            if (minerFee === null
-            || beautifyBigInt(minerFee) !== transaction.minerFee) return 0x1000000000000n
-            amount += minerFee
-            if (transaction.amount !== undefined) {
-                const _amount = parseBigInt(transaction.amount)
-                if (_amount === null
-                || beautifyBigInt(_amount) !== transaction.amount) return 0x2000000000000n
+        try {
+            if (!this.transactions.length) return 0x1n
+            const hashes: Array<string> = []
+            let amount = parseBigInt(config_core.blockReward)
+            for (let i = 0; i < this.transactions.length; i++) {
+                if (i === 0) continue
+                const transaction = this.transactions[i]
+                if (!transaction) return 0x2n
+                const code = transaction.isValid()
+                if (code) return code | 0x800000000000n
+                if (transaction.timestamp >= this.timestamp) return 0x4n
+                amount += parseBigInt(transaction.minerFee)
+                hashes.push(Transaction.calculateHash(transaction).toString('hex'))
             }
-            hashes.push(Transaction.calculateHash(transaction))
+            const blockReward = parseBigInt(this.transactions[0].amount)
+            if (blockReward === null) return 0x8n
+            if (blockReward !== amount) return 0x10n
+            if (beautifyBigInt(blockReward) !== this.transactions[0].amount) return 0x20n
+            if (!(this.transactions[0].to instanceof Buffer)) return 0x40n
+            if (Buffer.byteLength(this.transactions[0].to) !== 20) return 0x80n
+            if (Object.keys(this.transactions[0]).find(e => [ 'timestamp', 'minerFee', 'from', 'signature', 'recoveryParam' ].includes(e))) return 0x100n
+            if (hashes.some((e, i) => hashes.indexOf(e) !== i)) return 0x200n
+            return 0x0n
         }
-        const _amount = parseBigInt(this.transactions[0].amount)
-        if (_amount === null
-        || _amount !== amount
-        || beautifyBigInt(_amount) !== this.transactions[0].amount) return 0x4000000000000n
-        if (this.transactions[0].to === undefined) return 0x8000000000000n
-        if (Buffer.byteLength(this.transactions[0].to) !== 20) return 0x10000000000000n
-        if (this.transactions[0].timestamp !== undefined) return 0x20000000000000n
-        if (this.transactions[0].minerFee !== undefined) return 0x40000000000000n
-        if (this.transactions[0].from !== undefined) return 0x80000000000000n
-        if (this.transactions[0].signature !== undefined) return 0x100000000000000n
-        if (this.transactions[0].recoveryParam !== undefined) return 0x200000000000000n
-        if (hashes.some((e, i) => hashes.indexOf(e) !== i)) return 0x400000000000000n
-        return 0x0n
+        catch {
+            return 0x400n
+        }
     }
     static minify(input: Block) {
         if (!input) return null
@@ -130,40 +135,47 @@ class Block {
         }
         return <any> output
     }
-    seemsValid() {
-        if (typeof this.nonce !== 'number'
-            || !Number.isInteger(this.nonce)
-            || this.nonce < 0
-            || this.nonce > Number.MAX_SAFE_INTEGER) return 0x20000n
-        if (typeof this.height !== 'number'
-            || !Number.isInteger(this.height)
-            || this.height < 0
-            || this.height > Number.MAX_SAFE_INTEGER) return 0x40000n
-        if (typeof this.timestamp !== 'number'
-            || !Number.isInteger(this.timestamp)
-            || this.timestamp < 0
-            || this.timestamp > Number.MAX_SAFE_INTEGER) return 0x80000n
-        if (typeof this.difficulty !== 'number'
-            || !Number.isInteger(this.difficulty)
-            || this.difficulty < 0
-            || this.difficulty > 256 * 2**config_core.smoothness) return 0x100000n
-        if (typeof this.hash !== 'object') return 0x200000n
-        if (typeof this.previousHash !== 'object') return 0x400000n
-        if (this.hash instanceof Buffer === false) return 0x800000n
-        if (this.previousHash instanceof Buffer === false) return 0x1000000n
-        if (Array.isArray(this.transactions) === false) return 0x2000000n
-        const code = this.hasValidTransactions()
-        if (code) return code
-        return 0x0n
+    exceedsMaxBlockSize() {
+        if (Buffer.byteLength(
+            JSON.stringify(Block.minify(this))
+        ) > config_core.maxBlockSize) return true
+        return false
     }
     async isValid() {
-        const code = this.seemsValid()
-        if (code) return code | 0x4000000n
-        if (this.timestamp > Date.now()) return 0x8000000n
-        if (Buffer.byteLength(JSON.stringify(Block.minify(this))) > config_core.maxBlockSize) return 0x10000000n
-        if (this.hash.equals(await Block.calculateHash(this)) === false) return 0x20000000n
-        if (this.meetsDifficulty() === false) return 0x40000000n
-        return 0x0n
+        try {
+            // height
+            if (!Number.isSafeInteger(this.height)) return 0x800n
+            if (this.height < 0) return 0x1000n
+            // nonce
+            if (!Number.isSafeInteger(this.nonce)) return 0x2000n
+            if (this.nonce < 0) return 0x4000n
+            // timestamp
+            if (!Number.isSafeInteger(this.timestamp)) return 0x8000n
+            if (this.timestamp <= config_core.genesisBlockTimestamp) return 0x10000n
+            if (this.timestamp > Date.now()) return 0x20000n
+            // difficulty
+            if (!Number.isSafeInteger(this.difficulty)) return 0x40000n
+            if (this.difficulty < 0) return 0x80000n
+            if (this.difficulty > 256 * 2**config_core.smoothness) return 0x100000n
+            // hash
+            if (!(this.hash instanceof Buffer)) return 0x200000n
+            if (Buffer.byteLength(this.hash) !== 32) return 0x400000n
+            // previousHash
+            if (!(this.previousHash instanceof Buffer)) return 0x800000n
+            if (Buffer.byteLength(this.previousHash) !== 32) return 0x1000000n
+            // transactions
+            if (!Array.isArray(this.transactions)) return 0x2000000n
+            // verify
+            const code = this.hasValidTransactions()
+            if (code) return code | 0x2n
+            if (this.exceedsMaxBlockSize()) return 0x4000000n
+            if (!this.hash.equals(await Block.calculateHash(this))) return 0x8000000n
+            if (!this.meetsDifficulty()) return 0x10000000n
+            return 0x0n
+        }
+        catch {
+            return 0x20000000n
+        }
     }
 }
 export default Block

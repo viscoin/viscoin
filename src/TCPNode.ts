@@ -175,12 +175,12 @@ class TCPNode extends events.EventEmitter {
         }
     }
     connectToNode(host: string) {
-        if (!isValidHost(host)) return 0x80000000000000000n
+        if (!isValidHost(host)) return 0x800000000000n
         if (config_settings.TCPNode.allowConnectionsToSelf !== true
         && (host === this.host
             || host === this.ONION_ADDRESS
-            || host === this.TCP_NODE.host)) return 0x100000000000000000n
-        if (this.hasSocketWithRemoteAddress(host)) return 0x200000000000000000n
+            || host === this.TCP_NODE.host)) return 0x1000000000000n
+        if (this.hasSocketWithRemoteAddress(host)) return 0x2000000000000n
         if (this.USE_PROXY) {
             const options: SocksClientOptions = {
                 proxy: <SocksProxy> config_settings.proxy,
@@ -201,7 +201,7 @@ class TCPNode extends events.EventEmitter {
             })
         }
         else {
-            if (isValidOnion(host)) return 0x4000000000000000000n
+            if (isValidOnion(host)) return 0x4000000000000n
             const socket = net.connect(9333, host)
             this.addPeer(new Peer(socket, { address: this.address, privateKey: this.privateKey }, this.ONION_ADDRESS), false)
         }

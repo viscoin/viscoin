@@ -40,6 +40,7 @@
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "level": "^7.0.0",
+    "merkletreejs": "^0.2.24",
     "prompts": "^2.4.0",
     "secp256k1": "^4.0.2",
     "socks": "^2.6.1"
