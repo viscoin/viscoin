@@ -17,19 +17,19 @@ interface Transaction {
 }
 class Transaction {
     constructor({
+        to,
         from = undefined,
         amount,
-        to,
         minerFee = undefined,
         timestamp = undefined,
         signature = undefined,
         recoveryParam = undefined
     }) {
-        if (from !== undefined) this.from = from
         if (to !== undefined) this.to = to
+        if (from !== undefined) this.from = from
         if (amount !== undefined) this.amount = amount
-        if (timestamp !== undefined) this.timestamp = timestamp
         if (minerFee !== undefined) this.minerFee = minerFee
+        if (timestamp !== undefined) this.timestamp = timestamp
         if (signature !== undefined) this.signature = signature
         if (recoveryParam !== undefined) this.recoveryParam = recoveryParam
     }

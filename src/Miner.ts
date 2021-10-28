@@ -183,7 +183,7 @@ class Miner extends events.EventEmitter {
             switch (e.e) {
                 case 'mined':
                     this.emitThreadsStop()
-                    this.postBlock(new Block(e.block))
+                    this.postBlock(Block.spawn(e.block))
                     break
                 case 'hashrate':
                     this.hashrate += e.hashrate

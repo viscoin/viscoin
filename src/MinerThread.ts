@@ -51,7 +51,7 @@ class MinerThread extends events.EventEmitter {
         }
         if (await this.block.recalculateHash() === true) {
             this.stop = true
-            parentPort.postMessage(JSON.stringify({ e: 'mined', block: this.block }))
+            parentPort.postMessage(JSON.stringify({ e: 'mined', block: Block.minify(this.block) }))
         }
         this.mine()
     }
