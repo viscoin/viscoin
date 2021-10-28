@@ -157,7 +157,9 @@ class Node extends events.EventEmitter {
         })
         this.on('add-block', async (block: Block, cb: Function) => {
             if (!this.blockchain.loaded) return
-            if (!block.hash) return
+            if (!(block.hash instanceof Buffer)) return
+            if (Buffer.byteLength(block.hash) !== 32) return
+            if (!(block.timestamp - config_settings.Node.maxDesync < Date.now())) return
             if (this.blockchain.hashes[block.height]?.equals(block.hash)) {
                 this.verifyrate.hashes++
                 return cb(0x0n)
@@ -261,8 +263,8 @@ class Node extends events.EventEmitter {
     async nextBlock() {
         log.debug(5, 'nextBlock')
         const block = [...this.queue.blocks].sort((a, b) => a.height - b.height)[0]
-        if (block === undefined) {
-            this.nextSync()
+        if (block === undefined || block.timestamp > Date.now()) {
+            if (block === undefined) this.nextSync()
             return setTimeout(this.nextBlock.bind(this), 10)
         }
         if (this.workersReady.size === 0) return setImmediate(this.nextBlock.bind(this))

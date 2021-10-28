@@ -15,6 +15,7 @@
         "syncTimeout": 10000,
         "syncLoop": 600000,
         "banTimeout": 60000,
+        "maxDesync": 3000,
         "queue": {
             "blocks": 1000,
             "transactions": 1000
