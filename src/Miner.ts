@@ -164,7 +164,7 @@ class Miner extends events.EventEmitter {
         try {
             const code = BigInt(await HTTPApi.postBlock(this.HTTP_API, block))
             if (code) {
-                log.warn('Mined block rejected', '0x' + code.toString(16))
+                log.warn('Mined block rejected', `\x1b[31m0x${code.toString(16)}\x1b[0m`)
                 await this.start()
             }
             else log.info('Mined', `\x1b[32m+${block.transactions[0].amount}\x1b[0m`, block.hash.toString('hex'))

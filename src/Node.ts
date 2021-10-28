@@ -284,7 +284,7 @@ class Node extends events.EventEmitter {
             this.queue.callbacks.delete(block.hash.toString('hex'))
         }
         this.emit('block', block, code)
-        log.debug(2, 'Block:', block.hash.toString('hex'), block.height, '0x' + code.toString(16))
+        log.debug(2, 'Block:', block.hash.toString('hex'), block.height, `${code ? '\x1b[31m' : '\x1b[32m'}0x${code.toString(16)}\x1b[0m`)
         setImmediate(this.nextBlock.bind(this))
     }
     async nextTransaction() {
@@ -308,7 +308,7 @@ class Node extends events.EventEmitter {
             this.queue.callbacks.delete(transaction.signature.toString('hex'))
         }
         this.emit('transaction', transaction, code)
-        log.debug(2, 'Transaction:', '0x' + code.toString(16))
+        log.debug(2, 'Transaction:', `${code ? '\x1b[31m' : '\x1b[32m'}0x${code.toString(16)}\x1b[0m`)
         setImmediate(this.nextTransaction.bind(this))
     }
     async nextSync() {
