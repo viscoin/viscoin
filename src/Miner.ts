@@ -108,23 +108,29 @@ class Miner extends events.EventEmitter {
                 else if (remainder.b > remainder.a) return 1
                 else return 0
             })
+        const height = latestBlock.height + 1
         const transactions = [
             new Transaction({
                 to: address,
-                amount: beautifyBigInt(parseBigInt(config_core.blockReward))
+                amount: beautifyBigInt(Block.getReward(height))
             }),
             ...this.pendingTransactions.filter(transaction => transaction.timestamp < Date.now())
         ]
         const nextBlock = new Block({
             previousHash: latestBlock.hash,
-            height: latestBlock.height + 1,
+            height,
             transactions
         })
         for (let i = 0; i < nextBlock.transactions.length; i++) {
             if (i === 0) continue
             nextBlock.transactions[0].amount = beautifyBigInt(parseBigInt(nextBlock.transactions[0].amount) + parseBigInt(nextBlock.transactions[i].minerFee))
         }
-        while (Buffer.byteLength(JSON.stringify(Block.minify(nextBlock))) > config_core.maxBlockSize - 2**8) {
+        // make sure block size doesn't exceed max block size when mined
+        nextBlock.timestamp = Number.MAX_SAFE_INTEGER
+        nextBlock.difficulty = 256 * 2**config_core.smoothness
+        nextBlock.hash = Buffer.alloc(32, 0x00)
+        nextBlock.nonce = Number.MAX_SAFE_INTEGER
+        while (nextBlock.exceedsMaxBlockSize()) {
             const transaction = nextBlock.transactions.pop()
             nextBlock.transactions[0].amount = beautifyBigInt(parseBigInt(nextBlock.transactions[0].amount) - parseBigInt(transaction.minerFee))
             if (nextBlock.transactions.length === 1) break
@@ -159,10 +165,10 @@ class Miner extends events.EventEmitter {
         try {
             const code = BigInt(await HTTPApi.postBlock(this.HTTP_API, block))
             if (code) {
-                log.warn('Mined block rejected', '0x' + code.toString(16))
+                log.warn('Mined block rejected', `\x1b[31m0x${code.toString(16)}\x1b[0m`)
                 await this.start()
             }
-            else log.info('Mined', block.hash.toString('hex'), `\x1b[32m+${block.transactions[0].amount}\x1b[0m`)
+            else log.info('Mined', `\x1b[32m+${block.transactions[0].amount}\x1b[0m`, block.hash.toString('hex'))
         }
         catch {
             setTimeout(() => this.postBlock(block), config_settings.HTTPApi.autoRetry)
@@ -178,7 +184,7 @@ class Miner extends events.EventEmitter {
             switch (e.e) {
                 case 'mined':
                     this.emitThreadsStop()
-                    this.postBlock(new Block(e.block))
+                    this.postBlock(Block.spawn(e.block))
                     break
                 case 'hashrate':
                     this.hashrate += e.hashrate

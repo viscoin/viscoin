@@ -135,7 +135,7 @@ class Node extends events.EventEmitter {
                     for (let i = 0; i < blocks.length; i++) {
                         const block = blocks[i]
                         this.emit('add-block', block, code => {
-                            if (code === 0 && i === blocks.length - 1) {
+                            if (code === 0x0n && i === blocks.length - 1) {
                                 this.sync.timeout = 0
                                 this.sync.height = block.height + 1
                             }
@@ -156,21 +156,31 @@ class Node extends events.EventEmitter {
             this.nextTransaction()
         })
         this.on('add-block', async (block: Block, cb: Function) => {
-            if (!this.blockchain.loaded) return
-            if (!block.hash) return
-            if (this.blockchain.hashes[block.height]?.equals(block.hash)) {
-                this.verifyrate.hashes++
-                return cb(0)
+            try {
+                if (!this.blockchain.loaded) return
+                if (!(block.hash instanceof Buffer)) return
+                if (Buffer.byteLength(block.hash) !== 32) return
+                if (!(block.timestamp - config_settings.Node.maxDesync < Date.now())) return
+                if (this.blockchain.hashes[block.height]?.equals(block.hash)) {
+                    this.verifyrate.hashes++
+                    return cb(0x0n)
+                }
+                if (this.queue.callbacks.has(block.hash.toString('hex'))) return this.queue.callbacks.set(block.hash.toString('hex'), [ ...this.queue.callbacks.get(block.hash.toString('hex')), cb ])
+                this.queue.callbacks.set(block.hash.toString('hex'), [ cb ])
+                this.queue.blocks.add(block)
             }
-            if (this.queue.callbacks.has(block.hash.toString('hex'))) return this.queue.callbacks.set(block.hash.toString('hex'), [ ...this.queue.callbacks.get(block.hash.toString('hex')), cb ])
-            this.queue.callbacks.set(block.hash.toString('hex'), [ cb ])
-            this.queue.blocks.add(block)
+            catch {}
         })
         this.on('add-transaction', async (transaction: Transaction, cb: Function) => {
-            if (this.queue.transactions.size > config_settings.Node.queue.transactions) return
-            if (this.queue.callbacks.has(transaction.signature.toString('hex'))) return this.queue.callbacks.set(transaction.signature.toString('hex'), [ ...this.queue.callbacks.get(transaction.signature.toString('hex')), cb ])
-            this.queue.callbacks.set(transaction.signature.toString('hex'), [ cb ])
-            this.queue.transactions.add(transaction)
+            try {
+                if (!(transaction.timestamp - config_settings.Node.maxDesync < Date.now())) return
+                const hash = Transaction.calculateHash(transaction).toString('hex')
+                if (this.queue.transactions.size > config_settings.Node.queue.transactions) return
+                if (this.queue.callbacks.has(hash)) return this.queue.callbacks.set(hash, [ ...this.queue.callbacks.get(hash), cb ])
+                this.queue.callbacks.set(hash, [ cb ])
+                this.queue.transactions.add(transaction)
+            }
+            catch {}
         })
         this.on('block', (block, code) => {
             if (code) return
@@ -261,8 +271,8 @@ class Node extends events.EventEmitter {
     async nextBlock() {
         log.debug(5, 'nextBlock')
         const block = [...this.queue.blocks].sort((a, b) => a.height - b.height)[0]
-        if (block === undefined) {
-            this.nextSync()
+        if (block === undefined || block.timestamp > Date.now()) {
+            if (block === undefined) this.nextSync()
             return setTimeout(this.nextBlock.bind(this), 10)
         }
         if (this.workersReady.size === 0) return setImmediate(this.nextBlock.bind(this))
@@ -282,13 +292,13 @@ class Node extends events.EventEmitter {
             this.queue.callbacks.delete(block.hash.toString('hex'))
         }
         this.emit('block', block, code)
-        log.debug(2, 'Block:', block.hash.toString('hex'), block.height, '0x' + code.toString(16))
+        log.debug(2, 'Block:', block.hash.toString('hex'), block.height, `${code ? '\x1b[31m' : '\x1b[32m'}0x${code.toString(16)}\x1b[0m`)
         setImmediate(this.nextBlock.bind(this))
     }
     async nextTransaction() {
         log.debug(5, 'nextTransaction')
         const transaction = [...this.queue.transactions].sort((a, b) => a.timestamp - b.timestamp)[0]
-        if (transaction === undefined) return setTimeout(this.nextTransaction.bind(this), 10)
+        if (transaction === undefined || transaction.timestamp > Date.now()) return setTimeout(this.nextTransaction.bind(this), 10)
         if (this.workersReady.size === 0) return setImmediate(this.nextTransaction.bind(this))
         this.queue.transactions.delete(transaction)
         let code = 0x0n
@@ -300,13 +310,14 @@ class Node extends events.EventEmitter {
         }
         catch {}
         if (!code) code |= await this.blockchain.addTransaction(transaction)
-        if (this.queue.callbacks.has(transaction.signature.toString('hex'))) {
-            const cbs = this.queue.callbacks.get(transaction.signature.toString('hex'))
+        const hash = Transaction.calculateHash(transaction).toString('hex')
+        if (this.queue.callbacks.has(hash)) {
+            const cbs = this.queue.callbacks.get(hash)
             for (const cb of cbs) cb(code)
-            this.queue.callbacks.delete(transaction.signature.toString('hex'))
+            this.queue.callbacks.delete(hash)
         }
         this.emit('transaction', transaction, code)
-        log.debug(2, 'Transaction:', '0x' + code.toString(16))
+        log.debug(2, 'Transaction:', `${code ? '\x1b[31m' : '\x1b[32m'}0x${code.toString(16)}\x1b[0m`)
         setImmediate(this.nextTransaction.bind(this))
     }
     async nextSync() {

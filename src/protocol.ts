@@ -37,13 +37,13 @@ export default {
             let data = JSON.parse(buffer.slice(1).toString('binary'))
             switch (type) {
                 case 'blocks':
-                    data = data.map(e => new Block(Block.beautify(e)))
+                    data = data.map(e => Block.spawn(e))
                     break
                 case 'block':
-                    data = new Block(Block.beautify(data))
+                    data = Block.spawn(data)
                     break
                 case 'transaction':
-                    data = new Transaction(Transaction.beautify(data))
+                    data = Transaction.spawn(data)
                     break
                 case 'node':
                     break

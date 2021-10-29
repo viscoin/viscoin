@@ -7,10 +7,9 @@ export default (str: string) => {
     if (sign) {
         if (str.replace(sign, '').includes(sign)) return null
         const index = str.indexOf(sign)
-        while (str.slice(index).length <= config_core.decimalPrecision) {
-            str += '0'
-        }
         str = str.replace(sign, '')
+        if (str.slice(index).length > config_core.decimalPrecision) return null
+        while (str.slice(index).length < config_core.decimalPrecision) str += '0'
     }
     else str += new Array(config_core.decimalPrecision).fill('0').join('')
     try {

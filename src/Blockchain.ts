@@ -149,9 +149,9 @@ class Blockchain extends events.EventEmitter {
         return await this.getBlockByHash(this.hashes[this.hashes.length - 1])
     }
     async addTransaction(transaction: Transaction) {
-        if (this.pendingTransactions.find(_transaction => Transaction.calculateHash(transaction).equals(Transaction.calculateHash(_transaction)))) return 0x1000000000n
+        if (this.pendingTransactions.find(_transaction => Transaction.calculateHash(transaction).equals(Transaction.calculateHash(_transaction)))) return 0x40000000n
         const block = await this.getLatestBlock()
-        if (transaction.timestamp < block.timestamp) return 0x2000000000n
+        if (transaction.timestamp < block.timestamp) return 0x80000000n
         let sum = parseBigInt(transaction.minerFee)
         if (transaction.amount) sum += parseBigInt(transaction.amount)
         for (const { from, amount, minerFee } of this.pendingTransactions) {
@@ -160,22 +160,22 @@ class Blockchain extends events.EventEmitter {
                 if (amount) sum += parseBigInt(amount)
             }
         }
-        if (await this.getBalanceOfAddress(transaction.from) < sum) return 0x4000000000n
+        if (await this.getBalanceOfAddress(transaction.from) < sum) return 0x100000000n
         const { bigint, remainder } = transaction.byteFee()
         if (bigint < this.minByteFee.bigint
-        || (bigint === this.minByteFee.bigint && remainder <= this.minByteFee.remainder)) return 0x8000000000n
+        || (bigint === this.minByteFee.bigint && remainder <= this.minByteFee.remainder)) return 0x200000000n
         this.pendingTransactions.push(transaction)
         return 0x0n
     }
     async addBlock(block: Block) {
         try {
             let previousBlock = block.height === 1 ? this.genesisBlock : await this.getBlockByHash(block.previousHash)
-            if (!previousBlock) return 0x10000000000n
-            if (block.timestamp <= previousBlock.timestamp) return 0x20000000000n
+            if (!previousBlock) return 0x400000000n
+            if (block.timestamp <= previousBlock.timestamp) return 0x800000000n
             const latestBlock = await this.getLatestBlock()
             const isLatestBlock = latestBlock.hash.equals(previousBlock.hash)
             const code = await this.isPartOfChainValid([ previousBlock, block ], isLatestBlock)
-            if (code) return code | 0x40000000000n
+            if (code) return code | 0x1000000000n
             const data = Block.minify(block)
             delete data[config_minify.block.hash]
             await this.blocksDB.put(block.hash, data)
@@ -189,7 +189,7 @@ class Blockchain extends events.EventEmitter {
             return 0x0n
         }
         catch {
-            return 0x80000000000n
+            return 0x2000000000n
         }
     }
     async cacheAddressesInputOutputOfTransactionsNegative(transactions: Array<Transaction>) {
@@ -250,17 +250,15 @@ class Blockchain extends events.EventEmitter {
         for (let i = 1; i < chain.length; i++) {
             const block = chain[i]
             const previousBlock = chain[i - 1]
-            if (previousBlock.height !== block.height - 1) return 0x20000000n
-            if (Blockchain.getBlockDifficulty([ previousBlock, block ]) !== block.difficulty) return 0x40000000n
-            if (block.previousHash.equals(previousBlock.hash) === false) return 0x80000000n
+            if (previousBlock.height !== block.height - 1) return 0x4000000000n
+            if (block.timestamp <= previousBlock.timestamp) return 0x1000000000000000000n
+            if (Blockchain.getBlockDifficulty([ previousBlock, block ]) !== block.difficulty) return 0x8000000000n
+            if (block.previousHash.equals(previousBlock.hash) === false) return 0x10000000000n
             for (const transaction of block.transactions) {
-                if (transaction.timestamp < previousBlock.timestamp) return 0x100000000n
+                if (transaction.timestamp < previousBlock.timestamp) return 0x20000000000n
             }
-            // for (const transaction of previousBlock.transactions) {
-            //     if (transaction.timestamp >= block.timestamp) return 0x200000000n
-            // }
             const code = await block.isValid()
-            if (code) return code | 0x400000000n
+            if (code) return code | 0x40000000000n
             for (let i = 1; i < block.transactions.length; i++) {
                 const transaction = block.transactions[i]
                 let sum = 0n
@@ -272,7 +270,7 @@ class Blockchain extends events.EventEmitter {
                     }
                 }
                 const balance = isLatestBlock ? await this.getBalanceOfAddress(transaction.from) : await this.getBalanceOfAddressFromHash(transaction.from, block.previousHash)
-                if (balance < sum) return 0x800000000n
+                if (balance < sum) return 0x40000000000n
             }
         }
         return 0x0n
@@ -289,7 +287,7 @@ class Blockchain extends events.EventEmitter {
         if (this.genesisBlock.hash.equals(hash)) return this.genesisBlock
         try {
             const data = { [config_minify.block.hash]: hash, ...(await this.blocksDB.get(hash)) }
-            return new Block(Block.beautify(data))
+            return Block.spawn(data)
         }
         catch {
             return null

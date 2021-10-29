@@ -4,16 +4,14 @@ import * as config_settings from '../config/settings.json'
 import * as http from 'http'
 import * as express from 'express'
 import Transaction from './Transaction'
-import base58 from './base58'
 import Block from './Block'
-import * as rateLimit from 'express-rate-limit'
 import log from './log'
 import * as config_default_env from '../config/default_env.json'
 import Address from './Address'
 
 const beautify = (block) => {
     try {
-        block = new Block(Block.beautify(block))
+        block = Block.spawn(block)
         for (const i in block) {
             if (block[i] instanceof Buffer) block[i] = block[i].toString('hex')
             if (i === 'transactions') block[i] = block[i].map(transaction => {
@@ -57,7 +55,6 @@ class HTTPApi extends events.EventEmitter {
         const app = express()
         app.use(express.urlencoded({ extended: true }))
         app.use(express.json({ limit: '2mb' }))
-        app.use(rateLimit(config_settings.HTTPApi.rateLimit))
         if (config_settings.HTTPApi.get['/addresses'] === true) app.get('/addresses', (req, res) => {
             this.emit('get-addresses', parseInt(req.query.start), parseInt(req.query.amount), addresses => {
                 HTTPApi.resEndJSON(res, addresses)
@@ -109,10 +106,7 @@ class HTTPApi extends events.EventEmitter {
         if (config_settings.HTTPApi.get['/peers'] === true) app.get('/peers', (req, res) => this.emit('get-peers', peers => HTTPApi.resEndJSON(res, peers)))
         if (config_settings.HTTPApi.post['/transaction'] === true) app.post('/transaction', (req, res) => {
             try {
-                const beautified = Transaction.beautify(req.body)
-                if (beautified.timestamp) beautified.timestamp = parseInt(beautified.timestamp)
-                if (beautified.recoveryParam) beautified.recoveryParam = parseInt(beautified.recoveryParam)
-                const transaction = new Transaction(beautified)
+                const transaction = Transaction.spawn(req.body)
                 this.emit('transaction', transaction, code => HTTPApi.resEndJSON(res, '0x' + code.toString(16)))
             }
             catch {
@@ -121,7 +115,7 @@ class HTTPApi extends events.EventEmitter {
         })
         if (config_settings.HTTPApi.post['/block'] === true) app.post('/block', (req, res) => {
             try {
-                const block = new Block(Block.beautify(req.body))
+                const block = Block.spawn(req.body)
                 this.emit('block', block, code => HTTPApi.resEndJSON(res, '0x' + code.toString(16)))
             }
             catch {
@@ -220,7 +214,7 @@ class HTTPApi extends events.EventEmitter {
         try {
             const block = await this.get(address, `/block/${height}`)
             if (!block) return null
-            return new Block(Block.beautify(block))
+            return Block.spawn(block)
         }
         catch {
             return null
@@ -230,7 +224,7 @@ class HTTPApi extends events.EventEmitter {
         try {
             const block = await this.get(address, `/block/${hash.toString('hex')}`)
             if (!block) return null
-            return new Block(Block.beautify(block))
+            return Block.spawn(block)
         }
         catch {
             return null
@@ -240,7 +234,7 @@ class HTTPApi extends events.EventEmitter {
         try {
             const block = await this.get(address, '/block')
             if (!block) return null
-            return new Block(Block.beautify(block))
+            return Block.spawn(block)
         }
         catch {
             return null
@@ -249,7 +243,7 @@ class HTTPApi extends events.EventEmitter {
     static async getPendingTransactions(address: IP_Address) {
         try {
             const transactions = await this.get(address, '/transactions/pending')
-            return transactions.map(e => new Transaction(Transaction.beautify(e)))
+            return transactions.map(e => Transaction.spawn(e))
         }
         catch {
             return null
@@ -267,7 +261,7 @@ class HTTPApi extends events.EventEmitter {
         try {
             const block = await this.get(address, `/block/new/${Address.toString(_address)}`)
             if (!block) return null
-            return new Block(Block.beautify(block))
+            return Block.spawn(block)
         }
         catch {
             return null
