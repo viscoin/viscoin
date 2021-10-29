@@ -12,7 +12,7 @@ Viscoin is an experimental digital currency that enables instant payments to any
 | Specification | Value |
 |:-|:-|
 | Mining algorithm | `Argon2d` ([Argon2](https://en.wikipedia.org/wiki/Argon2)) |
-| Approximate block time | `10 minutes` |
+| Approximate block time | `1 minute` |
 | Initial mining reward | `1 Viscoin` |
 | Block halving | `Every 210000 blocks` (Roughly every 4 years) |
 | Max block size | `65536 bytes` |
