@@ -108,16 +108,17 @@ class Miner extends events.EventEmitter {
                 else if (remainder.b > remainder.a) return 1
                 else return 0
             })
+        const height = latestBlock.height + 1
         const transactions = [
             new Transaction({
                 to: address,
-                amount: beautifyBigInt(parseBigInt(config_core.blockReward))
+                amount: beautifyBigInt(Block.getReward(height))
             }),
             ...this.pendingTransactions.filter(transaction => transaction.timestamp < Date.now())
         ]
         const nextBlock = new Block({
             previousHash: latestBlock.hash,
-            height: latestBlock.height + 1,
+            height,
             transactions
         })
         for (let i = 0; i < nextBlock.transactions.length; i++) {

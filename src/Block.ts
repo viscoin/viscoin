@@ -86,11 +86,14 @@ class Block {
         if (Buffer.compare(this.hash, this.target_difficulty) !== -1) return false
         return true
     }
+    static getReward(height: number) {
+        return parseBigInt(config_core.blockReward) >> (BigInt(height) / BigInt(config_core.blockHalving))
+    }
     hasValidTransactions() {
         try {
             if (!this.transactions.length) return 0x1n
             const hashes: Array<string> = []
-            let amount = parseBigInt(config_core.blockReward)
+            let amount = Block.getReward(this.height)
             for (let i = 0; i < this.transactions.length; i++) {
                 if (i === 0) continue
                 const transaction = this.transactions[i]

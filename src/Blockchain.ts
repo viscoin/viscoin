@@ -251,6 +251,7 @@ class Blockchain extends events.EventEmitter {
             const block = chain[i]
             const previousBlock = chain[i - 1]
             if (previousBlock.height !== block.height - 1) return 0x4000000000n
+            if (block.timestamp <= previousBlock.timestamp) return 0x1000000000000000000n
             if (Blockchain.getBlockDifficulty([ previousBlock, block ]) !== block.difficulty) return 0x8000000000n
             if (block.previousHash.equals(previousBlock.hash) === false) return 0x10000000000n
             for (const transaction of block.transactions) {
