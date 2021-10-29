@@ -1,9 +1,5 @@
 # Viscoin
-
 Official Typescript implementation of the Viscoin protocol.
-
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/viscoin/viscoin?style=for-the-badge)
-[![Discord](https://img.shields.io/discord/840244262615515148?label=Viscoin&logo=discord&style=for-the-badge)](https://discord.gg/viscoin)
 
 ## What is Viscoin?
 Viscoin is an experimental digital currency that enables instant payments to anyone, anywhere in the world. Viscoin uses peer-to-peer technology to operate with no central authority: managing transactions and issuing money are carried out collectively by the network.
@@ -14,10 +10,10 @@ Viscoin is an experimental digital currency that enables instant payments to any
 | Mining algorithm | `Argon2d` ([Argon2](https://en.wikipedia.org/wiki/Argon2)) |
 | Approximate block time | `1 minute` |
 | Initial mining reward | `1 Viscoin` |
+| Precision | `1e-8` (0.00000001) |
 | Block halving | `Every 210000 blocks` (Roughly every 4 years) |
 | Max block size | `65536 bytes` |
 | Port | `9333` |
-
 
 ## Setup & Installation
 
