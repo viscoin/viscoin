@@ -171,9 +171,9 @@ class Blockchain extends events.EventEmitter {
         try {
             let previousBlock = block.height === 1 ? this.genesisBlock : await this.getBlockByHash(block.previousHash)
             if (!previousBlock) return 0x400000000n
-            if (block.timestamp <= previousBlock.timestamp) return 0x800000000n
             const latestBlock = await this.getLatestBlock()
             const isLatestBlock = latestBlock.hash.equals(previousBlock.hash)
+            if (isLatestBlock && block.timestamp <= previousBlock.timestamp) return 0x800000000n
             const code = await this.isPartOfChainValid([ previousBlock, block ], isLatestBlock)
             if (code) return code | 0x1000000000n
             const data = Block.minify(block)
