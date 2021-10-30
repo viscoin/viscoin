@@ -1,306 +1,137 @@
-<!doctype html>
-<html class="default no-js">
-<head>
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>viscoin</title>
-	<meta name="description" content="Documentation for viscoin">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="stylesheet" href="assets/css/main.css">
-	<script async src="assets/js/search.js" id="search-script"></script>
-</head>
-<body>
-<header>
-	<div class="tsd-page-toolbar">
-		<div class="container">
-			<div class="table-wrap">
-				<div class="table-cell" id="tsd-search" data-index="assets/js/search.json" data-base=".">
-					<div class="field">
-						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
-						<input id="tsd-search-field" type="text" />
-					</div>
-					<ul class="results">
-						<li class="state loading">Preparing search index...</li>
-						<li class="state failure">The search index is not available</li>
-					</ul>
-					<a href="index.html" class="title">viscoin</a>
-				</div>
-				<div class="table-cell" id="tsd-widgets">
-					<div id="tsd-filter">
-						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
-						<div class="tsd-filter-group">
-							<div class="tsd-select" id="tsd-filter-visibility">
-								<span class="tsd-select-label">All</span>
-								<ul class="tsd-select-list">
-									<li data-value="public">Public</li>
-									<li data-value="protected">Public/Protected</li>
-									<li data-value="private" class="selected">All</li>
-								</ul>
-							</div>
-							<input type="checkbox" id="tsd-filter-inherited" checked />
-							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
-							<input type="checkbox" id="tsd-filter-externals" checked />
-							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
-						</div>
-					</div>
-					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div class="tsd-page-title">
-		<div class="container">
-			<h1>viscoin</h1>
-		</div>
-	</div>
-</header>
-<div class="container container-main">
-	<div class="row">
-		<div class="col-8 col-content">
-			<div class="tsd-panel tsd-typography">
-				<a href="#viscoin" id="viscoin" style="color: inherit; text-decoration: none;">
-					<h1>Viscoin</h1>
-				</a>
-				<p>Official Typescript implementation of the Viscoin protocol.</p>
-				<p><img src="https://img.shields.io/github/languages/code-size/viscoin/viscoin?style=for-the-badge" alt="GitHub code size in bytes">
-				<a href="https://discord.gg/viscoin"><img src="https://img.shields.io/discord/840244262615515148?label=Viscoin&logo=discord&style=for-the-badge" alt="Discord"></a></p>
-				<a href="#what-is-viscoin" id="what-is-viscoin" style="color: inherit; text-decoration: none;">
-					<h2>What is Viscoin?</h2>
-				</a>
-				<p>Viscoin is an experimental digital currency that enables instant payments to anyone, anywhere in the world. Viscoin uses peer-to-peer technology to operate with no central authority: managing transactions and issuing money are carried out collectively by the network.</p>
-				<a href="#coin-specifications" id="coin-specifications" style="color: inherit; text-decoration: none;">
-					<h3>Coin Specifications</h3>
-				</a>
-				<table>
-					<thead>
-						<tr>
-							<th align="left">Specification</th>
-							<th align="left">Value</th>
-						</tr>
-					</thead>
-					<tbody><tr>
-							<td align="left">Mining Algorithm</td>
-							<td align="left"><code>Argon2d</code> (<a href="https://en.wikipedia.org/wiki/Argon2">Argon2</a>)</td>
-						</tr>
-						<tr>
-							<td align="left">Block Time</td>
-							<td align="left"><code>60 seconds</code></td>
-						</tr>
-						<tr>
-							<td align="left">Mining Reward</td>
-							<td align="left"><code>1000 VIS</code></td>
-						</tr>
-						<tr>
-							<td align="left">Block Size</td>
-							<td align="left"><code>65536 bytes</code></td>
-						</tr>
-						<tr>
-							<td align="left">Port</td>
-							<td align="left"><code>9333</code></td>
-						</tr>
-				</tbody></table>
-				<a href="#setup-amp-installation" id="setup-amp-installation" style="color: inherit; text-decoration: none;">
-					<h2>Setup &amp; Installation</h2>
-				</a>
-				<ol>
-					<li><code>git clone https://github.com/viscoin/viscoin</code></li>
-					<li><code>cd viscoin</code></li>
-					<li><code>npm run setup</code></li>
-				</ol>
-				<a href="#configuration" id="configuration" style="color: inherit; text-decoration: none;">
-					<h3>Configuration</h3>
-				</a>
-				<p>Create a <code>.env</code> file in the root of the project.</p>
-				<pre><code><span style="color: #0070C1">HTTP_API</span><span style="color: #000000">=:</span><span style="color: #098658">80</span>
-<span style="color: #0070C1">TCP_API</span><span style="color: #000000">=:</span><span style="color: #098658">9332</span>
-<span style="color: #0070C1">TCP_NODE</span><span style="color: #000000">=:</span><span style="color: #098658">9333</span>
-<span style="color: #0070C1">DEBUG</span><span style="color: #000000">=</span><span style="color: #098658">0</span>
-<span style="color: #0070C1">ADDRESS</span><span style="color: #000000">=</span><span style="color: #001080">your_mining_address</span>
+<!DOCTYPE html><html class="default no-js"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>viscoin</title><meta name="description" content="Documentation for viscoin"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script async src="assets/search.js" id="search-script"></script></head><body><script>document.body.classList.add(localStorage.getItem("tsd-theme") || "os")</script><header><div class="tsd-page-toolbar"><div class="container"><div class="table-wrap"><div class="table-cell" id="tsd-search" data-base="."><div class="field"><label for="tsd-search-field" class="tsd-widget search no-caption">Search</label><input type="text" id="tsd-search-field"/></div><ul class="results"><li class="state loading">Preparing search index...</li><li class="state failure">The search index is not available</li></ul><a href="index.html" class="title">viscoin</a></div><div class="table-cell" id="tsd-widgets"><div id="tsd-filter"><a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a><div class="tsd-filter-group"><div class="tsd-select" id="tsd-filter-visibility"><span class="tsd-select-label">All</span><ul class="tsd-select-list"><li data-value="public">Public</li><li data-value="protected">Public/Protected</li><li data-value="private" class="selected">All</li></ul></div> <input type="checkbox" id="tsd-filter-inherited" checked/><label class="tsd-widget" for="tsd-filter-inherited">Inherited</label><input type="checkbox" id="tsd-filter-externals" checked/><label class="tsd-widget" for="tsd-filter-externals">Externals</label></div></div><a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a></div></div></div></div><div class="tsd-page-title"><div class="container"><h1>viscoin</h1></div></div></header><div class="container container-main"><div class="row"><div class="col-8 col-content"><div class="tsd-panel tsd-typography">
+<a href="#viscoin" id="viscoin" style="color: inherit; text-decoration: none;">
+  <h1>Viscoin</h1>
+</a>
+<p>Official Typescript implementation of the Viscoin protocol.</p>
+
+<a href="#what-is-viscoin" id="what-is-viscoin" style="color: inherit; text-decoration: none;">
+  <h2>What is Viscoin?</h2>
+</a>
+<p>Viscoin is an experimental digital currency that enables instant payments to anyone, anywhere in the world. Viscoin uses peer-to-peer technology to operate with no central authority: managing transactions and issuing money are carried out collectively by the network.</p>
+
+<a href="#coin-specifications" id="coin-specifications" style="color: inherit; text-decoration: none;">
+  <h3>Coin Specifications</h3>
+</a>
+<table>
+<thead>
+<tr>
+<th align="left">Specification</th>
+<th align="left">Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">Mining algorithm</td>
+<td align="left"><code>Argon2d</code> (<a href="https://en.wikipedia.org/wiki/Argon2">Argon2</a>)</td>
+</tr>
+<tr>
+<td align="left">Approximate block time</td>
+<td align="left"><code>1 minute</code></td>
+</tr>
+<tr>
+<td align="left">Initial mining reward</td>
+<td align="left"><code>1 Viscoin</code></td>
+</tr>
+<tr>
+<td align="left">Precision</td>
+<td align="left"><code>1e-8</code> (0.00000001)</td>
+</tr>
+<tr>
+<td align="left">Block halving</td>
+<td align="left"><code>Every 210000 blocks</code> (Roughly every 4 years)</td>
+</tr>
+<tr>
+<td align="left">Max block size</td>
+<td align="left"><code>65536 bytes</code></td>
+</tr>
+<tr>
+<td align="left">Port</td>
+<td align="left"><code>9333</code></td>
+</tr>
+</tbody></table>
+
+<a href="#setup-amp-installation" id="setup-amp-installation" style="color: inherit; text-decoration: none;">
+  <h2>Setup &amp; Installation</h2>
+</a>
+<ol>
+<li><code>git clone https://github.com/viscoin/viscoin</code></li>
+<li><code>cd viscoin</code></li>
+<li><code>npm run setup</code></li>
+</ol>
+
+<a href="#configuration" id="configuration" style="color: inherit; text-decoration: none;">
+  <h3>Configuration</h3>
+</a>
+<p>Create a <code>.env</code> file in the root of the project.</p>
+<pre><code><span class="hl-0">HTTP_API</span><span class="hl-1">=:</span><span class="hl-2">80</span><br/><span class="hl-0">TCP_API</span><span class="hl-1">=:</span><span class="hl-2">9332</span><br/><span class="hl-0">TCP_NODE</span><span class="hl-1">=:</span><span class="hl-2">9333</span><br/><span class="hl-0">DEBUG</span><span class="hl-1">=</span><span class="hl-2">0</span><br/><span class="hl-0">ADDRESS</span><span class="hl-1">=</span><span class="hl-3">your_mining_address</span>
 </code></pre>
-				<a href="#wallet" id="wallet" style="color: inherit; text-decoration: none;">
-					<h3>Wallet</h3>
-				</a>
-				<ul>
-					<li><code>node wallet</code></li>
-				</ul>
-				<a href="#miner" id="miner" style="color: inherit; text-decoration: none;">
-					<h3>Miner</h3>
-				</a>
-				<ul>
-					<li><code>node miner</code></li>
-				</ul>
-				<a href="#fullnode" id="fullnode" style="color: inherit; text-decoration: none;">
-					<h3>Fullnode</h3>
-				</a>
-				<ol start="4">
-					<li><code>node net-config</code></li>
-					<li><code>Add</code> addresses to other nodes that are part of the Viscoin network.</li>
-					<li><em>Using <strong><a href="https://www.npmjs.com/package/pm2">pm2</a></strong></em> <code>pm2 start fullnode.js</code> <em>or with <strong>docker</strong></em> <code>docker-compose up -d</code>.</li>
-				</ol>
-				<a href="#tor-hidden-service" id="tor-hidden-service" style="color: inherit; text-decoration: none;">
-					<h4>Tor hidden service</h4>
-				</a>
-				<p><em>/etc/tor/torrc</em></p>
-				<pre><code><span style="color: #001080">HiddenServiceDir</span><span style="color: #000000"> /</span><span style="color: #0000FF">var</span><span style="color: #000000">/</span><span style="color: #001080">lib</span><span style="color: #000000">/tor/viscoin-service/</span>
-<span style="color: #001080">HiddenServicePort</span><span style="color: #000000"> </span><span style="color: #098658">9333</span><span style="color: #000000"> </span><span style="color: #098658">127.0</span><span style="color: #000000">.</span><span style="color: #098658">0.1</span><span style="color: #000000">:</span><span style="color: #098658">9333</span>
+
+<a href="#wallet" id="wallet" style="color: inherit; text-decoration: none;">
+  <h3>Wallet</h3>
+</a>
+<ul>
+<li><code>node wallet</code></li>
+</ul>
+
+<a href="#miner" id="miner" style="color: inherit; text-decoration: none;">
+  <h3>Miner</h3>
+</a>
+<ul>
+<li><code>node miner</code></li>
+</ul>
+
+<a href="#fullnode" id="fullnode" style="color: inherit; text-decoration: none;">
+  <h3>Fullnode</h3>
+</a>
+<ol start="4">
+<li><code>node net-config</code></li>
+<li><code>Add</code> addresses to other nodes that are part of the Viscoin network.</li>
+<li><em>Using <strong><a href="https://www.npmjs.com/package/pm2">pm2</a></strong></em> <code>pm2 start fullnode.js</code> <em>or with <strong>docker</strong></em> <code>docker-compose up -d</code>.</li>
+</ol>
+
+<a href="#tor-hidden-service" id="tor-hidden-service" style="color: inherit; text-decoration: none;">
+  <h4>Tor hidden service</h4>
+</a>
+<p><em>/etc/tor/torrc</em></p>
+<pre><code><span class="hl-3">HiddenServiceDir</span><span class="hl-1"> /</span><span class="hl-4">var</span><span class="hl-1">/</span><span class="hl-3">lib</span><span class="hl-1">/tor/viscoin-service/</span><br/><span class="hl-3">HiddenServicePort</span><span class="hl-1"> </span><span class="hl-2">9333</span><span class="hl-1"> </span><span class="hl-2">127.0</span><span class="hl-1">.</span><span class="hl-2">0.1</span><span class="hl-1">:</span><span class="hl-2">9333</span>
 </code></pre>
-				<p><em>.env</em></p>
-				<pre><code><span style="color: #0070C1">USE_PROXY</span><span style="color: #000000">=</span><span style="color: #098658">1</span>
-<span style="color: #0070C1">ONION_ADDRESS</span><span style="color: #000000">=</span><span style="color: #0070C1">XXXXXXXXXXX</span><span style="color: #000000">.</span><span style="color: #001080">onion</span>
+<p><em>.env</em></p>
+<pre><code><span class="hl-0">USE_PROXY</span><span class="hl-1">=</span><span class="hl-2">1</span><br/><span class="hl-0">ONION_ADDRESS</span><span class="hl-1">=</span><span class="hl-0">XXXXXXXXXXX</span><span class="hl-1">.</span><span class="hl-3">onion</span>
 </code></pre>
-				<a href="#important" id="important" style="color: inherit; text-decoration: none;">
-					<h4>Important</h4>
-				</a>
-				<p>If your system clock is off by more than <code>30 seconds</code> the network will reject your blocks.
-				Check with <a href="https://time.is">Time.is</a> if you are synchronized with the official atomic clock time for any time zone.</p>
-				<a href="#package-usage" id="package-usage" style="color: inherit; text-decoration: none;">
-					<h2>Package usage</h2>
-				</a>
-				<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
-					<h3>Installation</h3>
-				</a>
-				<pre><code><span style="color: #001080">npm</span><span style="color: #000000"> </span><span style="color: #001080">install</span><span style="color: #000000"> </span><span style="color: #001080">viscoin</span>
+
+<a href="#important" id="important" style="color: inherit; text-decoration: none;">
+  <h4>Important</h4>
+</a>
+<p>If your system clock is off by more than <code>30 seconds</code> the network will reject your blocks.
+Check with <a href="https://time.is">Time.is</a> if you are synchronized with the official atomic clock time for any time zone.</p>
+
+<a href="#package-usage" id="package-usage" style="color: inherit; text-decoration: none;">
+  <h2>Package usage</h2>
+</a>
+
+<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
+  <h3>Installation</h3>
+</a>
+<pre><code><span class="hl-3">npm</span><span class="hl-1"> </span><span class="hl-3">install</span><span class="hl-1"> </span><span class="hl-3">viscoin</span>
 </code></pre>
-				<a href="#examples" id="examples" style="color: inherit; text-decoration: none;">
-					<h3>Examples</h3>
-				</a>
-				<a href="#generating-a-wallet" id="generating-a-wallet" style="color: inherit; text-decoration: none;">
-					<h4>Generating a wallet</h4>
-				</a>
-				<pre><code class="language-typescript"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">Wallet</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;viscoin&#039;</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">wallet</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Wallet</span><span style="color: #000000">()</span>
-<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">)</span>
+
+<a href="#examples" id="examples" style="color: inherit; text-decoration: none;">
+  <h3>Examples</h3>
+</a>
+
+<a href="#generating-a-wallet" id="generating-a-wallet" style="color: inherit; text-decoration: none;">
+  <h4>Generating a wallet</h4>
+</a>
+<pre><code class="language-typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-3">Wallet</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-6">&#39;viscoin&#39;</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-0">wallet</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-7">Wallet</span><span class="hl-1">()</span><br/><span class="hl-3">console</span><span class="hl-1">.</span><span class="hl-7">log</span><span class="hl-1">(</span><span class="hl-3">wallet</span><span class="hl-1">.</span><span class="hl-3">address</span><span class="hl-1">)</span>
 </code></pre>
-				<a href="#get-latest-block-http-request" id="get-latest-block-http-request" style="color: inherit; text-decoration: none;">
-					<h4>Get latest block (HTTP Request)</h4>
-				</a>
-				<pre><code class="language-typescript"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">HTTPApi</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;viscoin&#039;</span>
-<span style="color: #000000">(</span><span style="color: #0000FF">async</span><span style="color: #000000"> () </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
-<span style="color: #000000">    </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">block</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">HTTPApi</span><span style="color: #000000">.</span><span style="color: #795E26">getLatestBlock</span><span style="color: #000000">({ </span><span style="color: #001080">host:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;localhost&#039;</span><span style="color: #000000">, </span><span style="color: #001080">port:</span><span style="color: #000000"> </span><span style="color: #098658">80</span><span style="color: #000000"> })</span>
-<span style="color: #000000">    </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">block</span><span style="color: #000000">)</span>
-<span style="color: #000000">})()</span>
+
+<a href="#get-latest-block-http-request" id="get-latest-block-http-request" style="color: inherit; text-decoration: none;">
+  <h4>Get latest block (HTTP Request)</h4>
+</a>
+<pre><code class="language-typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-3">HTTPApi</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-6">&#39;viscoin&#39;</span><br/><span class="hl-1">(</span><span class="hl-4">async</span><span class="hl-1"> () </span><span class="hl-4">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-0">block</span><span class="hl-1"> = </span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-3">HTTPApi</span><span class="hl-1">.</span><span class="hl-7">getLatestBlock</span><span class="hl-1">({ </span><span class="hl-3">host:</span><span class="hl-1"> </span><span class="hl-6">&#39;localhost&#39;</span><span class="hl-1">, </span><span class="hl-3">port:</span><span class="hl-1"> </span><span class="hl-2">80</span><span class="hl-1"> })</span><br/><span class="hl-1">    </span><span class="hl-3">console</span><span class="hl-1">.</span><span class="hl-7">log</span><span class="hl-1">(</span><span class="hl-3">block</span><span class="hl-1">)</span><br/><span class="hl-1">})()</span>
 </code></pre>
-				<a href="#contributing" id="contributing" style="color: inherit; text-decoration: none;">
-					<h2>Contributing</h2>
-				</a>
-				<p>Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.</p>
-			</div>
-		</div>
-		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
-			<nav class="tsd-navigation primary">
-				<ul>
-					<li class=" ">
-						<a href="modules.html">Exports</a>
-					</li>
-				</ul>
-			</nav>
-			<nav class="tsd-navigation secondary menu-sticky">
-				<ul class="before-current">
-					<li class=" tsd-kind-class">
-						<a href="classes/Address.html" class="tsd-kind-icon">Address</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/Block.html" class="tsd-kind-icon">Block</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/Blockchain.html" class="tsd-kind-icon">Blockchain</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/HTTPApi.html" class="tsd-kind-icon">HTTPApi</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/Miner.html" class="tsd-kind-icon">Miner</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/MinerThread.html" class="tsd-kind-icon">Miner<wbr>Thread</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/Node.html" class="tsd-kind-icon">Node</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/NodeThread.html" class="tsd-kind-icon">Node<wbr>Thread</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/PaymentProcessor.html" class="tsd-kind-icon">Payment<wbr>Processor</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/Peer.html" class="tsd-kind-icon">Peer</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/TCPApi.html" class="tsd-kind-icon">TCPApi</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/TCPNode.html" class="tsd-kind-icon">TCPNode</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/Transaction.html" class="tsd-kind-icon">Transaction</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/Wallet.html" class="tsd-kind-icon">Wallet</a>
-					</li>
-					<li class=" tsd-kind-property">
-						<a href="modules.html#addressFromPublicKey" class="tsd-kind-icon">address<wbr>From<wbr>Public<wbr>Key</a>
-					</li>
-					<li class=" tsd-kind-property">
-						<a href="modules.html#base58" class="tsd-kind-icon">base58</a>
-					</li>
-					<li class=" tsd-kind-property">
-						<a href="modules.html#beautifyBigInt" class="tsd-kind-icon">beautify<wbr>Big<wbr>Int</a>
-					</li>
-					<li class=" tsd-kind-property">
-						<a href="modules.html#isValidAddress" class="tsd-kind-icon">is<wbr>Valid<wbr>Address</a>
-					</li>
-					<li class=" tsd-kind-property">
-						<a href="modules.html#isValidHost" class="tsd-kind-icon">is<wbr>Valid<wbr>Host</a>
-					</li>
-					<li class=" tsd-kind-property">
-						<a href="modules.html#isValidOnion" class="tsd-kind-icon">is<wbr>Valid<wbr>Onion</a>
-					</li>
-					<li class=" tsd-kind-property">
-						<a href="modules.html#keygen" class="tsd-kind-icon">keygen</a>
-					</li>
-					<li class=" tsd-kind-property">
-						<a href="modules.html#parseBigInt" class="tsd-kind-icon">parse<wbr>Big<wbr>Int</a>
-					</li>
-					<li class=" tsd-kind-property">
-						<a href="modules.html#proofOfWorkHash" class="tsd-kind-icon">proof<wbr>OfWork<wbr>Hash</a>
-					</li>
-					<li class=" tsd-kind-property">
-						<a href="modules.html#protocol" class="tsd-kind-icon">protocol</a>
-					</li>
-					<li class=" tsd-kind-property">
-						<a href="modules.html#publicKeyFromPrivateKey" class="tsd-kind-icon">public<wbr>Key<wbr>From<wbr>Private<wbr>Key</a>
-					</li>
-					<li class=" tsd-kind-property">
-						<a href="modules.html#walletPassphraseHash" class="tsd-kind-icon">wallet<wbr>Passphrase<wbr>Hash</a>
-					</li>
-					<li class=" tsd-kind-variable">
-						<a href="modules.html#config" class="tsd-kind-icon">config</a>
-					</li>
-				</ul>
-			</nav>
-		</div>
-	</div>
-</div>
-<footer>
-	<div class="container">
-		<h2>Legend</h2>
-		<div class="tsd-legend-group">
-			<ul class="tsd-legend">
-				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
-				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
-				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
-			</ul>
-			<ul class="tsd-legend">
-				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
-			</ul>
-			<ul class="tsd-legend">
-				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
-			</ul>
-		</div>
-	</div>
-</footer>
-<div class="overlay"></div>
-<script src="assets/js/main.js"></script>
-</body>
-</html>
+
+<a href="#contributing" id="contributing" style="color: inherit; text-decoration: none;">
+  <h2>Contributing</h2>
+</a>
+<p>Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.</p>
+</div></div><div class="col-4 col-menu menu-sticky-wrap menu-highlight"><nav class="tsd-navigation primary"><ul><li class="current"><a href="modules.html">Exports</a></li></ul></nav><nav class="tsd-navigation secondary menu-sticky"><ul><li class="tsd-kind-class"><a href="classes/Address.html" class="tsd-kind-icon">Address</a></li><li class="tsd-kind-class"><a href="classes/Block.html" class="tsd-kind-icon">Block</a></li><li class="tsd-kind-class"><a href="classes/Blockchain.html" class="tsd-kind-icon">Blockchain</a></li><li class="tsd-kind-class"><a href="classes/HTTPApi.html" class="tsd-kind-icon">HTTPApi</a></li><li class="tsd-kind-class"><a href="classes/Miner.html" class="tsd-kind-icon">Miner</a></li><li class="tsd-kind-class"><a href="classes/MinerThread.html" class="tsd-kind-icon">Miner<wbr/>Thread</a></li><li class="tsd-kind-class"><a href="classes/Node.html" class="tsd-kind-icon">Node</a></li><li class="tsd-kind-class"><a href="classes/NodeThread.html" class="tsd-kind-icon">Node<wbr/>Thread</a></li><li class="tsd-kind-class"><a href="classes/PaymentProcessor.html" class="tsd-kind-icon">Payment<wbr/>Processor</a></li><li class="tsd-kind-class"><a href="classes/Peer.html" class="tsd-kind-icon">Peer</a></li><li class="tsd-kind-class"><a href="classes/TCPApi.html" class="tsd-kind-icon">TCPApi</a></li><li class="tsd-kind-class"><a href="classes/TCPNode.html" class="tsd-kind-icon">TCPNode</a></li><li class="tsd-kind-class"><a href="classes/Transaction.html" class="tsd-kind-icon">Transaction</a></li><li class="tsd-kind-class"><a href="classes/Wallet.html" class="tsd-kind-icon">Wallet</a></li><li class="tsd-kind-property"><a href="modules.html#addressFromPublicKey" class="tsd-kind-icon">address<wbr/>From<wbr/>Public<wbr/>Key</a></li><li class="tsd-kind-property"><a href="modules.html#base58" class="tsd-kind-icon">base58</a></li><li class="tsd-kind-property"><a href="modules.html#beautifyBigInt" class="tsd-kind-icon">beautify<wbr/>Big<wbr/>Int</a></li><li class="tsd-kind-property"><a href="modules.html#isValidAddress" class="tsd-kind-icon">is<wbr/>Valid<wbr/>Address</a></li><li class="tsd-kind-property"><a href="modules.html#isValidHost" class="tsd-kind-icon">is<wbr/>Valid<wbr/>Host</a></li><li class="tsd-kind-property"><a href="modules.html#isValidOnion" class="tsd-kind-icon">is<wbr/>Valid<wbr/>Onion</a></li><li class="tsd-kind-property"><a href="modules.html#keygen" class="tsd-kind-icon">keygen</a></li><li class="tsd-kind-property"><a href="modules.html#parseBigInt" class="tsd-kind-icon">parse<wbr/>Big<wbr/>Int</a></li><li class="tsd-kind-property"><a href="modules.html#proofOfWorkHash" class="tsd-kind-icon">proof<wbr/>Of<wbr/>Work<wbr/>Hash</a></li><li class="tsd-kind-property"><a href="modules.html#protocol" class="tsd-kind-icon">protocol</a></li><li class="tsd-kind-property"><a href="modules.html#publicKeyFromPrivateKey" class="tsd-kind-icon">public<wbr/>Key<wbr/>From<wbr/>Private<wbr/>Key</a></li><li class="tsd-kind-property"><a href="modules.html#walletPassphraseHash" class="tsd-kind-icon">wallet<wbr/>Passphrase<wbr/>Hash</a></li><li class="tsd-kind-variable"><a href="modules.html#config" class="tsd-kind-icon">config</a></li></ul></nav></div></div></div><footer class=""><div class="container"><h2>Legend</h2><div class="tsd-legend-group"><ul class="tsd-legend"><li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li><li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li><li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li></ul></div><h2>Settings</h2><p>Theme <select id="theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></p></div></footer><div class="overlay"></div><script src="assets/main.js"></script></body></html>
