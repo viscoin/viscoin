@@ -1,9 +1,9 @@
 {
     "blockReward": "1",
     "blockTime": 60000,
-    "blockHalving": 210000,
+    "blockHalving": 2100000,
     "decimalPrecision": 8,
-    "genesisBlockTimestamp": 1577836800000,
+    "genesisBlockTimestamp": 1609459200000,
     "maxBlockSize": 65536,
     "smoothness": 4
 }
