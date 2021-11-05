@@ -4,14 +4,8 @@ services:
         container_name: viscoin
         restart: always
         build: .
-        environment:
-            - HTTP_API=:80
-            - TCP_API=:9332
-            - TCP_NODE=:9333
-            - DEBUG=0
-        ports:
-            - 80:80
-            - 9332:9332
-            - 9333:9333
+        network_mode: host
+        env_file:
+            - .env
         volumes:
             - ./db:/viscoin/db
