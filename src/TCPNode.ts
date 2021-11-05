@@ -52,8 +52,8 @@ class TCPNode extends events.EventEmitter {
         else log.warn('Unset environment value! Using default value for ONION_ADDRESS:', this.ONION_ADDRESS)
         this.host = null
         dns.lookup(hostname(), (err, host) => {
-            if (err) throw err
-            this.host = host
+            if (err) log.error(err)
+            else this.host = host
         })
         this.hashes = []
         this.peers = new Set()
