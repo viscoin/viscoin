@@ -10,6 +10,7 @@ import { execSync } from 'child_process'
 import log from './src/log'
 import * as settings from './config/settings.json'
 import * as path from 'path'
+import * as config_peers from './config/peers.json'
 
 if (isMainThread) {
     setTimeout(() => {
@@ -26,6 +27,7 @@ if (isMainThread) {
     }
     if (!fs.existsSync(settings.Node.dbPath)) fs.mkdirSync(settings.Node.dbPath)
     const nodes = level(path.join(settings.Node.dbPath, 'nodes'), { keyEncoding: 'utf8', valueEncoding: 'utf8' })
+    for (const peer of config_peers) nodes.put(peer, 0)
     const blocks = level(path.join(settings.Node.dbPath, 'blocks'), { keyEncoding: 'binary', valueEncoding: 'json' })
     const node = new Node({ nodes, blocks }, commit)
     setPriority(19)

@@ -23,7 +23,7 @@ interface Blockchain {
     _hashes: object
 }
 class Blockchain extends events.EventEmitter {
-    constructor({ blocks }) {
+    constructor(blocks) {
         super()
         this.blocksDB = blocks
         this.pendingTransactions = []

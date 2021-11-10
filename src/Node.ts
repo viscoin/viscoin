@@ -58,7 +58,7 @@ class Node extends events.EventEmitter {
         this.httpApi = new HTTPApi(commit)
         this.tcpApi = TCPApi.createServer()
         this.tcpNode = new TCPNode(nodes)
-        this.blockchain = new Blockchain({ blocks })
+        this.blockchain = new Blockchain(blocks)
         this.blockchain.once('loaded', async () => {
             setInterval(() => {
                 log.debug(2, 'Verifyrate', this.verifyrate)
