@@ -22,7 +22,8 @@
         },
         "autoReconnect": 120000,
         "restartAfter": 86400000,
-        "dbPath": "./db"
+        "dbPath": "./db",
+        "hardcodedPeers": true
     },
     "Miner": {
         "threads": 0,
