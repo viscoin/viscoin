@@ -101,12 +101,12 @@ class TCPNode extends events.EventEmitter {
             .once('delete', code => {
                 this.peers.delete(peer)
                 log.debug(1, 'Peer disconnected', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`)
-                log.debug(4, 'Peer deleted', code)
+                log.debug(4, 'Peer deleted', `0x${code.toString(16)}`)
             })
             .once('ban', async code => {
                 if (peer.remoteAddress) {
                     await this.nodes.put(peer.remoteAddress, Date.now())
-                    log.warn('Peer banned', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`, 'code:', code)
+                    log.warn('Peer banned', server ? 'in' : 'out', `${peer.remoteAddress}:${peer.remotePort}`, `0x${code.toString(16)}`)
                 }
                 else log.debug(2, 'Peer', server ? 'in' : 'out', 'connection failed')
             })
@@ -171,7 +171,7 @@ class TCPNode extends events.EventEmitter {
         hosts = TCPNode.shuffle(hosts)
         for (const host of hosts) {
             const code = this.connectToNode(host)
-            log.debug(3, 'connectToNode', host, code)
+            log.debug(3, 'connectToNode', host, `0x${code.toString(16)}`)
         }
     }
     connectToNode(host: string) {

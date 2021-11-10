@@ -99,7 +99,7 @@ class Block {
                 const transaction = this.transactions[i]
                 if (!transaction) return 0x2n
                 const code = transaction.isValid()
-                if (code) return code | 0x800000000000n
+                if (code) return code | 0x2000000000000000000n
                 if (transaction.timestamp >= this.timestamp) return 0x4n
                 amount += parseBigInt(transaction.minerFee)
                 hashes.push(Transaction.calculateHash(transaction).toString('hex'))
@@ -174,7 +174,7 @@ class Block {
             if (!Array.isArray(this.transactions)) return 0x2000000n
             // verify
             const code = this.hasValidTransactions()
-            if (code) return code | 0x2n
+            if (code) return code | 0x4000000000000000000n
             if (this.exceedsMaxBlockSize()) return 0x4000000n
             if (!this.hash.equals(await Block.calculateHash(this))) return 0x8000000n
             if (!this.meetsDifficulty()) return 0x10000000n

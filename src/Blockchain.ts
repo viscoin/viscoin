@@ -258,7 +258,7 @@ class Blockchain extends events.EventEmitter {
                 if (transaction.timestamp < previousBlock.timestamp) return 0x20000000000n
             }
             const code = await block.isValid()
-            if (code) return code | 0x40000000000n
+            if (code) return code | 0x800000000000000000n
             for (let i = 1; i < block.transactions.length; i++) {
                 const transaction = block.transactions[i]
                 let sum = 0n

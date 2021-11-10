@@ -8,7 +8,6 @@ import * as secp256k1 from 'secp256k1'
 import addressFromPublicKey from './addressFromPublicKey'
 import Address from './Address'
 import isValidOnion from './isValidOnion'
-import log from './log'
 interface Peer extends events.EventEmitter {
     socket: net.Socket
     remotePort: number
@@ -33,10 +32,15 @@ interface Peer extends events.EventEmitter {
     address: string
     timestamp: number
     onion: string
+    bannable: bigint
 }
 class Peer extends events.EventEmitter {
     constructor(socket: net.Socket, { address, privateKey }: { address: Buffer, privateKey: Buffer }, onion: string) {
         super()
+        this.bannable = 0n
+        for (const code of config_settings.Peer.bannable) {
+            this.bannable |= BigInt(code)
+        }
         this.socket = socket
         this.address = ''
         this.timestamp = 0
@@ -59,8 +63,8 @@ class Peer extends events.EventEmitter {
         this.socket
             .on('connect', () => this.emit('meta-send'))
             .on('error', () => {})
-            .on('close', () => this.delete(1))
-            .on('timeout', () => this.emit('ban', 0x800000000000000))
+            .on('close', () => this.delete(0x400000000000000000000n))
+            .on('timeout', () => this.emit('ban', 0x8000000000000000000n))
             .on('data', chunk => this.onData(chunk))
         this
             .once('meta-send', () => {
@@ -82,7 +86,7 @@ class Peer extends events.EventEmitter {
                 this.localPort = socket.localPort
                 this.localAddress = socket.localAddress
             })
-            .on('ban', () => this.delete(2))
+            .on('ban', () => this.delete(0x800000000000000000000n))
     }
     interval = {
         '1s': () => {
@@ -105,9 +109,9 @@ class Peer extends events.EventEmitter {
         this.socket.destroy()
     }
     onData(chunk: Buffer) {
-        if (this.socket.bytesRead - this.bytesRead > config_settings.Peer.socket.maxBytesRead1s) return this.emit('ban', 0x1000000000000000)
+        if (this.socket.bytesRead - this.bytesRead > config_settings.Peer.socket.maxBytesRead1s) return this.emit('ban', 0x10000000000000000000n)
         this.buffer = Buffer.concat([ this.buffer, chunk ])
-        if (Buffer.byteLength(this.buffer) > config_settings.Peer.maxBytesInMemory) return this.emit('ban', 0x2000000000000000)
+        if (Buffer.byteLength(this.buffer) > config_settings.Peer.maxBytesInMemory) return this.emit('ban', 0x20000000000000000000n)
         this.extract()
     }
     extract() {
@@ -125,18 +129,17 @@ class Peer extends events.EventEmitter {
             if (parsed === null) continue
             const { type, data } = parsed
             if (type === 'meta') {
-                if (this.address !== '') return this.emit('ban', 0x4000000000000000)
+                if (this.address !== '') return this.emit('ban', 0x40000000000000000000n)
                 const code = this.meta(data)
-                if (code) return this.emit('ban', 0x8000000000000000)
+                if (code) return this.emit('ban', 0x80000000000000000000n)
                 this.emit('meta-received')
             }
-            else if (this.address === '') return this.emit('ban', 0x10000000000000000)
+            else if (this.address === '') return this.emit('ban', 0x100000000000000000000n)
             if (this.requests[type]++ > config_settings.Peer.maxRequestsPerSecond[type]) continue
             this.addHash(hash)
             this.emit(type, data, b, res => {
-                // if (res === 1) this.emit('ban', 4)
-                // need to add new checks
-                if (type === 'sync' && res !== null) this.write(protocol.constructBuffer('blocks', res), () => {})
+                if (type === 'sync' && res !== null) return this.write(protocol.constructBuffer('blocks', res), () => {})
+                if (res & this.bannable) this.emit('ban', 0x200000000000000000000n | res)
             })
         }
     }
