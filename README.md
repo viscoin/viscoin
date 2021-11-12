@@ -2,7 +2,7 @@
 Official Typescript implementation of the Viscoin protocol.
 
 ## What is Viscoin?
-Viscoin is an experimental digital currency that lives on the internet. Payments can be made by anyone, to anyone, any time, anywhere in the world, and are carried out collectively by the network with the use of peer-to-peer technology. Cryptography makes trusting a central authority obsolete when anyone with a computer can verify that a transaction is valid.
+Viscoin is an experimental digital currency that lives on the internet. Payments can be made by anyone, to anyone, at any time, anywhere in the world, and are carried out collectively by the network with the use of peer-to-peer technology. Cryptography makes trusting a central authority obsolete when anyone with a computer can verify that a transaction is valid.
 
 ### Coin Specifications
 | Specification | Value |
