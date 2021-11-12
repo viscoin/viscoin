@@ -56,7 +56,7 @@ ONION_ADDRESS=XXXXXXXXXXX.onion
 ```
 
 #### Important
-If your system clock is off by more than `30 seconds` the network will reject your blocks.
+If your system clock is off by more than `3 seconds` the network will reject your blocks.
 Check with [Time.is](https://time.is) if you are synchronized with the official atomic clock time for any time zone.
 
 ## Package usage
