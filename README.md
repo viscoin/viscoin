@@ -11,7 +11,8 @@ Viscoin is an experimental digital currency that lives on the internet. Payments
 | Approximate block time | `1 minute` |
 | Initial mining reward | `1 Viscoin` |
 | Precision | `1e-8` (0.00000001) |
-| Block halving | `Every 210000 blocks` (Roughly every 4 years) |
+| Genesis timestamp | `1609459200000` (Fri, 01 Jan 2021 00:00:00 GMT) |
+| Block halving | `Every 2100000 blocks` (Roughly every 4 years) |
 | Max block size | `65536 bytes` |
 | Port | `9333` |
 
